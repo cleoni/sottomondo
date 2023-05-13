@@ -1,0 +1,305 @@
+'----COMMON GUI for version 9.9+
+
+PANEL initial
+	BUTTON logout
+	BUTTON help
+
+PANEL initchoice
+	LABEL	"<B>Umano</B><BR>"
+	BUTTON warrior, Guerriero, "Essere un Guerriero", onChooseWarrior
+		IMAGE	32x32 	icoWarrior.gif
+	LABEL	" Guerriero"
+	CR
+	BUTTON fwarrior, Guerriera, "Essere una Guerriera", onChooseFWarrior
+		IMAGE	32x32 	icoguerriera.gif
+	LABEL	" Guerriera"
+	CR
+	BUTTON cleric, Chierico, "Essere un Chierico", onChooseCleric
+		IMAGE	32x32 	icoCleric.gif
+	LABEL	" Chierico"
+	CR
+	BUTTON sorceress, Incantatrice, "Essere un'Incantatrice", onChooseSorceress
+		IMAGE	32x32 	icoMystic.gif
+	LABEL	" Incantatrice"
+	CR
+	BUTTON artisan, Artigiano, "Essere un Artigiano", onChooseArtisan
+		IMAGE	32x32 	icoartisan.gif
+	LABEL	" Artigiano"
+	CR
+	LABEL	"<HR>"
+	LABEL	"<B>Mostro</B><BR>"
+	BUTTON darken, "Entità Oscura", "Essere un'Entità Oscura", onChooseDarken
+		IMAGE	32x32 	icoDark.gif
+	LABEL	" Entità Oscura"
+	CR
+	BUTTON vampire, Vampiro, "Essere un vampiro", onChooseVampire
+		IMAGE	32x32 	icovampire.gif
+	LABEL	" Vampiro"
+	CR
+	BUTTON vampirebride, Vampira, "Essere una vampira", onChooseVampireBride
+		IMAGE	32x32 	icovampirebride.gif
+	LABEL	" Vampira"
+	CR
+	BUTTON werewolf, "Lupo Mannaro", "Essere un lupo mannaro", onChooseWerewolf
+		IMAGE	32x32 	icowolf.gif
+	LABEL	" Lupo Mannaro"
+	CR
+	CR
+	BUTTON logout
+	BUTTON help
+
+PANEL pcleric
+	BUTTON castspell, "Incantesimo", "Lancia ... su ...", onCastSpell, OO
+		ICON	panspell.gif
+	LABEL " "
+	BUTTON combine, "Combina", "Combina ... con ...", onCombine, OO
+		ICON	pancombine.gif
+	CR
+
+PANEL pmastercleric
+	BUTTON castspell, "Incantesimo", "Lancia ... su ...", onCastSpell, OO
+		ICON	panspell.gif
+	LABEL " "
+	BUTTON combine, "Combina", "Combina ... con ...", onCombine, OO
+		ICON	pancombine.gif
+	BUTTON sense, "Trova", "Trova ... ", onFindObject, T
+	BUTTON mypanel, "Operazioni Speciali", "Operazioni Speciali", doMasterPanel
+		IMAGE	20x20 	icoWarrior.gif
+	CR
+
+PANEL partisan
+	BUTTON use2
+	CR
+
+PANEL pmasterartisan
+	BUTTON use2
+	BUTTON sense, "Trova", "Trova ... ", onFindObject, T
+	BUTTON mypanel, "Operazioni Speciali", "Operazioni Speciali", doMasterPanel
+		IMAGE	20x20 	icoWarrior.gif
+	CR
+
+PANEL pwarrior
+	LABEL ""
+
+PANEL pmasterwarrior
+	BUTTON sense, "Trova", "Trova ... ", onFindObject, T
+	BUTTON mypanel, "Operazioni Speciali", "Operazioni Speciali", doMasterPanel
+		IMAGE	20x20 	icoWarrior.gif
+	CR
+
+PANEL pmasterspecial
+	BUTTON dothis, "Fai questo: ", "Comando", doCommand
+	DROPDOWN masterop, masterOps, _0
+	LABEL "<BR>Persone:"
+	DROPDOWN charsel, "getKillable($OWNER)", _0
+	LABEL "<BR>Oggetti:"
+	DROPDOWN itemsel, "SetSortedByName(getItemsIn($WORLD))", _0
+	LABEL "<BR>Stanze:"
+	DROPDOWN roomsel, "SetSortedByName(getRooms(NewSet($OWNER.container.id)))", _0
+	CR
+	TEXTBOX
+	CR
+	CR
+	BUTTON m_return, "Ritorna", "Ritorna al gioco", doMasterReturn
+
+PANEL pmonster
+	BUTTON yell, "Urla", "Urla", onYell
+		ICON	panyell.gif
+	CR
+
+PANEL pdarken
+	BUTTON castspell, "Incantesimo", "Lancia ... su ...", onCastSpell, OO
+		ICON	panspell.gif
+	LABEL " "
+	BUTTON combine, "Combina", "Combina ... con ...", onCombine, OO
+		ICON	pancombine.gif
+	LABEL " "
+	BUTTON yell, "Urla", "Urla", onYell
+		ICON	panyell.gif
+	CR
+
+PANEL pmasterdarken
+	BUTTON castspell, "Incantesimo", "Lancia ... su ...", onCastSpell, OO
+		ICON	panspell.gif
+	LABEL " "
+	BUTTON combine, "Combina", "Combina ... con ...", onCombine, OO
+		ICON	pancombine.gif
+	LABEL " "
+	BUTTON yell, "Urla", "Urla", onYell
+		ICON	panyell.gif
+	BUTTON sense, "Trova", "Trova ... ", onFindObject, T
+	BUTTON mypanel, "Operazioni Speciali", "Operazioni Speciali", doMasterPanel
+		IMAGE	20x20 	icoWarrior.gif
+	CR
+
+PANEL pvampire
+	BUTTON bite, "Mordi", "Mordi ...", onBite, O
+		ICON	panbite.gif
+	BUTTON yell, "Urla", "Urla", onYell
+		ICON	panyell.gif
+	BUTTON transform, "Trasformati", "Trasformati", onTransform
+		ICON	pantransform.gif
+	CR
+
+PANEL pmastervamp
+	BUTTON bite, "Mordi", "Mordi ...", onBite, O
+		ICON	panbite.gif
+	BUTTON yell, "Urla", "Urla", onYell
+		ICON	panyell.gif
+	BUTTON transform, "Trasformati", "Trasformati", onTransform
+		ICON	pantransform.gif
+	BUTTON sense, "Trova", "Trova ... ", onFindObject, T
+	BUTTON mypanel, "Operazioni Speciali", "Operazioni Speciali", doMasterPanel
+		IMAGE	20x20 	icoWarrior.gif
+	CR
+
+PANEL default
+	DELETE look
+	BUTTON attack, "Attacca", "Attacca ... ", onAttack, O
+		ICON	panattack.gif
+	BUTTON info,"Info","Profilo attuale",doCheckup
+	BUTTON use
+		ICON	panuse.gif
+	CR
+	BUTTON search
+		ICON	pansearch.gif
+	BUTTON	open
+	BUTTON	close
+	CR
+	BUTTON pick
+		ICON	panpick.gif
+	BUTTON drop
+		ICON	pandrop.gif
+	BUTTON hide
+		ICON	panhide.gif
+	BUTTON put
+		ICON	panput.gif
+	BUTTON give
+		ICON	pangive.gif
+	BUTTON look
+		ICON	panlook.gif
+	BUTTON help
+		ICON	panhelp.gif
+	BUTTON clear
+		ICON	pancancel.gif
+	BUTTON map,"Mappa","Mostra/nascondi mappa",onMap
+	CR
+	TEXTBOX
+	BUTTON say
+		ICON	pansay.gif
+	CR
+	CR
+	BUTTON save
+		ICON	pansave.gif
+	BUTTON savexit
+		ICON	pansavexit.gif
+	BUTTON logout
+		ICON	panlogout.gif
+	LABEL "<br/><br/><a TITLE='Classifica giocatori - Sei tra i migliori? Scoprilo!' TARGET=_blank HREF='https://www.sottomondo.org/classifiche/' style='text-decoration:none;font-size:0.8em'><IMG ALT=Classifiche SRC=https://www.dimensionex.net/underworld/uwpics/crown.gif WIDTH=16 HEIGHT=16 BORDER=0> Classifiche</A>"
+	LABEL " <a TITLE='Ricevi notifiche quando giocatori si collegano' TARGET=_blank HREF='https://t.me/SottomondoMMORPG' style='text-decoration:none;font-size:0.8em'><IMG ALIGN=MIDDLE src='https://www.dimensionex.net/underworld/uwpics/icotelegram.png' WIDTH=16 HEIGHT=16 BORDER=0> Telegram</a>"
+
+PANEL penterexit VERSION OF default
+	CR
+	CR
+	BUTTON enter, "Entra", "Entra in ...", dummy, O
+	BUTTON exit, "Esci", "Esci da qui", dummy
+
+PANEL pshop VERSION OF default
+	CR
+	CR
+	BUTTON buy, "Compra", "Compra ...", onBuy, O
+		ICON	panbuy.gif
+	BUTTON sell, "Vendi", "Vendi ...", onSell, O
+		ICON	pansell.gif
+
+PANEL pgather VERSION OF default
+	CR
+	CR
+	BUTTON gather, "Prendi acqua", "Raccogli risorse", onGather
+		ICON	pangather.gif
+
+PANEL connect VERSION OF connect
+	LABEL "<BR><BR><FONT SIZE=1><A TARGET=_blank HREF=https://www.sottomondo.org/regolamento-del-gioco/><IMG ALT=i SRC=https://www.dimensionex.net/underworld/skins/bloody/paninfo.gif WIDTH=16 HEIGHT=16 ALIGN=LEFT BORDER=0> Regolamento di gioco</A></FONT>"
+
+PANEL map
+      CR
+      MAP
+      CR
+
+PANEL pchoose_weapon
+	LABEL "<b>Arma</b>: "
+	DROPDOWN selector_weapon, "weaponsOf($OWNER)", "$OWNER.weapon"
+	LABEL " "
+	BUTTON choose, "Usa questa", "Scelta", doChoose
+
+PANEL pchoose_spell
+	LABEL "<b>Incantesimo att.</b>: "
+	DROPDOWN selector_spell, "spellsOf($OWNER)", "$OWNER.weapon"
+	LABEL " "
+	BUTTON choose, "Usa questo", "Scelta", doChoose
+
+PANEL pchoose_armour
+	LABEL "<b>Armatura</b>: "
+	DROPDOWN selector_armour, "protectionsOf($OWNER,cstARMOUR)", "$OWNER.armour"
+	LABEL " "
+	BUTTON choose, "Usa questa", "Scelta", doChoose
+
+PANEL pchoose_shield
+	LABEL "<b>Scudo</b>: "
+	DROPDOWN selector_shield, "protectionsOf($OWNER,cstSHIELD)", "$OWNER.shield"
+	LABEL " "
+	BUTTON choose, "Usa questo", "Scelta", doChoose
+
+PANEL pchoose_helmet
+	LABEL "<b>Elmetto</b>: "
+	DROPDOWN selector_helmet, "protectionsOf($OWNER,cstHELMET)", "$OWNER.helmet"
+	LABEL " "
+	BUTTON choose, "Usa questo", "Scelta", doChoose
+
+PANEL pchoose_artattack
+	LABEL "<b>Arte d'attacco</b>: "
+	DROPDOWN selector_artattack, "artsOf($OWNER,cstATTACK)", "$OWNER.artattack"
+	LABEL " "
+	BUTTON choose, "Usa questa", "Scelta", doChoose
+
+PANEL pchoose_artdefense
+	LABEL "<b>Arte di difesa</b>: "
+	DROPDOWN selector_artdefense, "artsOf($OWNER,cstDEFENSE)", "$OWNER.artdefense"
+	LABEL " "
+	BUTTON choose, "Usa questa", "Scelta", doChoose
+
+PANEL pbuyshop
+	'BUTTON dothis, "Vedi: ", "Comando", doCommand
+	LABEL "@catalog_dropdown($OWNER,$AGENT)"
+
+PANEL paffinity
+	BUTTON waterplus, "+", "Comando", "doAffinity($AGENT,1,0,0,0)"
+	BUTTON water, "Acqua", "Acqua", helpAffi
+		IMAGE	32x32 	elem1.gif
+	LABEL	" Acqua"
+	BUTTON waterminus, "-", "Comando", "doAffinity($AGENT,-1,0,0,0)"
+	LABEL	"<BR />"
+	BUTTON earthplus, "+", "Comando", "doAffinity($AGENT,0,1,0,0)"
+	BUTTON earth, "Terra", "Terra", helpAffi
+		IMAGE	32x32 	elem2.gif
+	LABEL	" Terra"
+	BUTTON earthminus, "-", "Comando", "doAffinity($AGENT,0,-1,0,0)"
+	LABEL	"<BR />"
+	BUTTON windplus, "+", "Comando", "doAffinity($AGENT,0,0,1,0)"
+	BUTTON wind, "Aria", "Aria", helpAffi
+		IMAGE	32x32 	elem3.gif
+	LABEL	" Aria"
+	BUTTON windminus, "-", "Comando", "doAffinity($AGENT,0,0,-1,0)"
+	LABEL	"<BR />"
+	BUTTON fireplus, "+", "Comando", "doAffinity($AGENT,0,0,0,1)"
+	BUTTON fire, "Fuoco", "Fuoco", helpAffi
+		IMAGE	32x32 	elem4.gif
+	LABEL	" Fuoco"
+	BUTTON fireminus, "-", "Comando", "doAffinity($AGENT,0,0,0,-1)"
+	LABEL	"<BR /><BR /><INPUT TYPE=hidden NAME=affi VALUE=1>"
+	BUTTON dothis,"Fatto","Comando", doCommand
+
+PANEL pgetvisits
+	BUTTON download, "Controlla visite", "Contr visite", "doGetVisits($AGENT.name)"
+
+'----END COMMON GUI

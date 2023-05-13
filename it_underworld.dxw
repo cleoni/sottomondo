@@ -1,0 +1,4503 @@
+WORLD
+	NAME    	Sottomondo
+	CLUSTER		Sottomondo
+	VERSION    	9.9.4
+	' Testato su DimensioneX 7.0.4
+	'AUTHOR    	Cristiano Leoni, LFicarra, Krisaore
+	'
+	SITE    	https://www.sottomondo.org/
+	' The following for local mode
+	IMAGESFOLDER_LOCAL    /dimx/uwpics/
+	' The following for network (light) mode
+	IMAGESFOLDER_PUBLIC    https://www.sottomondo.org/uwpics/
+	'alternates
+	'IMAGESFOLDER_PUBLIC    https://www.dimensionex.net/underworld/uwpics/
+	HELP    	https://www.sottomondo.org/guida/
+	SAVEGAME_PERSISTENCE	2
+	INTERPHONE	1
+	' The following only for network (light) mode
+	COUNTERHTML	</div><div><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><script src="https://www.google-analytics.com/urchin.js" type="text/javascript"></script><script type="text/javascript">_uacct = "UA-960085-1";_udn="none";_ulink=1;urchinTracker();</script>
+	MUTING		1
+
+GUI
+	SCENE SIZE	400x230
+	SCREEN SIZE	800x600
+	LOGOSRC    	https://www.sottomondo.org/images/splash.jpg
+	MSGLISTSIZE	4
+	COMPASS   	true
+	SKINS    	bloody.txt
+	'PAGE		flash	flash.htm
+	MAP		map_uw1.gif
+	HOOKS		findobj=doFindObj,viewitem=doViewItem,expertswitch=doExpertSwitch,quickactsw=doQuickActionSwitch
+
+Include "it_uwpanels.dxl"
+
+PANEL pjukebox
+	BUTTON dothis, "Suona: ", "Comando", doCommand
+	DROPDOWN trackselector, "jukebox.tracklist", 0
+
+PANEL pgetmoneyjb
+	BUTTON withdraw, "Prendi monete", "Prendi monete", doWithdraw, T
+
+PANEL pmarriage
+	BUTTON dothis, "Fai questo: ", "Comando", doCommand
+	DROPDOWN partnerselector, "getPartners($AGENT)", 0
+
+PANEL pbuydrink
+	BUTTON dothis, "Compra: ", "Comando", doCommand
+	DROPDOWN drinkselector, arrDrinks, 0
+
+PANEL pbank
+	BUTTON withdraw, "Preleva", "Preleva denaro", doWithdraw, T
+	TEXTBOX
+
+PANEL pthrone
+	BUTTON tax, "Nuove tasse", "Stabilisci tasse: ... monete", doNewTax, T
+	TEXTBOX
+	LABEL "<br/>"
+	BUTTON withdraw, "Riscuoti", "Riscuoti crediti", doWithdraw, T
+
+PANEL pguilds
+	BUTTON guildcmd, "Operazione: ", "Comando", doCommand
+	DROPDOWN guildop, guildOps, "$AGENT.__lastcmd"
+	LABEL ""
+	TEXTBOX
+	LABEL " gilda: "
+	DROPDOWN guildsel, guildnames, "guildSubscribed($AGENT)"
+
+PANEL pwar
+	BUTTON dothis, "Fai questo: ", "Comando", doCommand
+	DROPDOWN warop, warOps, 1wardecl
+	LABEL ""
+	DROPDOWN guildsel, "getWarriorGuilds($OWNER)", 0
+
+PANEL pextract
+	BUTTON gather, "Estrai roccia", "Raccogli risorse", onGather
+		ICON	pangather.gif
+PANEL pprivacy
+	LABEL "@privacytext()"
+	BUTTON dothis, " OK, accetto i termini ", "Conferma", doCommand
+
+PANEL pcraftsman
+	BUTTON craftcmd, "Operazione: ", "Comando", doCommand, "TO"
+	DROPDOWN craftop, craftOps, "$AGENT.__lastcmd"
+	LABEL ""
+	TEXTBOX
+
+END_GUI
+
+
+ROOMS
+
+ROOM pre1 DEFAULT
+	NAME	inizio
+	DESCRIPTION	Stai entrando nel Regno di Graiel.<p>Clicca sulla icona FRECCIA AVANTI nel riquadro, così ti avvicinerai al Castello.<p>Usa sempre le icone freccia per muoverti nel gioco.<P>Clicca l'icona FRECCIA AVANTI adesso.
+	ATTRLIST	introductory=1,dark=1
+	PANEL	initial
+	IMAGE 	castledist.png
+
+ROOM pre1a
+	NAME	Regolamento e privacy
+	DESCRIPTION	@privacy()
+	ATTRLIST	introductory=1
+	PANEL	initial
+	IMAGE 	castledist.png
+
+ROOM pre2
+	NAME	scelta della Classe
+	ATTRLIST	introductory=1
+	PANEL	initchoice
+	IMAGE 	SHOWAREA 0,130,-1	castlemid.png
+
+ROOM start
+	NAME	al Cancello
+	DESCRIPTION	C'e' un cancello chiuso verso Sud, mentre il castello di trova in direzione Nord.
+	IMAGE N 	SHOWAREA 100,300,10	start.jpg
+	IMAGE S 	SHOWAREA 100,300,10	1.png
+	ATTRLIST	mapx=100,mapy=181
+
+ROOM R2
+	NAME	Entrata
+	IMAGE N 	2.jpg
+	IMAGE E 	3.png
+	IMAGE S 	4.png
+	IMAGE W 	5.png
+	ATTRLIST	mapx=100,mapy=169
+
+ROOM B
+	NAME	torre Sud-Ovest
+	DESCRIPTION	Qui c'è una piccola stalla per cavalli. Vicino c'e' un mucchio di fieno.
+	IMAGE N 	6.png
+	IMAGE E 	7.png
+	IMAGE S 	8.png
+	IMAGE W 	9.jpg
+	ATTRLIST	mapx=45,mapy=163
+
+ROOM guildroom
+	NAME	Sala delle gilde
+	DESCRIPTION	@guildroom_description()
+	IMAGE S 	armoroom2.jpg
+	ATTRLIST	mapx=21,mapy=175
+
+ROOM cell
+	NAME	stalla
+	IMAGE W 	SHOWAREA 120,300,-1	pictureevme1.gif
+	IMAGE E 	SHOWAREA -1,320,-1	pictureevme4.gif
+	ATTRLIST	mapx=25,mapy=143
+
+ROOM C
+	NAME	lato Ovest
+	IMAGE N 	10.png
+	IMAGE E 	11.jpg
+	IMAGE S 	SHOWAREA 100,-1,-1	12.png
+	IMAGE W 	13.jpg
+	ATTRLIST	mapx=41,mapy=102
+
+ROOM bscell
+	NAME	bottega del fabbro
+	IMAGE W 	SHOWAREA 0,295,12	pictures1.gif
+	ATTRLIST	mapx=25,mapy=102
+	DESCRIPTION	In questa stanza gli <b>artigiani</b> possono fabbricare armi, protezioni e bottiglie, da <b>utilizzare</b> o <b>vendere</b>! <a href="https://www.sottomondo.org/guida/#craft" target=_blank>Dettagli</a>
+
+ROOM D
+	NAME	torre Nord-Ovest
+	IMAGE N 	14.jpg
+	IMAGE E 	15.png
+	IMAGE S 	16.png
+	IMAGE W 	17.jpg
+	ATTRLIST	mapx=39,mapy=56
+
+ROOM E
+	NAME	lato Nord
+	IMAGE N 400x230	18.png
+	IMAGE E 	19.png
+	IMAGE S 	20.jpg
+	IMAGE W 	21.png
+	ATTRLIST	mapx=101,mapy=52
+
+ROOM F
+	NAME	torre Nord-Est
+	IMAGE N 	22.jpg
+	IMAGE E 	23.jpg
+	IMAGE S 	24.png
+	IMAGE W 	25.png
+	ATTRLIST	mapx=155,mapy=58
+
+ROOM G
+	NAME	lato Est
+	IMAGE N 	26.png
+	IMAGE S 	27.png
+	ATTRLIST	mapx=161,mapy=104
+
+ROOM T
+	NAME	torre Sud-Est
+	IMAGE N 	28.png
+	IMAGE E 	29.jpg
+	IMAGE S 	30.png
+	IMAGE W 	31.png
+	ATTRLIST	mapx=156,mapy=158
+
+ROOM bank
+	NAME	Banca di Garumir
+	IMAGE S 	armoroom.jpg
+	DESCRIPTION	@bank_description()
+	ATTRLIST	mapx=169,mapy=170
+
+ROOM R4
+	NAME	scalinata d'ingresso
+	IMAGE N 	SHOWAREA	50,350,-1	32.jpg
+	IMAGE S 	SHOWAREA	50,350,-1	33.jpg
+	ATTRLIST	mapx=100,mapy=150
+
+ROOM hall
+	NAME	ingresso
+	IMAGE N 	SHOWAREA	50,-1,-1	34.jpg
+	IMAGE E 	35.jpg
+	IMAGE S 	36.jpg
+	IMAGE W 	37.jpg
+	ATTRLIST	mapx=100,mapy=140
+
+ROOM biblio
+	NAME	biblioteca
+	IMAGE W 	SHOWAREA	50,350,-1	38.jpg
+	ATTRLIST	mapx=70,mapy=140
+
+ROOM salotto
+	NAME	salone
+	IMAGE E 	39.jpg
+	ATTRLIST	mapx=130,mapy=140
+
+ROOM J
+	NAME	inizio del corridoio
+	IMAGE N 	SHOWAREA	50,350,-1	40.jpg
+	IMAGE E 	41.jpg
+	IMAGE S 	SHOWAREA	200,340,-1	42.jpg
+	IMAGE W 	43.jpg
+	ATTRLIST	mapx=100,mapy=121
+
+ROOM armory
+	NAME	l'armeria
+	DESCRIPTION @panelhtml("pbuyshop")+"<br />Questa è l'armeria del castello. Qui si acquistano e vendono articoli di ogni tipo."
+	PANEL	pshop
+	IMAGE E 	SHOWAREA	60,-1,-1	44.jpg
+	ATTRLIST	shop=1,shopkeeper=auron,mapx=130,mapy=121
+
+ROOM upstairs
+	NAME	atrio primo piano
+	IMAGE N		SHOWAREA	100,-1,-1	housefire.jpg
+	ATTRLIST	map=uw1_map_floor1.gif,mapx=95,mapy=136
+
+ROOM salon1
+	NAME	salone da ballo
+	IMAGE N		lunarp2.jpg
+	IMAGE S		room1.jpg
+	ATTRLIST	map=uw1_map_floor1.gif,mapx=114,mapy=96
+
+ROOM salon2
+	NAME	sala delle guardie
+	IMAGE N		bof1.jpg
+	ATTRLIST	map=uw1_map_floor1.gif,mapx=82,mapy=101
+
+ROOM salon2a
+	NAME	la scala
+	IMAGE N		SHOWAREA	172,236,86	staircse.jpg
+	ATTRLIST	map=uw1_map_floor1.gif,mapx=54,mapy=102
+
+ROOM upstcorr
+	NAME	il corridoio al primo piano
+	IMAGE S		upcorrs.jpg
+	IMAGE N		upcorrn.jpg
+	ATTRLIST	map=uw1_map_floor1.gif,mapx=54,mapy=69
+
+ROOM seat
+	NAME	sala del trono
+	DESCRIPTION	@KingdomStats()
+	IMAGE N		ballseat.jpg
+	ATTRLIST	map=uw1_map_floor1.gif,mapx=53,mapy=34
+
+ROOM warroom
+	NAME	sala della Guerra
+	IMAGE N		SHOWAREA	0,180,-1	warroom.jpg
+	DESCRIPTION	@warroom_description()
+	ATTRLIST	map=uw1_map_floor1.gif,mapx=27,mapy=67
+
+ROOM castletop
+	NAME	cima del castello
+	DESCRIPTION	Da questa torretta posso osservare le campagne circostanti. Sotto, un corso d'acqua serpeggia attorno al castello e si perde in lontananza.
+	IMAGE W		castletop.png
+	ATTRLIST	map=uw1_map_floor2.gif,mapx=122,mapy=98
+
+ROOM N
+	NAME	centro corridoio
+	IMAGE N 	SHOWAREA	140,350,-1	45.jpg
+	IMAGE E 	46.jpg
+	IMAGE S 	SHOWAREA	50,350,-1	47.jpg
+	IMAGE W 	SHOWAREA	0,150,-1	48.jpg
+	ATTRLIST	mapx=101,mapy=103
+
+ROOM P
+	NAME	fondo al corridoio
+ 	IMAGE N 	SHOWAREA	50,250,-1	50.jpg
+ 	IMAGE E 	51.jpg
+ 	IMAGE S 	SHOWAREA	50,250,-1	52.jpg
+	IMAGE W 	53.jpg
+	ATTRLIST	mapx=100,mapy=86
+
+ROOM bar
+	NAME	taverna
+	IMAGE E 	49.jpg
+	ATTRLIST	mapx=130,mapy=105
+
+ROOM chapel
+	NAME	cappella
+	IMAGE E 	SHOWAREA 100,300,-1 54.jpg
+	IMAGE W 	SHOWAREA 120,280,-1 55.jpg
+	ATTRLIST	mapx=130,mapy=87
+
+ROOM bedroom
+	NAME	camera da letto
+	IMAGE N 	56.jpg
+	ATTRLIST	mapx=72,mapy=88
+
+ROOM forest
+	NAME	bosco
+	IMAGE N 	forest.jpg
+	ATTRLIST	mapx=99,mapy=27
+
+ROOM lake
+	NAME	rive del fiume
+	DESCRIPTION	Il fiume è circondato da una nebbia cupa. C'è una piccola barca, che purtroppo non potrebbe condurmi in alcun luogo.
+        PANEL	pgather
+	IMAGE N 	lake.jpg
+	ATTRLIST	mapx=98,mapy=11
+
+ROOM dhall
+	NAME	ingresso dei nani
+	DESCRIPTION	Una piazza aperta con una fontana sotterranea ed una luce illumina un camino molto singolare.
+	IMAGE S 450x205	SHOWAREA 300,430,-1 dwarvenhall2.jpg
+	ATTRLIST	map=uw1_map_floor-2.gif,mapx=157,mapy=63
+
+ROOM cave1
+	NAME	caverna piccola
+	IMAGE E donjohn1c.jpg
+	IMAGE W donjohn1b.jpg
+	ATTRLIST	map=uw1_map_floor-2.gif,mapx=182,mapy=71
+
+ROOM cave2
+	NAME	caverna
+	IMAGE S lunari.jpg
+	IMAGE N lunari2.jpg
+        IMAGE W battle_yuu23.jpg
+	ATTRLIST	map=uw1_map_floor-2.gif,mapx=167,mapy=89
+
+ROOM cave3
+	NAME    caverna
+	IMAGE W b6.jpg
+	IMAGE E b6f.jpg
+	ATTRLIST	map=uw1_map_floor-2.gif,mapx=154,mapy=91
+
+ROOM cave4
+	DESCRIPTION	C'è una fontana qui, una scritta incisa sul muro dice che è alimentata da una sorgente magica.
+        NAME    caverna
+        PANEL	pgather
+        IMAGE N thron.jpg
+	ATTRLIST	map=uw1_map_floor-2.gif,mapx=124,mapy=96
+
+ROOM cave5
+	NAME    caverna
+	IMAGE N lunar6b.jpg
+	ATTRLIST	map=uw1_map_floor-2.gif,mapx=93,mapy=95
+
+ROOM cave6
+	NAME    caverna
+	IMAGE N lunars2.jpg
+	ATTRLIST	map=uw1_map_floor-2.gif,mapx=44,mapy=93
+
+ROOM cave7
+	NAME    caverna
+	IMAGE N lavacave2.jpg
+	ATTRLIST	map=uw1_map_floor-2.gif,mapx=11,mapy=93
+	DESCRIPTION @PanelHtml("pextract")
+
+ROOM gateroom
+	NAME	cancello catacombe
+	DESCRIPTION	C'e' un cancello chiuso illuminato da due fuochi posti ai suoi lati
+	IMAGE S gateroom.jpg
+	ATTRLIST	map=map_uw3.gif,mapx=133,mapy=108
+
+ROOM hellfire
+	NAME	cella
+	PANEL	initial
+
+END_ROOMS
+
+
+LINKS
+
+LINK w1	start-R2	N
+LINK w2	R2-B		W
+LINK w3 R2-R4		N
+LINK w4 R4-hall		N
+LINK w5 hall-biblio	W
+LINK w6 hall-salotto	E
+MLINK w20 hall-upstairs  U
+	NAME	scale
+ 	IMAGE		80x130	blank.gif
+ 	SHOW	ONSCREEN	265,65 FOR 34.jpg
+MLINK w20a upstairs-hall  D	NAME		scale
+LINK w7 hall-J		N
+LINK w8 J-N		N
+LINK w9 N-bar		E
+LINK w10 N-P		N
+MLINK st1 N-gateroom	D
+	NAME	scale
+ 	IMAGE		72x45	blank.gif
+ 	SHOW	ONSCREEN	60,15 FOR 45.jpg
+MLINK st1a gateroom-N	U	NAME		scale
+LINK c1 gateroom-gateroom	S
+MLINK tr1 gateroom-dhall D
+	NAME		botola
+	ATTRLIST	open=0,locked=1,unlocker=key3,linked=tr1a,imageOpen=tdopen.gif,imageClosed=td.gif
+	ICON		trapdoor.gif
+ 	IMAGE		82x35	td.gif
+ 	SHOW		ONSCREEN	155,5
+MLINK tr1a dhall-gateroom U
+	NAME		botola
+	ATTRLIST	open=0,locked,unlocker=key3,linked=tr1,imageOpen=dhall_open.jpg,imageClosed=blank.gif
+ 	IMAGE		128x108	blank.gif
+ 	SHOW		ONSCREEN	323,96
+LINK w11 P-chapel	E
+LINK w12 T-R2		W
+LINK w12a T-bank	S
+LINK w13 B-C		N
+LINK w13a B-cell	W
+LINK w13b B-guildroom	S
+LINK w14 C-D		N
+LINK w14a C-bscell	W
+LINK w15 D-E		E
+LINK w16 E-F		E
+LINK arch1 E-forest	N
+LINK wfola forest-lake	N
+LINK wboat lake-lake	N
+LINK w17 F-G		S
+LINK w18 G-T		S
+LINK w19 J-armory	E
+LINK w23 dhall-cave1	E
+LINK w24 dhall-cave2	S
+LINK w25 cave2-cave3	W
+LINK w26 cave3-cave4	W
+LINK w27 cave4-cave5	W
+LINK w28 cave5-cave6	W
+LINK w29 cave6-cave7	W
+LINK door1 P-bedroom	W
+	NAME	porta
+	ATTRLIST	open=0,locked=0,unlocker=key4,imageClosed=blank.gif,imageOpen=door1_open.jpg
+	ICON	icoDoor.gif
+	IMAGE	87x162 blank.gif
+	SHOW ONSCREEN 122,43 FOR 53.jpg
+LINK door2 C-bedroom	E
+	NAME	porta
+	ATTRLIST	open=0,locked
+	ICON	icoDoor.gif
+MLINK p0 pre1-pre1a	N
+MLINK p0a pre1a-pre2	N
+MLINK p1 pre2-pre2	N
+MLINK w21a upstairs-salon2 N
+	NAME	porta
+	ATTRLIST	open=0,locked=0,unlocker=key2,linked=w21b,imageOpen=blank.gif,imageClosed=housefire_doorclosed.jpg
+	ICON	icoDoor.gif
+ 	IMAGE		51x211	housefire_doorclosed.jpg
+ 	SHOW	ONSCREEN	0,0
+MLINK w21b salon2-upstairs S
+	NAME	porta
+	ATTRLIST	open=0,locked=0,unlocker=key2,linked=w21a
+	ICON	icoDoor.gif
+LINK w31 salon2-salon2a	W
+MLINK w22a upstairs-salon1 E
+ 	NAME	porta
+ 	ATTRLIST	open=0,locked,unlocker=key1,linked=w22b,imageOpen=door2open.gif,imageClosed=blank.gif
+	ICON	icoDoor.gif
+ 	IMAGE		43x84	blank.gif
+ 	SHOW	ONSCREEN	317,53
+MLINK w22b salon1-upstairs E
+ 	NAME	porta
+ 	ATTRLIST	open=0,locked,unlocker=key1,linked=w22a,imageOpen=w22b_open.jpg,imageClosed=blank.gif
+	ICON	icoDoor.gif
+ 	IMAGE		90x123	blank.gif
+ 	SHOW	ONSCREEN	232,107 FOR room1.jpg
+MLINK w30 salon2-castletop U
+	NAME	scale
+ 	IMAGE		55x60	blank.gif
+ 	SHOW	ONSCREEN	250,160
+MLINK w30a castletop-salon2 D
+	NAME	scale
+ 	IMAGE		32x48	blank.gif
+ 	SHOW	ONSCREEN	60,105
+MLINK w32a salon2a-upstcorr N
+	NAME	porta
+	ATTRLIST	open=0,locked=0,unlocker=key5,linked=w32b,imageClosed=blank.gif,imageOpen=w32a_open.jpg
+	ICON	icoDoor.gif
+	IMAGE	65x107 blank.gif
+	SHOW ONSCREEN	180,100
+MLINK w32b upstcorr-salon2a S
+	NAME	porta
+	ATTRLIST	open=0,locked=0,unlocker=key5,linked=w32a,imageOpen=blank.gif,imageClosed=w32b_closed.jpg
+	ICON	icoDoor.gif
+	IMAGE	81x112 w32b_closed.jpg
+	SHOW ONSCREEN	165,52 FOR upcorrs.jpg
+LINK w33 upstcorr-warroom W
+	NAME	porta
+	ATTRLIST	open=0,imageClosed=blank.gif,imageOpen=w33_open.jpg
+	ICON	icoDoor.gif
+	IMAGE	39x148 blank.gif
+	SHOW ONSCREEN	85,63 FOR upcorrn.jpg
+LINK w34 upstcorr-seat N
+	NAME	porta
+	ATTRLIST	open=0,imageClosed=blank.gif,imageOpen=w34_open.jpg
+	ICON	icoDoor.gif
+	IMAGE	53x77 blank.gif
+	SHOW ONSCREEN	177,90 FOR upcorrn.jpg
+
+END_LINKS
+
+
+CHARACTERS
+ATTRLIST Salute=10,Forza=1,Esperienza=0,type=0,Livello=1,gender=M
+' Types from 10 to up are monsters
+' from 1 to 9 are humans
+' 0 means unattackable character
+
+CHARACTER asia
+	NAME		Asia
+	DESCRIPTION	Asia è la principessa del Regno. Ha un'aria strana e mi fissa intensamente con la coda dell'occhio.
+	POSITION	bedroom
+	ACCEPTS		ring
+	ATTRLIST	type=6,status=0,steady=1,pacific,nohands,balanceignore,gender=F,noteleport,remoteAddr=dummy
+	IMAGE 		70x71 	chrAsia.gif
+	SHOW		ONSCREEN	160,75 FOR 56.png
+
+
+CHARACTER nkono
+	NAME		N'Kono
+	DESCRIPTION	N'Kono è un guerriero Zulu. Cosa ci fa qui? Giuro che non lo so!
+	POSITION	forest
+	ATTRLIST	type=5,Classe=Guerriero,Forza=3,pacific,nohands
+	IMAGE 		52x130	chrNkono.gif
+
+CHARACTER guard
+	NAME		la guardia
+	DESCRIPTION	Che cosa vorrebbe fare con quella spada...?
+	POSITION	E
+	IMAGE 		55x90	guard.gif
+	ATTRLIST	type=1,Classe=Guerriero,Livello=2,Forza=2,weapon=weapon.02.02.0000.sword,steady=1,nohands=1,keeper=1,pacific,noteleport
+	SHOW 		ONSCREEN	160,55 FOR 18.png
+
+CHARACTER merlin
+	NAME		Merlino
+	DESCRIPTION	Sembra un vecchio stregone... Non dovrebbe essere pericoloso.
+	POSITION	R4
+	IMAGE 		54x90	merlin.gif
+	SHOW 		ONSCREEN
+
+CHARACTER garumir
+	NAME		Garumir
+	DESCRIPTION	E' il banchiere del castello
+	POSITION	bank
+	IMAGE 		44x100	garumir.gif
+	ATTRLIST	accepts=*
+	SHOW 		ONSCREEN	300,-1
+
+CHARACTER guilford
+	NAME		Lord Guilford
+	DESCRIPTION	E' il capitano delle guardie
+	POSITION	guildroom
+	IMAGE 		86x120	odin.gif
+	'ATTRLIST	accepts=*
+	SHOW 		ONSCREEN	130,-1
+
+CHARACTER auron
+	NAME		Auron
+	DESCRIPTION	Auron è l'armaiolo del castello.
+	POSITION	armory
+	IMAGE 		48x72	auron3.gif
+	SHOW 		ONSCREEN
+
+' Monsters
+
+CHARACTER deathelem
+	NAME		elementale nero
+	DESCRIPTION	Non mi lascia proseguire.
+	POSITION	cave3
+	IMAGE 		104x95	deathelemental1.png
+	ATTRLIST	type=15,Forza=7,steady,nohands,affi=0/4/0/0,artdefense=counterattack
+	SHOW		ONSCREEN -1,-1 FOR b6.png
+
+CHARACTER deathpede
+	NAME		deathpede
+	DESCRIPTION	E' una specie di bruco mostruoso.
+	POSITION	cave6
+	IMAGE 		84x80	dethpede.png
+	ATTRLIST	type=11,Forza=7,nohands,affi=0/4/0/0,artdefense=survival
+
+CHARACTER giantworm
+	NAME		verme gigante
+	DESCRIPTION	E' veramente orribile!
+	POSITION	rndSet(setCastle)
+	IMAGE 		100x125	horror091.gif
+	ATTRLIST	type=11,vuln_mob,Forza=6,accepts=*,affi=0/4/0/0,artdefense=survival
+
+CHARACTER template
+	NAME		Te stesso
+	DESCRIPTION	Scegli un tipo di personaggio usando le apposite icone.
+	POSITION	pre2
+	IMAGE 		64x100	uomo.gif
+	SHOW 		ONSCREEN	170,-1
+	ATTRLIST	Classe=indefinita
+
+
+
+
+
+END_CHARACTERS
+
+
+
+ITEMS
+
+ITEM	book1
+	NAME	libro grande
+	DESCRIPTION	Un antico libro di incantesimi. <BR>Sulla prima pagina e' riportato come titolo: Come risvegliare una creatura infernale dalle Tenebre. <BR>Sembra avere un doppio fondo...
+	TYPE		book1
+	POSITION	biblio
+	ATTRLIST	pickable,openable,open=0,uses=6,Valore=3,imageOpen=BookOpen1.gif,imageClosed=Book1.gif
+	ICON		Book1.gif
+	IMAGE		26x36 Book1.gif
+	SHOW		ONSCREEN	0,129 FOR 38.jpg
+
+
+ITEM	book2
+	NAME	libro piccolo
+	DESCRIPTION	Titolo: "Canzoni d'Amore: Antologia". E adesso cosa ci dovrei fare con questo?
+	POSITION	book1
+	ATTRLIST	type=book2,pickable,openable,open=0,Valore=3,imageOpen=BookOpen2.gif,imageClosed=Book2.gif
+	ICON		Book2.gif
+	IMAGE		25x36 Book1.gif
+	SHOW		ICON
+
+ITEM	hay
+	NAME	fieno
+	DESCRIPTION	Del normale fieno. E' completamente inutile!
+	POSITION	B
+	ICON		hay.gif
+	ATTRLIST	pickable
+	IMAGE		32x32 hay.gif
+	SHOW		ONSCREEN	325,30 FOR 9.jpg
+
+ITEM	pot
+	NAME	calderone
+	DESCRIPTION	Un calderone, in ghisa, molto pesante.
+	POSITION	bscell
+	ATTRLIST	open,openable=0,capacity=1
+	IMAGE		32x32 pot.gif
+	SHOW		ONSCREEN
+
+ITEM	ciotola
+	NAME	ciotola
+	DESCRIPTION	Una ciotola di pietra. Ha dei piccoli fori ma può essere utile per trasportare sabbia.
+	POSITION	cell
+	ATTRLIST	type=bowl,open,openable=0,capacity=1,pickable,Valore=10
+	IMAGE		32x32 bowl.gif
+	ICON		bowl.gif
+	SHOW		ICON
+
+ITEM	fire
+	NAME	il fuoco
+	DESCRIPTION	Il fuoco sprigiona brevi lingue rosse sulle braci ardenti.
+	POSITION	bscell
+	IMAGE		101x17 fire.gif
+	SHOW		ONSCREEN	140,90
+
+ITEM	sand
+	NAME 		mucchio di sabbia
+	POSITION	lake
+	ATTRLIST	pickable
+	IMAGE		32x16 sandpack.gif
+	SHOW 		ONSCREEN	70,-1
+
+ITEM	powder
+	NAME 		polvere pirica
+	POSITION	cave5
+	ATTRLIST	pickable
+	IMAGE		48x48 blank.gif
+	SHOW 		ONSCREEN	160,120
+
+ITEM	martello
+	NAME	martello
+	DESCRIPTION	Un martello pesante e ben costruito.
+	POSITION	bscell
+	ICON		hammer.gif
+	IMAGE		40x40 hammer.gif
+	SHOW		ICON	290,63
+
+ITEM	mould
+	NAME	stampo
+	DESCRIPTION	Uno stampo per bottiglie. In breve, coli dentro il vetro fuso e ottieni una bottiglia.
+	POSITION	bscell
+	ICON		mouldicon.gif
+	IMAGE		105x105 mould.gif
+	SHOW		ICON		73,87
+
+ITEM	bomb
+	NAME 		bomba
+	POSITION	armory
+	DESCRIPTION	Una bomba. Usare con cautela.
+	ATTRLIST	type=bomb,pickable,Valore=10,sound=match.wav,seller=auron,Livello=1
+	ICON		bomb.gif
+	IMAGE		40x40 bomb.gif
+	SHOW		ICON 240,64 FOR 44.jpg
+
+ITEM	trap
+	NAME 		meccanismo a scatto
+	POSITION	armory
+	DESCRIPTION	Un meccanismo a scatto, adatto a costruire trappole.
+	ATTRLIST	type=trap,pickable,Valore=5,seller=auron,Livello=2
+	ICON		trap.gif
+	IMAGE		40x40 trap.gif
+	SHOW		ICON
+
+' Magic Items
+
+ITEM	cross
+	NAME	croce
+	POSITION	chapel
+	DESCRIPTION	Questa croce sembra essere fatta d'oro. Sembra comunque essere molto utile contro i vampiri. Potrebbe ritenersi molto importante!
+	ATTRLIST	type=cross,pickable
+	ICON		croce.gif
+	IMAGE		84x88 croce.gif
+	SHOW		ICON
+
+ITEM	silvering
+	NAME	anello d'argento
+	TYPE	ring.silver
+	DESCRIPTION	Un anello d'argento, con strane iscrizioni sopra.
+	POSITION	seat
+	ATTRLIST	pickable,volume=0,Valore=10
+	ICON		icosilvering.gif
+	IMAGE		200x150 silvering.jpg
+	SHOW		ICON
+
+ITEM	waterspell
+	NAME	incantesimo dell'Acqua
+	POSITION	rndSet(setAll)
+	DESCRIPTION	Una piccola pietra con uno strano simbolo impresso sopra.<BR>Un'iscrizione incisa nella roccia dice: Quando questo incantesimo è usato da un mago, riempie una bottiglia vuota di pozione curativa.
+	ATTRLIST	type=spell.water,pickable,Valore=30,Livello=1
+	ICON		spellwater.gif
+	IMAGE		48x48 spellwater.gif
+	SHOW		ICON
+
+ITEM	firespell
+	NAME	incantesimo del Fuoco
+	POSITION	rndSet(setAll)
+	DESCRIPTION	Una piccola pietra con uno strano simbolo impresso sopra.<BR>Un'iscrizione incisa nella roccia dice: Quando questo incantesimo è usato da un mago, può provocare danno ai propri nemici.
+	ATTRLIST	type=spell.attack.02.02.0004.fire,pickable,Potenza=2,Valore=20,sound=roarlong2.wav,Livello=2,affi=0/0/0/4
+	ICON		spellfire.gif
+	IMAGE		48x48 spellfire.gif
+	SHOW		ICON 30,110 FOR 44.jpg
+
+ITEM	windspell
+	NAME	incantesimo del Vento
+	POSITION	rndSet(setAll)
+	DESCRIPTION	Una piccola pietra con uno strano simbolo impresso sopra.<BR>Un'iscrizione incisa nella roccia dice: Quando questo incantesimo è usato da un mago, può provocare danno ai propri nemici.
+	ATTRLIST	type=spell.attack.01.01.0040.wind,pickable,Potenza=1,Valore=15,sound=wind.wav,Livello=1,affi=0/0/4/0
+	ICON		spellwind.gif
+	IMAGE		48x48 spellwind.gif
+	SHOW		ICON
+
+ITEM	teleport
+	NAME	incantesimo del Teletrasporto
+	POSITION	rndSet(setAll)
+	DESCRIPTION	Una piccola pietra con uno strano simbolo impresso sopra.<BR>Un'iscrizione incisa nella roccia dice: Con questo incantesimo è possibile teleportare oggetti e persone in altri luoghi.
+	ATTRLIST	type=spell.tele,pickable,Valore=10,sound=music.wav,hidden,Livello=1
+	ICON		spellsun.gif
+	IMAGE		48x48 spellsun.gif
+	SHOW		ICON
+
+ITEM	invis
+	NAME	incantesimo dell'Invisibilità
+	POSITION	Start 'rndSet(setAll)
+	DESCRIPTION	Una piccola pietra con uno strano simbolo impresso sopra.<BR>Un'iscrizione incisa nella roccia dice: Con questo incantesimo è possibile nasconderti agli occhi dei nemici.
+	ATTRLIST	type=spell.invis,pickable,Valore=20,sound=music.wav,hidden,Livello=3
+	ICON		spellxplode.gif
+	IMAGE		48x48 spellxplode.gif
+	SHOW		ICON
+
+ITEM	whirl
+	NAME	incantesimo del Vortice
+	POSITION	rndSet(setAll)
+	DESCRIPTION	Una piccola pietra con uno strano simbolo impresso sopra.<BR>Un'iscrizione incisa nella roccia dice: "I loro oggetti cadranno come foglie al vento".
+	ATTRLIST	type=spell.whirl,pickable,Valore=20,sound=wind.wav,hidden,Livello=4
+	ICON		spellwhirl.gif
+	IMAGE		48x48 spellwhirl.gif
+	SHOW		ICON
+
+ITEM	gemini
+	NAME	incantesimo dei Gemelli
+	POSITION	rndSet(setAll)
+	DESCRIPTION	Una piccola pietra con uno strano simbolo impresso sopra.<BR>Un'iscrizione incisa nella roccia dice: "Sei il frutto di madre terra possiederai, le Armi Magiche moltiplicherai.".
+	ATTRLIST	type=spell.gemini,pickable,Valore=30,Livello=2
+	ICON		spellgemini.gif
+	IMAGE		48x48 spellgemini.gif
+	SHOW		ICON
+
+
+' Weapons
+
+ITEM	sword
+	NAME 		spada
+	POSITION	guard
+	DESCRIPTION	Una spada elegante e in buono stato.
+	ATTRLIST	type=weapon.02.02.0000.sword,pickable,Potenza=2,Valore=20,sound=swordlong.wav,Livello=2
+	ICON		sword1.gif
+	IMAGE		40x40 sword1.gif
+	ZOOMIMAGE	300x225	sword_revenge.jpg
+	SHOW		ONSCREEN 243,90 FOR 44.jpg
+
+ITEM	sword2
+	NAME 		spada
+	POSITION	armory
+	DESCRIPTION	Una spada elegante e in buono stato.
+	ATTRLIST	pickable,type=weapon.02.02.0000.sword,seller=auron,Potenza=2,Valore=20,sound=swordlong.wav,Livello=2
+	ICON		sword1.gif
+	IMAGE		40x40 sword1.gif
+	ZOOMIMAGE	300x225	sword_revenge.jpg
+	SHOW		ONSCREEN 243,90 FOR 44.jpg
+
+ITEM	dagger
+	NAME 		pugnale
+	POSITION	armory
+	DESCRIPTION	Un normalissimo pugnale
+	ATTRLIST	type=weapon.01.01.0000.dagger,pickable,seller=auron,Potenza=1,Valore=10,sound=sword1.wav,Livello=1
+	ICON		sword1.gif
+	IMAGE		30x30 sword1.gif
+	SHOW		ONSCREEN 7,10 FOR 44.jpg
+
+ITEM	axe
+	NAME 		ascia
+	POSITION	cave4
+	DESCRIPTION	Un'ascia bella pesante.
+	ATTRLIST	type=weapon.03.03.0000.axe,pickable,Potenza=3,Valore=30,sound=sword2.wav,Livello=3
+	ICON		dblaxe.gif
+	IMAGE		40x40 dblaxe.gif
+	SHOW		ONSCREEN
+
+' Armour
+
+ITEM	bodyiron
+	NAME 		armatura di ferro
+	POSITION	armory
+	DESCRIPTION	Una armatura di ferro.
+	ATTRLIST	type=armour.02.05.0000.iron,pickable,seller=auron,Protezione=5,Valore=25,volume=0,Livello=2,material=iron
+	ICON		bodyprot4.gif
+	IMAGE		32x32 bodyprot4.gif
+	SHOW		ONSCREEN 186,73 FOR 44.jpg
+
+ITEM	shieldwood
+	NAME 		scudo di legno
+	POSITION	salon1
+	DESCRIPTION	Uno scudo di legno.
+	ATTRLIST	type=shield.01.01.0000.wood,pickable,Protezione=1,Valore=15,Livello=1,material=wood
+	ICON		shieldwood3.gif
+	IMAGE		32x32 shieldwood3.gif
+	SHOW		ONSCREEN
+
+ITEM	shieldiron
+	NAME 		scudo di ferro
+	POSITION	armory
+	DESCRIPTION	Uno scudo di ferro.
+	ATTRLIST	type=shield.02.05.0000.iron,pickable,seller=auron,Protezione=5,Valore=25,Livello=2,material=iron
+	ICON		shieldiron3.gif
+	IMAGE		32x32 shieldiron3.gif
+	SHOW		ONSCREEN 186,110 FOR 44.jpg
+
+
+ITEM	helmet1
+	NAME 		elmetto semplice
+	POSITION	castletop
+	DESCRIPTION	Un elmetto da guerra di tipo leggero.
+	ATTRLIST	type=helmet.01.01.0000.wood,pickable,Protezione=1,Valore=15,volume=0,Livello=1,material=wood
+	ICON		cap3.gif
+	IMAGE		48x48 cap3.gif
+	SHOW		ICON
+
+ITEM	helmet2
+	NAME 		elmetto di ferro
+	POSITION	salon2a
+	DESCRIPTION	Un elmetto da guerra di tipo pesante.
+	ATTRLIST	type=helmet.02.05.0000.iron,pickable,Protezione=5,Valore=25,volume=0,Livello=2,material=iron
+	ICON		helmet5.gif
+	IMAGE		48x48 helmet5.gif
+	SHOW		ICON
+
+
+' Drinks
+
+ITEM	poison
+	NAME 		un Liquore
+	POSITION	bar
+	DESCRIPTION	Un liquore fatto in casa, preparato con un'antica ricetta a base di erbe naturali. Sembra invitante!
+	ATTRLIST	type=bottle.poison,pickable
+	ICON		bottle3.gif
+	SHOW		ICON	150,108	FOR	49.jpg
+	IMAGE		60x90 veleno.gif
+
+ITEM	potion1
+	NAME 		pozione di cura
+	POSITION	J
+	DESCRIPTION	L'etichetta dice: "Pozione di Cura"
+	ATTRLIST	type=bottle.potion,pickable,Valore=5,uses=5
+	ICON		bottle3.gif
+	SHOW		ICON
+	IMAGE		60x90 potion.gif
+
+ITEM	potion2
+	NAME 		pozione di cura
+	POSITION	forest
+	DESCRIPTION	L'etichetta dice: "Pozione di Cura"
+	ATTRLIST	type=bottle.potion,pickable,Valore=5,uses=5
+	ICON		bottle3.gif
+	SHOW		ICON
+	IMAGE		60x90 potion.gif
+
+ITEM	potion3
+	NAME 		pozione di cura
+	POSITION	armory
+	DESCRIPTION	L'etichetta dice: "Pozione di Cura"
+	ATTRLIST	type=bottle.potion,pickable,Valore=5,uses=5,seller=auron
+	ICON		bottle3.gif
+	SHOW		ICON 101,92 FOR 44.jpg
+	IMAGE		60x90 potion.gif
+
+
+' Hints
+
+ITEM	scroll
+	NAME 		pergamena
+	POSITION	R2
+	DESCRIPTION	Srotolandola si legge: Ucciderò tutte le bestie che incontrerò e salverò la Principessa.<br>Spero di riuscire nel mio intento.<br>Se tu stai leggendo queste mie parole, probabilmente io ho fallito.<br>Possa Dio assisterti straniero, cosicché tu riesca dove io ho fallito!"<br>Firmato: J.D.
+	ICON		scroll.gif
+	IMAGE		100x100 pergamena.gif
+	SHOW		ICON
+
+
+ITEM	scroll2
+	NAME 		pergamena
+	POSITION	rndSet(setCastle)
+	DESCRIPTION	Srotolando la pergamena si legge: Prima di gettarmi nella battaglia, ho deciso di nascondere il mio oro in un luogo sicuro, nelle stanze del castello e nella corte. Se stai leggendo questa pergamena, probabilmente non ne avro' piu' bisogno, meglio quindi che finiscano nelle tue mani, CERCALE.<br>Firmato: P.V.
+	ATTRLIST 	pickable
+	ICON		scroll.gif
+	SHOW		ICON
+	IMAGE		100x100 pergamena.gif
+
+' Insects and plants
+
+ITEM	spider
+	NAME 		ragno
+	POSITION	rndSet(setCastle)
+	DESCRIPTION	Un ragno... disgustoso!
+	ATTRLIST	pickable,hidden
+	ICON		icospider.gif
+	IMAGE		54x32 spider_walk.gif
+	SHOW ICON
+
+ITEM	cymbidium
+	NAME 		cymbidium
+	POSITION	forest
+	DESCRIPTION	una pianta di Cymbidium Goeringii. Che bella.
+	ATTRLIST	pickable,branches=10
+	ICON		cymbidium.gif
+	IMAGE		100x100 cymbidium.gif
+	SHOW ICON
+
+ITEM	garlic
+	NAME 		aglio
+	TYPE		garlic
+	POSITION	rndSet(setAll)
+	DESCRIPTION	uno spicchio d'aglio. Puzza un pò.
+	ATTRLIST	type=garlic,pickable,hidden,Valore=20
+	ICON		garlic.gif
+	IMAGE		70x70 garlic.gif
+	SHOW ICON
+
+' Keys
+
+ITEM	key1
+	NAME 		chiave di rame
+	TYPE		key1
+	DESCRIPTION	Ogni serratura ha la sua chiave... ed ogni chiave apre una serratura. O no?
+	ATTRLIST	pickable,Valore=1
+	ICON		key.gif
+	IMAGE		67x50 chiavegold.gif
+	SHOW		ICON
+
+ITEM	key2
+	NAME 		chiave di ferro
+	TYPE		key2
+	POSITION	book2
+	DESCRIPTION	Una chiave che sicuramente aprirà qualcosa!
+	ATTRLIST	pickable,Valore=1
+	ICON		keysilver.gif
+	IMAGE		67x50 chiavegold.gif
+	SHOW		ICON
+
+ITEM	key3
+	NAME 		chiave lucida
+	TYPE		key3
+	POSITION	B
+	DESCRIPTION	Una piccola chiave lucida.
+	ATTRLIST	pickable,hidden,Valore=1
+	ICON		key.gif
+	IMAGE		67x50 chiavegold.gif
+	SHOW		ICON	328,38	FOR 9.jpg
+
+ITEM	key4
+	NAME 		chiave d'oro
+	TYPE		key4
+	DESCRIPTION	Una chiave dorata.
+	ATTRLIST	pickable,Valore=30
+	ICON		key.gif
+	IMAGE		67x50 chiavegold.gif
+	SHOW		ICON
+
+ITEM	key5
+	NAME 		chiave di bronzo
+	TYPE		key5
+	DESCRIPTION	Una chiave che sicuramente aprirà qualcosa!
+	ATTRLIST	pickable,Valore=1
+	ICON		key.gif
+	IMAGE		67x50 chiavegold.gif
+	SHOW		ICON
+
+' Money
+
+ITEM	coins
+	NAME		monete
+	TYPE		money
+	POSITION	hall
+	ATTRLIST	hidden,pickable,Monete=5,volume=0
+	ICON		money.gif
+	IMAGE		31x31 money.gif
+	SHOW		ICON
+
+ITEM	jukebox
+	NAME		juke-box
+	POSITION	bar
+	IMAGE		83x129 jukebox.gif
+	ATTRLIST	capacity=1,open,openable=0
+	SHOW ONSCREEN	12,38
+
+END_ITEMS
+
+
+SETS
+
+SET setCastle	R4,J,N,P,biblio,hall,salotto,bar,gateroom,upstairs
+SET setAll	J,N,P,biblio,salotto,armory,chapel,bar,R2,B,C,D,E,F,G,gateroom,dhall,upstairs,cell,bscell,cave1,cave2,cave3,cave4,cave5,cave6,cave7,salon1,salon2,salon2a,castletop,upstcorr,seat,warroom
+SET setCovered	Start,guildroom,bank,cell,bscell,R4,J,N,P,armory,hall,biblio,salotto,chapel,bar,gateroom,upstairs,dhall,cave1,cave2,cave3,cave4,cave5,cave6,cave7,salon1,salon2,salon2a,upstcorr,seat,bedroom,warroom
+END_SETS
+
+
+
+SCRIPTS
+
+Include "it_commons.dxl"
+
+' Tutto inizia da questo evento
+'
+EVENT onStart
+	Call common_onStart()
+	mode=1		'Game mode 1=phase1 2=phase2
+	Call config()
+	mkilled=0	'Killed monsters counter
+	hkilled=0	'Killed humans counter
+	population=0    'Population (phase2)
+	taxes=1		'Taxes, coins per day (phase2)
+	starved=0	'Starved people (phase 2)
+	kingTicks=0	'Ticks counter
+	killfriend=0	'Kill counter for citizens phase 2
+	killenemy=0	'Kill counter for enemies phase 2
+	guildOps = NewSet("0new=Fonda nuova gilda,1edt_logo=Imposta logo (url),2edt_web=Imposta homepage gilda (url),3fund=Versa (soldi) per gilda,8del=Cancella gilda,4info=Info su (nome),5appr=Approva iscrizione di (nome),5ban=Espelli membro (nome),5purge=Ripulisci gilda,6status=Calcola situazione gilda,7delegate=Delega sottocapo (nome),8deldele=Revoca delega a (nome),8type=Cambia tipologia gilda") 'managed apart: leave/join
+	warOps = NewSet("1wardecl=Dichiara guerra a...,2warcancel=Annulla guerra con...,6guildstatus=Aggiorna situazione vittorie")
+	craftOps = NewSet("10ren=Rinomina oggetto ...,20img=Modifica immagine ...,22rde=Modifica descrizione,23lev=Imposta livello ...,30pro=Imposta protezione/potenza ...,40prx=Imposta prezzo ...")
+	arrDrinks = NewSet("1=una birra,2=del vino,3=del succo d'uva")
+	arrShopkeepers = NewArray("auron")
+	msgKingQueen = NewSet("F=regina,M=re")
+	guard.weapons = NewArray("weapon.02.02.0000.sword")
+	Call LoadContext() ' Reads game saved status from disk
+	Call updFrontpageText()
+	Call doRndMusic()
+	' Create vampire or ghost
+	Call popMonster(6,monstersPopupSet)
+	' Create werewolf
+	Call popMonster(5,monstersPopupSet)
+	' Create 3 more random monsters
+	Call CalcAvgPower()
+	Call popMonster(avgPowerHumans,monstersPopupSet)
+	Call popMonster(avgPowerHumans,monstersPopupSet)
+	Call popMonster(avgPowerHumans,monstersPopupSet)
+	Call NewItem(RndSet(setCastle),"bomba","E' una bomba.",NewImage("bomb.gif",40,40),"type=bomb,pickable,Valore=10,sound=match.wav,icon=bomb.gif,showmode=2")
+	If debugtype<>0 Or mode=2
+		Dim passg = NewItem(cave7,"un passaggio","Una uscita all'esterno",NewImage("crack1.gif",46,64),"type=passg,pickable=0,showmode=1,showx=0,showy=150,hideable")
+		AttachEvent passg,"onLook","transfer2"
+		tr1.locked=0
+		tr1a.locked=0
+	End_If
+	If debugtype = "war"
+		w21a.locked=false
+		w21b.locked=false
+		w22a.locked=false
+		w22b.locked=false
+		w32a.locked=false
+		w32b.locked=false
+		notifyinterval = "000000000000" ' Notification interval for guild wars
+		guildwar_duration = "000000000001" ' Duration interval for guild wars
+		guildwar_mindiff = 0.01
+		guildwar_prizeperc = 0.001
+	End_If
+	If debugtype = "cmds"
+		Dim i
+		For i = 1 To 10
+			Call popHuman(avgPowerMonsters,monstersPopupSet)
+		Next
+	End_If
+	merlin.asked = NewSet()
+End_EVENT
+
+'
+' Game configuration parameters
+'
+Sub config()
+	If debugmode 'Must set debugMode=1 in worldnav.properties for enabling the following
+		debugtype="craft" ' 1=debug end phase 1, 2=debug king mode, 3=debug other area, gem=debug gemini spell, war=debug war system, shop=debug shop, cmds=Commands to pg, craft=Craftsman
+	End_If
+	targkilled=40	'Killed Monsters target
+	maxTicks=4800	'Ticks to the evil crusade victory
+	monstersPopupSet=setCastle	'Set of rooms where monsters will pop up
+	escapeSet=setCastle		'Set of rooms where monsters can escape
+	lake.effect = NewImage("mist.gif",400,200) ' New! Animated effect for lake
+	scoretype=10	'Type of scoring method
+	baseprofiles = NewSet("s1=15,e1=10,s2=8,e2=15,s4=15,e4=15,s10=17,e10=8,s16=17,e16=8,s12=17,e12=8,s14=17,e14=8,s19=17,e19=8,s11=17,e11=8")
+	guildmemberprice = 200	'Price for each guild member
+	disable_locking = 1	'Set to 1 to disable doors locking
+	' Guild Wars Config
+	notifyinterval = "000000000002" ' Notification interval for guild wars
+	guildwar_duration = "000000000100" ' Duration interval for guild wars
+	guildwar_mindiff = 2 ' Minimum difference for win (kills per player)
+	guildwar_prizeperc = 0.01 ' Percentage for prizes
+	guildwar_cost = 10 ' Cost for war declaring
+End_Sub
+
+Sub onNew_local()
+	'Speak $AGENT,frontpagetext
+
+	'****************
+	' Wars management
+	'****************
+	Dim w = war_menaced($AGENT.guild)
+	If w <> null
+		Call war_notify(w,$AGENT)
+		Return
+	End_If
+	Dim w = war_running($AGENT.guild)
+	If w <> null
+		If w("finishes") <> null And w("finishes") < getTime("yyyyMMddHHmm")
+			'Update stats
+			Call getGuildKillStats(w("comp1"),false)
+			Call getGuildKillStats(w("comp2"),false)
+			'Record in past wars
+			pastwars(w("name")) = "Finita il " + getTime("dd/MM/yyyy") + ": " + WarComment(w,w("comp1"),w("comp2"),true)
+			Call war_result(w,w("comp1"),w("comp2"),$AGENT)
+			saveSetting "ctx_pastwars",pastwars
+			SetRemove guildwars,w("comp1")+"*"+w("comp2")
+			SetRemove guildwars,w("comp2")+"*"+w("comp1")
+			saveSetting "ctx_guildwars",guildwars
+			Speak SYS,$WORLD,"La guerra <b>"+w("name")+"</b> è TERMINATA!!"
+		Else
+			Speak SYS,$AGENT,"Siete in guerra: <b>"+w("name")+"</b>!!"
+		End_If
+	End_If
+
+	'****************
+	' Debug modes
+	'****************
+	If debugtype = ""
+		Return
+		' Quick exit
+	End_If
+
+	If debugtype="shop"
+		Move $AGENT,armory
+		$AGENT.Livello=7
+		Call giveMoney($AGENT,500)
+	End_If
+	If debugtype="craft"
+		Call NewItem($AGENT,"pietra","E' un blocco di minerale roccioso.",NewImage("spelltablet.gif",48,48),"pickable,showmode=2,icon=spelltablet.gif,type=stone,Valore=2")
+		Move shieldwood,$AGENT
+	End_If
+	If debugtype=2
+		mode=2
+		w21a.locked=false
+		w21b.locked=false
+		w22a.locked=false
+		w22b.locked=false
+		w32a.locked=false
+		w32b.locked=false
+		'population = 200
+		'Move $AGENT, seat
+		Dim crown = getContainedType($WORLD,"crown")
+		If Exists(crown)
+			Move crown,$AGENT
+		Else
+			Call NewKing($AGENT,false)
+		End_If
+		richness=30
+		Call livePopulation($AGENT)
+	End_If
+End_Sub
+
+Sub onTick_local()
+	kingTicks=kingTicks+1
+	If debugtype=2
+		Call updateKingdom("FULL")
+	Else
+		Call updateKingdom(null)
+	End_If
+	Call war_possiblystart()
+	Call updFrontpageText()
+	If mode=1
+		' Phase 1 in progress
+		If kingTicks>=maxTicks
+			'Evil wins
+			Kill asia
+			Goal "I mostri vincono: Il tempo è scaduto e la principessa è stata divorata dai mostri."
+		End_If
+		'Pop up devilman?
+		If mkilled >= targkilled And Not(key4appeared)
+			'If target number of killed monsters reached AND key4 not appeared yet
+			'pop devilman and place key4 in him
+			Call popDevilman()
+		End_If
+	End_If
+	If mode=0
+		' Game has been just won
+		' Experimental: enter phase 2
+		mode=2
+		saveSetting "ctx_mode",mode
+	End_If
+End_Sub
+
+Sub crown_whenPicked()
+	If ExistScript("NewKing")
+		Call NewKing($TARGET,false)
+	End_If
+End_Sub
+
+EVENT pre2.onReceive
+Print "Il castello di Graiel è a pochi passi da qui.<p>Prima di entrare però, decidi che tipo di personaggio interpretare.<p>Clicca l'icona di ogni classe per vederne le caratteristiche. Per accettare la classe selezionata, clicca l'icona FRECCIA AVANTI."
+template.image = NewImage("uomo.gif",64,100)
+template.Classe = "Guerriero"
+template.description = "Scegli una classe di personaggio usando le apposite icone."
+
+EVENT	pre2.onLoose
+If $TARGET = p1
+	' Check that we are exiting from the castle gate
+	If $AGENT.type=0
+		Speak "DEVI decidere che personaggio diventare prima entrare nel Regno!"
+		Return  0
+	End_If
+	Display "Entri in questo mondo con il ruolo di <b>" + $AGENT.Classe + "</b> - OK."
+	$AGENT.__startnow = true
+	Move $AGENT,Start
+	Return
+End_If
+
+EVENT cave3.onLoose
+If $TARGET=w25
+	$AGENT.facing = "N"
+	Return
+End_If
+If deathelem<>null
+	If $TARGET=w26 And deathelem.container = cave3
+		Speak deathelem, $AGENT, "Grrrrrrrrr..."
+		Call doAttack(deathelem,$AGENT,null,true)
+		Return 0
+	End_If
+End_If
+End_EVENT
+
+EVENT guilford.onLook
+	Speak "Sono il capitano delle guardie...","La gente qui usa formare delle Gilde...","Potete fondare una gilda oppure entrare in una già esistente!"
+	Print PanelHtml("pguilds")
+	$OWNER.__clearInfo=true
+END_EVENT
+
+EVENT garumir.onLook
+	Dim richest = SetKeyOfMax(garumir.accounts)
+	Speak "Depositate qui le vostre monete! Così non rischierete di perderle.","Per depositare, datemi le monete che volete mettere al sicuro.","Per prelevare, clicca <B>Preleva</B>. Puoi persino specificare la cifra nella casella di testo.","Sapete chi possiede più ricchezza? E' <B>" + richest + "</B>, ne possiede " + garumir.accounts(richest)
+	Print PanelHtml("pbank")
+	'$AGENT.__clearFocus=true
+	$OWNER.__clearInfo=true
+END_EVENT
+
+EVENT garumir.onHear
+	Speak "Non capisco quelo che dite, di dove siete?","Datemi le vostre monete, invece di perder tempo."
+END_EVENT
+
+EVENT garumir.onReceiveItem
+	Dim howmuch = Int($TARGET.Monete)
+	If howmuch <= 0
+		Speak $OWNER,$AGENT,"Potete depositare qui solo le vostre monete."
+		Move $TARGET,$AGENT.container
+		Return false
+	Else
+		Call deposit_money($AGENT,$OWNER,howmuch)
+		Kill $TARGET
+	End_If
+END_EVENT
+
+Sub deposit_money(from,banker,howmuch)
+	Dim credits = from.Crediti
+	Dim text = ""
+	If credits <> banker.accounts(from.name)
+		credits = banker.accounts($AGENT.name)
+		text = "I crediti che vantate non sono corretti. Vi dovevo in verità " + credits + " monete. "
+	End_If
+	banker.accounts(from.name) = Int(credits) + howmuch
+	from.Crediti = banker.accounts(from.name)
+	text = text + "Vi devo ora: " + from.Crediti + " monete."
+	Speak banker,from,text
+	If banker.accounts(from.name) <= 0 'Cleanup
+		SetRemove banker.accounts,from.name
+	End_If
+End_Sub
+
+Sub morubar_onLook
+	Speak "Io tengo la contabilità del regno!", "Le ricchezze reali ammontano a " + $WORLD.richness + " monete."
+
+Sub morubar_onHear
+	Speak "Se non sapete come governare, leggete la guida. Cliccate l'icona [Spiega]!"
+
+EVENT morubar_onReceiveItem
+	If $WORLD.richness >= 30
+		Speak $OWNER,$AGENT,"Non posso accettare, abbiamo denaro sufficiente."
+		Move $TARGET,$AGENT.container
+		Return false
+	End_If
+	If $TARGET.Monete <= 0
+		Speak $OWNER,$AGENT,"Solo monete, per favore."
+		Move $TARGET,$AGENT.container
+		Return false
+	End_If
+	If $WORLD.richness+$TARGET.Monete > 30
+		Speak $OWNER,$AGENT,"Posso attualmente accettare fino a " + (30 - $WORLD.richness) + " monete."
+		Move $TARGET,$AGENT.container
+		Return false
+	End_If
+	Speak $OWNER,$AGENT,"La vostra donazione in favore del regno è molto apprezzata."
+	$WORLD.richness = $WORLD.richness+$TARGET.Monete
+	Kill $TARGET
+END_EVENT
+
+EVENT auron.onLook
+	Speak "Ciao straniero, vuoi comprare qualcosa?", "Abbiamo un sacco di roba per combattere, guarda pure!"
+	$AGENT.__clearFocus=true
+	$OWNER.__clearInfo=true
+END_EVENT
+
+EVENT bedroom.onReceive
+	Call onReceive()
+	If door1.open=1 And asia.container = bedroom And asia.type < 10
+		' Asia sees someone entering
+		If $AGENT.type < 10
+			Speak asia,asia.container,"TENETE QUELLA PORTA CHIUSA, VE NE PREGO!!"
+		Else
+			Speak asia,$WORLD,"EEEEEEeeeeEEEeeekkkk!! Un mostro nella mia camera!! Aiuto! AIUTOOOOO!"
+		End_If
+	End_If
+
+
+EVENT chapel.onReceive
+	Call onReceive()
+	If Exists(priest)
+		If priest.step > 0
+			Call priest_celebrate()
+		End_If
+	End_If
+End_EVENT
+
+EVENT chapel.onHear
+	If InStr($TARGET,"prete")
+		If Not(Exists(priest))
+			priest = NewCharacter(chapel,"il prete","",NewImage("priest.gif",64,100),"type=3,pacific,nohands,steady,noteleport")
+			Speak priest,priest.container,"Eccomi!"
+			AttachEvent priest,"onLook","priest_onLook"
+			AttachEvent priest,"onExit","priest_onDie"
+		End_If
+		Return
+	End_If
+	If Exists(priest) And priest.step > 0
+		Return priest_onHear($TARGET,$AGENT)
+	End_If
+End_EVENT
+
+EVENT asia.onReceiveItem
+	' When asia receives the ring...
+	If mode <> 1
+		Return
+	End_If
+	If asia.inlovewith <> $AGENT.name
+		Speak asia,$AGENT,"Oh grazie ma non posso accettare. Certo, se fossimo fidanzati..."
+		Move $TARGET,$AGENT
+		Return false
+	End_If
+	If asia.container = chapel
+		If Exists(priest)
+			If priest.step > 0 And priest.step < 4
+				Speak asia,$AGENT,"Ehm... caro... senti un pò quello che dice il prete..."
+				Move $TARGET,$AGENT
+				Return false
+			End_If
+			Goal $AGENT.name + ", " + $AGENT.Classe + " ha completato la fase 1 "
+			asia.status=3
+			Call NewKing($AGENT,false)
+		Else
+			Speak asia, chapel, "Grazie tante, e adesso che il prete è andato che si fa??"
+			Move $TARGET,$AGENT
+			Return false
+		End_If
+	Else
+		Speak asia,$AGENT,"Ok, ok, tienitelo per quando saremo davanti al prete..."
+		Move $TARGET,$AGENT
+		Return false
+	End_If
+End_EVENT
+
+EVENT asia.onHear
+	If $AGENT.type >= 10
+		'Monster
+		Speak asia,$WORLD,"EEEeeeeeek! " + $AGENT.name + " mi è addosso! Aiuto! Aiuto!"
+		Speak asia,$AGENT,"VATTENE!! VATTENE!!"
+		Return false
+	End_If
+	If $AGENT.gender = "M"
+		If asia.status < 1
+			Speak $OWNER,$AGENT,"COSA? Hey, dimmi qualcosa di ROMANTICO! Sarò rimasta chiusa qui per giorni, ma sono sempre una donna!","La tua fantasia è tutta qui? Perchè non impari da qualche buon libro di poesia? Oh gosh!","Hmmmm.... dimmi di più..."
+		End_If
+		If asia.status = 2
+			If $AGENT.hooked = asia
+				Speak $OWNER,$AGENT,"Oh, mio coraggioso compagno! Non perdiamo altro tempo! Portami all'altare!"
+			Else
+				Speak $OWNER,$AGENT,"Non ho tempo da dedicarti, scusami sai, devo pensare a organizzare le mie nozze..."
+			End_If
+		End_If
+	Else
+		Speak "Non voglio nulla da te, ma grazie. Non è che per caso hai un amico maschio da presentarmi?"
+	End_If
+
+
+EVENT hay.whenPicked
+	Dim k = getContainedType(B,"key3")
+	If k <> null
+		k.hidden=false
+	End_If
+
+EVENT guard.onLook
+	Speak "Ehi ferma!","Chi siete?!?","Ma quanti siete?","Che cosa portate?","Sì, ma quanti siete?","UN FIORINO!"
+	Call onLook
+End_Event
+
+EVENT E.onLoose
+	If guard <> null
+		If $TARGET=arch1 And guard.container = E
+			Speak guard, $AGENT, "Non ci provare!", "Ti stai mettendo nei guai!", "Mi vuoi fare arrabbiare, dillo."
+			Call doAttack(guard,$AGENT,guard.weapon,true)
+			Return 0
+		End_If
+	End_If
+
+EVENT nkono.onExit
+' Bounces back Nkono if guard is in place
+If guard <> null
+	If guard.container = E
+		Return 0
+	End_If
+End_If
+
+
+EVENT merlin.onLook
+	Dim merlinphrase,merlinphrase2=$WORLD.frontpagetext,merlinphrase3=getTournamentMessage()
+	If mode > 1
+		merlinphrase="Cerca la corona!"
+		Dim arr=merlin.asked
+
+		If arr($AGENT.name)=1
+			merlinphrase="Vuoi sapere dov'è la corona? Torna a chiedermelo domani!"
+		Else
+			merlinphrase="La corona è stata portata via dal castello..."
+			Dim crown = getContainedType($WORLD,"crown")
+			If Exists(crown)
+				If IsCharacter(crown.container)
+					merlinphrase="La corona è stata conquistata da <b>"+crown.container.name+"</b>. Ma tu puoi averla!"
+				Else
+					merlinphrase="La corona è stata lasciata in <b>" +crown.container.name+"</b>. Prendila!"
+				End_If
+			End_If
+			arr($AGENT.name)=1
+		End_If
+	Else
+		merlinphrase="Clicca [SALVA] per salvare la partita e [SALVA E ESCI] prima di smettere."
+	End_If
+
+	If merlinphrase3 = null
+		If mode<2
+			merlinphrase3="Sai, con i miei poteri di veggente mi sembra di percepire che c'è oro <B>" + coins.container.name + "</B>"
+		Else
+			Dim money = getContainedType($WORLD,"money")
+			merlinphrase3="Cerchi soldi? Prova a guardare in "+money.container.name+"!"
+		End_If
+	End_If
+	If containsType("money",$AGENT,false)
+		merlinphrase4 = "Non dovreste andare in giro con tutto quel denaro, depositatelo in banca, da <b>Garumir</b>!"
+	Else
+		merlinphrase4 = "Ritira le tue monete da <b>Garumir</b>, e compra qualcosa di utile!"
+	End_If
+	Speak merlinphrase,merlinphrase2,merlinphrase3,merlinphrase4
+End_EVENT
+
+EVENT merlin.onHear
+	If $TARGET <> ""
+		If $TARGET = "cleanup"
+			Speak "Oh! Era questa la formula!"
+			Call cleanup()
+			Return
+		End_If
+		If $TARGET = "legion"
+			Dim i
+			For i = 1 To 10
+				Call popHuman(avgPowerMonsters,monstersPopupSet)
+			Next
+			Return
+		End_If
+		Speak "Oh interessante. Sembrate una persona in gamba, forse un giorno regnerete su queste terre.","Hm.","Aha."
+	Else
+		Speak "Non vi sento."
+	End_If
+
+EVENT cross.whenPicked
+	If $TARGET.type > 9
+		Display $TARGET,"Ouch!! Non posso tenerla in mano..."
+		Move $OWNER,$TARGET.container
+		Return false
+	Else
+		PlaySound $TARGET,"fanfare.wav"
+		Display $TARGET,"Hey, mi sento bello arzillo!"
+	End_If
+
+EVENT cross.onUse
+	If $AGENT = infected
+		' Heals infection
+		infected = ""
+		infector = ""
+		Display "Ahhhh.... Adesso va meglio."
+		$AGENT.Salute = $AGENT.Salute + 1
+	End_If
+
+EVENT garlic.whenPicked
+	If $TARGET.type = 14
+		Display $TARGET,"Bleah!! Non posso soffrire l'aglio!!"
+		Move $OWNER,$TARGET.container
+		Return false
+	End_If
+
+EVENT silvering.whenPicked
+	If $TARGET.type = 16
+		Display $TARGET,"Non voglio toccare l'argento!"
+		Move $OWNER,$TARGET.container
+		Return false
+	End_If
+	Return whenPicked()
+
+EVENT silvering.onUse
+	If $AGENT = infected And infectype=16
+		' Heals infection
+		infected = ""
+		infector = ""
+		Display "Ahhhh.... Adesso va meglio."
+		$AGENT.Salute = $AGENT.Salute + 1
+	End_If
+
+EVENT cymbidium.onExit
+        ' Management of plants
+        Call getBranch($OWNER,$AGENT)
+	Return false
+
+EVENT sand.onExit
+        ' Management of sand
+	Dim cont = getContainedType($AGENT,"bowl")
+	If cont <> null
+		Dim new = NewItem(cont,"sabbia","",NewImage("sand.gif",32,32),"pickable,showmode=2,icon=sand.gif,type=sand,vanishing")
+		If new.container <> cont
+			Print "La ciotola è piena..."
+			Kill new
+		Else
+			Print "Ne metterò un pò nella ciotola."
+		End_If
+	Else
+		Print "Mi serve un contenitore adatto."
+	End_If
+	Return false
+
+EVENT powder.onExit
+        ' Management of powder
+	Dim cont = getContainedType($AGENT,"bowl")
+	If cont <> null
+		Dim new = NewItem(cont,"polvere pirica","",NewImage("powder.gif",32,32),"pickable,showmode=2,icon=powder.gif,type=powder,vanishing")
+		If new.container <> cont
+			Print "La ciotola è piena..."
+			Kill new
+		Else
+			Print "Ne metterò un pò nella ciotola."
+		End_If
+	Else
+		Print "Mi serve un contenitore adatto."
+	End_If
+	Return false
+
+EVENT armory.onLooseItem
+        ' Management of sold items
+        If $TARGET.seller <> ""
+            Display "E' in vendita."
+	    Speak $TARGET.seller, $AGENT, "Hey, quello costa " + $TARGET.Valore + " monete!", "Ti serve " + $TARGET.name + " eh? E' in vendita, sai.", "Guarda: ti faccio un prezzo speciale: "+ $TARGET.Valore + " monete, solo perché sei tu!"
+            Return false
+        End_If
+
+' Transfer function to move people to Area 2
+Function transfer2
+	$AGENT.fromarea = $WORLD.name
+	MoveOutside $AGENT,"Sottomondo2"
+	Return False
+End_Function
+
+'Local explosives management
+'input: cont=bomb container
+Sub bombExplode_local(cont)
+	If cont=cave7 And Not(containsType(cont,"passg",false))
+		Dim passg = NewItem(cave7,"un passaggio","Una uscita all'esterno",NewImage("crack1.gif",46,64),"type=passg,pickable=0,showmode=1,showx=0,showy=150,hideable")
+		AttachEvent passg,"onLook","transfer2"
+	End_If
+End_Sub
+
+EVENT pre1.onReceive
+	' Teleport comers from other areas to correct places
+	If $TARGET.fromarea = "Sottomondo2"
+		Move $TARGET,cave7
+	End_If
+	If $TARGET.fromarea = "Sottomondo3"
+		Move $TARGET,gateroom
+	End_If
+	If $TARGET.fromarea = "Underworld4"
+		Move $TARGET,lake
+	End_If
+End_EVENT
+
+EVENT pre1.onReceiveItem
+	If $TARGET.type <> "msg"
+		'Unknown object, make it visible
+		Move $TARGET,start
+		Return
+	End_If
+	'Debug "Got command message. cmd=" + $TARGET.cmd
+	If HandleCommandMessage_Common($TARGET) = false
+		' Handle control/command message
+		If $TARGET.cmd = "upd_guildkills"
+			guildkills($TARGET.guild) = $TARGET.guildkills
+			guildavglvl($TARGET.guild) = $TARGET.guildavglvl
+		End_If
+	End_If
+	Kill $TARGET
+End_EVENT
+
+Sub diePrincess()
+	If mode<>1 ' Suppress if phase 1 completed
+		Return
+	End_If
+	Dim name = "qualcuno"
+	Dim killer = asia.killer
+	If Exists(killer)
+		If IsPlayer(killer)
+			name = killer.Classe + " "
+		End_If
+		name = name + killer.name
+	End_If
+	Goal "I mostri vincono: " + name + " ha ucciso la principessa."
+	Call doMusic("livetotell.mid",6)
+	If Not(crowncreated)
+		Call NewKing(killer,false)
+	End_If
+End_Sub
+
+'popDevilman
+'pop devilman and place key4 in him if needed
+'returns: the Devilman
+Function popDevilman()
+	Dim new = popMonster(15,setCastle)
+	If Not(key4appeared)
+		Move key4, new
+		key4appeared = true
+	End_If
+	Return new
+End_Function
+
+Sub Living_local(person)
+	If IsPlayer(person) ' Affinity check
+		If person.affinity = null
+			If Not(person.container.introductory)
+				Call chooseAffinity(person,person.container)
+			End_If
+		Else
+			If SetLen(person.affinity)=4 And (person.affinity(1)+person.affinity(2)+person.affinity(3)+person.affinity(4))>4
+				Call chooseAffinity(person,person.container)
+			End_If
+		End_If
+	End_If
+	If person.Livello = 1
+		If IsPlayer(person) And SetContainsKey(setAll,person.container.id)
+			Call Hints(person)
+		End_If
+	End_If
+	If mode<>1 ' Suppress if phase 1 completed
+		Return
+	End_If
+	If person.type=14 Or person.type=16 Or person.type=12
+		' Vampire, Werewolf or BatVampire
+		Dim key4 = getContainedType($WORLD,"key4")
+		If person.Infettati >= targkilled And key4 <> null And key4.seller = null
+			' Make devilman appear and give key
+			Dim new=popDevilman()
+			Move new,person.container
+			Move key4,person
+			If key4.container<>person
+				' Handles case in which player is at full capacity
+				Move key4,person.container
+			End_If
+			Speak new,person,"Ecco la chiave, te la sei meritata! Fai della della principessa ciò che vuoi!"
+		End_If
+	End_If
+End_Sub
+
+EVENT onReceive_Local
+If asia <> null
+	If $TARGET.hooked <> asia
+		Return
+	End_If
+	If asia.inlovewith = $TARGET.name
+		Move asia, $OWNER
+	End_If
+End_If
+End_EVENT
+
+EVENT bscell.onReceiveItem
+	If $TARGET.type = "sand" And $OWNER=bscell And SetLen(getItemsIn(pot))=0
+		Move $TARGET,pot
+		Print $AGENT,"Metto la sabbia nel calderone."
+		Return 1
+	End_If
+	' Else call global event
+	Call onReceiveItem
+End_EVENT
+
+EVENT onChooseWarrior
+	$AGENT.type = 1
+	$AGENT.Classe = "Guerriero"
+	$AGENT.image = NewImage("uomo.gif",60,94)
+	$AGENT.gender = "M"
+	$AGENT.suffersound = rndSet(setSndHumanYell)
+	template.description = "Il guerriero può usare armi e indossare protezioni.<br>Scegli questo se preferisci combattere con la forza fisica."
+	Call updTemplate
+
+EVENT onChooseFWarrior
+	$AGENT.type = 1
+	$AGENT.Classe = "Guerriera"
+	$AGENT.image = NewImage("fwarrior.gif",35,102)
+	$AGENT.gender = "F"
+	$AGENT.suffersound = "bighit1.wav"
+	template.description = "La guerriera può usare armi e indossare protezioni.<br>Scegli questo se preferisci combattere con la forza fisica."
+	Call updTemplate
+
+EVENT onChooseCleric
+	$AGENT.type = 2
+	$AGENT.Classe = "Chierico"
+	$AGENT.image = NewImage("cleric.gif",63,100)
+	$AGENT.gender = "M"
+	$AGENT.suffersound = rndSet(setSndHumanYell)
+	template.description = "Chierico: aiuta gli altri con le arti magiche ed è in grado di lanciare incantesimi.<br>Scegli questo se vuoi che la tua energia mentale sia la predominante."
+	Call updTemplate
+
+EVENT onChooseSorceress
+	$AGENT.type = 2
+	$AGENT.Classe = "Incantatrice"
+	$AGENT.image = NewImage("mystic.gif",64,100)
+	$AGENT.gender = "F"
+	$AGENT.suffersound = "scream1.wav"
+	template.description = "Incantatrice: aiuta gli altri con le arti magiche ed è in grado di lanciare incantesimi.<br>Scegli questo se vuoi che la tua energia mentale sia la predominante."
+	Call updTemplate
+
+
+EVENT onChooseArtisan
+	$AGENT.type = 4
+	$AGENT.Classe = "Artigiano"
+        $AGENT.image = NewImage("paesant.gif",60,94)
+	$AGENT.gender = "M"
+	$AGENT.suffersound = rndSet(setSndHumanYell)
+	template.description = "Artigiano: è in grado di estrarre il metallo dai minerali e di costruire oggetti.<br>Scegli questo se sei propenso al lavoro e al commercio più che al combattimento."
+	Call updTemplate
+
+EVENT onChooseDarken
+	$AGENT.type=19
+	$AGENT.Classe = "Entità Oscura"
+	$AGENT.image = NewImage("horror047.gif",121,144)
+	$AGENT.gender = "F"
+	$AGENT.yell = "roar2.wav"
+	$AGENT.suffersound = "pig.wav"
+	template.description = "Entità Oscura: E' lo spirito di una maga maledetta. Creatura delle tenebre, pura energia maligna, è la versione malvagia dell'Incantatrice.<br>Scegli questo se ti senti diabolicamente malvagia e se la tua energia è più mentale che fisica."
+	Call updTemplate
+
+EVENT onChooseVampire
+	$AGENT.type=14
+	$AGENT.Classe = "Vampiro"
+	$AGENT.image = NewImage("vampire.gif",95,100)
+	$AGENT.gender = "M"
+	$AGENT.yell = "roar2.wav"
+	$AGENT.suffersound = "pig.wav"
+	template.description = "Il vampiro: Creatura malvagia, può trasformare gli umani in vampiri, da sempre nemico dei lupi mannari.<BR>Odia le croci e l'aglio, non può sopportare la luce del sole, salvo quando assume la forma di un pipistrello.<BR>Scegli questo se la forza e la seduzione sono il tuo lato oscuro."
+	Call updTemplate
+
+EVENT onChooseVampireBride
+	$AGENT.type=14
+	$AGENT.Classe = "Vampira"
+	$AGENT.image = NewImage("vampirebride.gif",94,100)
+	$AGENT.gender = "F"
+	$AGENT.yell = "roar2.wav"
+	$AGENT.suffersound = "scream1.wav"
+	template.description = "Vampira: Creatura malvagia, può trasformare gli umani in vampiri, da sempre nemica dei lupi mannari.<BR>Odia le croci e l'aglio, non può sopportare la luce del sole, salvo quando assume la forma di un pipistrello.<BR>Scegli questo se la forza e la seduzione sono il tuo lato oscuro."
+	Call updTemplate
+
+EVENT onChooseWerewolf
+	$AGENT.type=16
+	$AGENT.Classe = "Lupo Mannaro"
+	$AGENT.image = NewImage("werewolf.gif",90,100)
+	$AGENT.gender = "M"
+	$AGENT.yell = "roar2.wav"
+	$AGENT.oldimage = NewImage("paesant.gif",64,100)
+	$AGENT.oldstrength = 2
+	$AGENT.suffersound = null
+	template.description = "Lupo mannaro: Creatura malvagia, può trasformare gli umani in lupi mannari, da sempre nemico dei vampiri.<BR>Non tollera il contatto con l'argento.<BR>Può traformarsi in lupo quando è in stato di alterazione pshichica.<BR>Scegli questo se quando ti arrabbi diventi una belva."
+	Call updTemplate
+
+Sub updTemplate()
+	$AGENT.Forza = 1
+	If $AGENT.mainpg = "" Or $AGENT.mainpg = $AGENT.name Or debugmode>0 'True beginner
+		If arrIps($AGENT.remoteAddr)<>1
+			$AGENT.invul = 60
+			If garumir.accounts($AGENT.name) = null
+				$AGENT.Crediti = 100
+				garumir.accounts($AGENT.name) = 100
+			Else
+				$AGENT.Crediti = garumir.accounts($AGENT.name)
+			End_If
+			arrIps($AGENT.remoteAddr)=1
+		End_If
+	End_If
+	template.image = $AGENT.image
+        template.Forza = $AGENT.Forza
+	template.Classe = $AGENT.Classe
+	Display template.description
+	If $AGENT.mainpg <> "" And $AGENT.mainpg <> $AGENT.name
+		Print $AGENT,"Nessuna invulnerabilità iniziale (utente non nuovo)"
+	Else
+		Print $AGENT,"Invulnerabilità iniziale: " + ($AGENT.invul/2) + " minuti"
+
+		If getTime("dd/MM/yyyy")=smDay
+			$AGENT.Crediti = 500
+			garumir.accounts($AGENT.name) = 500
+			Speak SYS,$AGENT,"Oggi è il <b><a target=_blank href=https://www.sottomondo.org/?p=571>Sottomondo Day</a></b>. Per aver iniziato a giocare oggi ti spetta una <b>SUPER dotazione iniziale di ben 500 monete</b>!!"
+		End_If
+	End_If
+	Display "<p><b>NB</b>: Questo è solo il tuo aspetto iniziale per iniziare, proseguendo nel gioco potrai personalizzare il tuo PG con qualsiasi immagine vorrai."
+End_Sub
+
+'
+' Updates kingdom's situation
+'
+Sub updateKingdom(full_mode)
+	Dim king = null
+	Dim crown = getContainedType($WORLD,"crown")
+	Dim text = ""
+	If Exists(crown)
+		If IsCharacter(crown.container)
+			king = crown.container
+		End_If
+	End_If
+	If Not(Exists(king))
+		Return
+	End_If
+
+	If full_mode = null
+		Call livePopulation(king)
+		Return
+	End_If
+
+	'Update kingdom duration
+	king.kingdays = king.kingdays + 1
+	text=text+"<BR>Fino adesso "+king.name+" ha regnato per " + king.kingdays + " giorni."
+
+	'Income from villains
+	Dim totincome = 5 * population
+	text=text+"<BR>I popolani hanno prodotto un reddito complessivo di <B>" + totincome + "</B> monete"
+
+	'Tax villains
+	Dim tottaxes = taxes * population
+
+	If tottaxes >= totincome
+		richness = richness + totincome
+		totincome = 0
+	Else
+		richness = richness + tottaxes
+		totincome = totincome - tottaxes
+	End_If
+	text=text+"<BR>Tasse ottenute dai popolani: " + tottaxes + " monete"
+
+	Dim dconf = 0 ' Confidence increment
+	Dim alive = Int(totincome/3) 'How many villains will stay alive
+
+	If alive < population
+		starved = population - alive
+		text=text+"<BR>" + starved + " popolani muoiono di fame a causa delle tasse troppo alte"
+		dconf = dconf-2
+	Else
+		If alive > population
+			text=text+"<BR>Tutti i popolani sopravvivono"
+			dconf = dconf+1
+		End_If
+	End_If
+	population = alive
+
+	'Tax players
+	Dim playtaxes = TaxPlayers(king,taxes)
+	text=text+"<BR>Tasse ottenute dai giocatori: " + playtaxes + " monete"
+	richness = richness + playtaxes
+
+	'How good is safety?
+	If king.type < 10
+		killfriend = hkilled
+		killenemy = mkilled
+	Else
+		killenemy = hkilled
+		killfriend = mkilled
+	End_If
+	text=text+"<BR>Rapporto uccisioni Nemici/Cittadini: "+killenemy + ":" + killfriend
+	if killfriend < killenemy
+		dconf = dconf+1
+		text=text+"<BR>Il popolo si sente al sicuro"
+	End_If
+	if killfriend > killenemy
+		dconf = dconf-2-2*(king.Livello>3)
+		text=text+"<BR><font color=red>Il popolo si lamenta, la sicurezza non è garantita</font>"
+		Speak morubar,king,"Maestà, fate qualcosa per garantire la sicurezza dei cittadini!"
+	End_If
+
+	If Int(richness/3) = 0 And population < 200
+		text=text+"<br><font color=red>Non ci sono abbastanza ricchezze per accogliere nuovi popolani!</font>"
+		Speak morubar,king,"Maestà, le ricchezze del nostro regno non ci permettono di accogliere nuovi popolani! Datemi qualche moneta."
+		dconf = dconf-1-2*(king.Livello>3)
+	End_If
+
+	' Reset counters for next day
+	mkilled=0
+	hkilled=0
+
+	text=text+"<br/>La reputazione del "+msgKingQueen(king.gender)+" è "
+	If dconf < 0
+		text=text+"peggiorata: " + dconf
+	Else
+		If dconf > 0
+			text=text+"migliorata: +" + dconf
+		Else
+			text=text+"rimasta invariata: +" + dconf
+		End_If
+	End_If
+	confidence = confidence + dconf
+	If confidence>10
+		confidence=10
+	End_If
+	text=text+"<BR>Reputazione attuale: <b>" + confidence + "</b> su 10"
+	If confidence<0
+		confidence=0
+		Call insurrection(king)
+	End_If
+
+	If Exists(king) ' Is king still alive?
+		text=text+"<BR>Le ricchezze reali ammontano a: " + richness + " monete<br>"
+
+		' Newcomers
+		Dim maxnewcomers = Int(richness/3)
+		text=text+"Il denaro è sufficiente per dar da mangiare a " & maxnewcomers & " nuovi popolani<br>"
+		If (200-population) < maxnewcomers
+			maxnewcomers = 200-population
+		End_If
+
+		Dim newcomers = Int(confidence/2+RndInt(confidence*2))
+		If newcomers > maxnewcomers
+			newcomers = maxnewcomers
+		End_If
+
+		population = population + newcomers
+
+		text=text+"La reputazione del regno e le ricchezze attraggono " + newcomers + " nuovi popolani. La popolazione è ora di: <b>" + population + " popolani</b>.<br>"
+
+		Call livePopulation(king)
+
+		Dim incr = Round(confidence + richness/2000 + population/20,0)
+		text = text + "<BR>Incremento Score: " + incr
+		Speak SYS,king,"Incremento Score: " + incr
+		Call advanceCheck(king,"score",incr)
+
+		richness = richness - 3*newcomers ' Subtract cost of newcomers
+		text=text+"<BR>Distribuite 3 monete a ciascun nuovo popolano, rimangono " + richness + " monete al tesoriere del Regno.<br>"
+
+		If king.married <> null
+			If incrScore(king.married,incr) = false ' Try other areas
+				Call BroadcastOtherWorlds("incr_score","incr="+incr+",to="+king.married)
+			End_If
+			If ProfileExists(king.married)
+				Dim wifescore = Int(LookupProfileDB(king.married,"score_added"))
+				wifescore = incr+wifescore
+				Dim nick = CookName(king.married)
+				Dim tmp = getSetting(nick + "_properties","")
+				SaveSetting nick + "_properties",tmp+",score_added="+wifescore
+			End_If
+		End_If
+		Dim new = NewItem(king,"Diario del Regno, giorno "+king.kingdays,"...",NewImage("pergamena.gif",100,100),"icon=scroll.gif,showmode=2,vanishing,pickable,volume=0")
+		new.description = text
+		Dim hiscore = 0 + getSetting("hiscore") 'Sum to force considering number value
+		If king.Score > hiscore
+			saveSetting "hiscore",king.Score
+			saveSetting "hiscoretext","Il migliore punteggio: " + king.Score + " di <B>" + king.name + "</B>, "+king.Class+ " in data " + getTime("dd/MM/yyyy")
+			Speak SYS,$WORLD,"Il "+msgKingQueen(king.gender)+" migliore è " + king.name + " con score " + king.Score
+			Print king,"Sono il migliore "+msgKingQueen(king.gender)+" che abbia finora regnato!"
+		End_If
+	End_If
+	SaveSetting "fbusers",fbusers
+End_Sub
+
+EVENT doNewTax
+	Dim newtax = Int($TARGET)
+	If newtax < 1 Or newtax > 5
+		Print "Questo serve per stabilire le tasse giornaliere. Devi scrivere un numero (da 1 a 5) nella textbox e premere il pulsante."
+		Return
+	End_If
+	If containsType($AGENT,"crown",false)
+		taxes = newtax
+		Print "OK - da oggi le tasse giornaliere saranno di " + taxes + " monete a persona."
+	Else
+		Print "Per stabilire le tasse dovrei essere Re o Regina... forse un giorno..."
+	End_If
+END_EVENT
+
+EVENT doWithdraw
+	If $AGENT.container = bank
+		Dim banker = garumir
+		Dim howmuch = Int($TARGET)
+		Dim credits = Int($AGENT.Crediti)
+		Dim text = ""
+		$AGENT.ticket = ""
+		Dim personname = $AGENT.name
+
+		banker.accounts(personname) = Int(banker.accounts(personname)) ' Convert to number
+		If credits <> banker.accounts(personname)
+			credits = Int(banker.accounts(personname))
+			text = "I crediti che vantate non sono corretti. Vi dovevo in verità " + credits + " monete. "
+		End_If
+		If credits <= 0
+			text = text + "Non vi devo niente. Portatemi delle monete se volete tenerle al sicuro."
+		Else
+			If howmuch <= 0
+				howmuch = 10 'default 10
+			End_If
+			If howmuch > credits ' withdraw all
+				howmuch = credits
+			End_If
+			Call giveMoney($AGENT,howmuch)
+			banker.accounts(personname) = credits - howmuch
+			If $AGENT.Crediti < 1
+				text = text + "Ora siamo pari, fate attenzione, c'è strana gente in giro... eh eh eh..."
+			Else
+				text = text + "Vi devo ora: " + banker.accounts(personname) + " monete."
+			End_If
+		End_if
+		$AGENT.Crediti = banker.accounts(personname)
+		Speak banker,$AGENT,text
+		If banker.accounts(personname) <= 0 'Cleanup
+			SetRemove banker.accounts,personname
+		End_If
+		Return
+	End_If
+	If $AGENT.container = seat
+		If Exists(morubar) And richness > 0
+			If getContainedType($AGENT,"crown") <> null
+				Call giveMoney($AGENT,richness)
+				Speak morubar,$AGENT,"Tenete, Maestà."
+				richness = 0
+			Else
+				Speak morubar,$AGENT,"Mi è stato detto di non dare il denaro a nessuno tranne che al Re o la Regina."
+				Return false
+			End_If
+		Else
+			Print "Non c'è nulla da riscuotere, per ora"
+			Return false
+		End_If
+		Return
+	End_If
+	If $AGENT.container = bar
+		If jukebox.contents > 0
+			If getContainedType($AGENT,"crown") <> null
+				Call giveMoney($AGENT,jukebox.contents)
+				jukebox.contents = 0
+			Else
+				Return false
+			End_If
+		Else
+			Print "E' vuoto, per ora."
+			Return false
+		End_If
+		Return
+	End_If
+END_Event
+
+' Makes a new King or Queen
+' input: person who will become king
+' force=true will force creation of crown
+Sub NewKing(person,force)
+	If person = null
+		person = Start
+	Else
+		If person.name <> prevking
+			PlaySound $WORLD,"fanfare.wav"
+			Dim phrase = "un nuovo Re"
+			If person.gender = "F"
+				phrase = "una nuova <FONT COLOR=PINK><B>Regina</B></FONT>"
+			End_If
+			Dim pname = person.name
+			Dim link = gameinfo("site")
+			If IsPlayer(person)
+				link = UserCard(pname)
+				Journal pname&" governa sul Regno!",link,"C'è "&phrase&" a Sottomondo:\n"&UserCardLink(person.name)&"!","news*regno*utente:"&pname
+				pname = UserCardLink(pname)
+			End_If
+			Speak SYS,$WORLD,"Abbiamo " + phrase + ": "+pname+"!!!"
+			confidence=10
+			person.kingdays = 0
+			If person.scoretype <> scoretype
+				person.Score = 0
+				person.scoretype = scoretype
+			End_If
+		End_If
+	End_If
+	If Not(crowncreated) Or force=true
+		' First clean crown
+		Dim crown = getContainedType($WORLD,"crown")
+		If crown <> null
+			Kill crown
+		End_If
+		Call BroadcastOtherWorlds("kill_crown",null)
+		' make new crown
+		Dim crown = NewItem(person,"corona","Chi possiede questa corona può governare il Regno.",NewImage("crown.gif",40,40),"type=crown,pickable,showmode=2,icon=crown.gif")
+		AttachEvent crown,"whenPicked","crown_whenPicked"
+		If SetLen(getPeopleName($WORLD,"Morubar")) < 1
+			morubar = NewCharacter(seat,"Morubar","E' il tesoriere del re.",NewImage("morubar.gif",39,100),"type=0,nohands,accepts=*")
+			AttachEvent morubar,"onHear","morubar_onHear"
+			AttachEvent morubar,"onLook","morubar_onLook"
+			AttachEvent morubar,"onReceiveItem","morubar_onReceiveItem"
+		End_If
+		richness=0
+		crowncreated=true
+	End_If
+	prevking = person.name
+	Call updFrontpageText()
+End_Sub
+
+Sub infect_SpecialCase
+	If Exists(asia) And infected = asia And infectype <> 16
+		'Special case
+		infected.type = 14
+		infected.Classe = "Sposa Vampira"
+		infected.yell = "roar2.wav"
+		infected.image = NewImage("vampirebride.gif",93,100)
+		Speak asia,infector,"Amore mio, ora staremo insieme per sempre!!"
+		Goal infector.name + " ha trasformato la principessa in una vampira."
+		If Not(crowncreated)
+			Call NewKing(infector,false)
+		End_If
+		infected = null
+		infector = null
+	End_If
+End_Sub
+
+'updates front page text
+Sub updFrontpageText()
+	If mode=1
+		leftHours = Int((maxTicks-kingTicks)/120)
+		leftMins = Int((maxTicks-kingTicks)/2 - leftHours*60)
+		frontpagetext = "" + leftHours + " ore, " + leftMins + " minuti rimasti prima della caduta del Regno"
+		If calcMonstersLeft() > 0
+			frontpagetext = frontpagetext + " - almeno " + calcMonstersLeft() + " mostri infestano il castello."
+		End_If
+	End_If
+	If mode=2
+		leftHours = Int(kingTicks/120)
+		'leftMins = Int(kingTicks/2 - kingHours*60)
+		Dim crown = getContainedType($WORLD,"crown")
+		Dim tmp
+		If IsCharacter(crown.container)
+			Dim pname = crown.container.name
+			If IsPlayer(crown.container)
+				pname = UserCardLink(pname)
+			End_If
+			If crown.container.type < 10
+				If crown.container.gender = "F"
+					tmp = "La <FONT COLOR=PINK><b>Regina</b></FONT> è " + pname + "."
+				Else
+					tmp = "Il <b>re</b> è " + pname + "."
+				End_If
+				humansPts = humansPts+1
+			Else
+				tmp = "La corona è stata rubata da " + pname + "."
+				monstersPts = monstersPts+1
+			End_If
+		Else
+			tmp = "La corona è stata smarrita."
+		End_If
+		If humansPts > monstersPts
+			tmp=tmp + " Gli umani hanno governato " + Int(100*humansPts/(humansPts+monstersPts+1)) + " % del tempo"
+		Else
+			tmp=tmp + " I mostri hanno governato " + Int(100*monstersPts/(humansPts+monstersPts+1)) + " % del tempo"
+		End_If
+		frontpagetext = "Il Nuovo Regno esiste da " + leftHours + " giorni. " + tmp
+	End_If
+End_Sub
+
+Sub livePopulation(king)
+	Dim villains = getPeopleName($WORLD,"un popolano")
+	'Print king,"Popolani: " + villains
+	Dim existing = SetLen(villains)
+	Dim pop = Round(population / 10,0)
+	Dim diff = pop - existing
+	'Print king,"I popolani in giro dovrebbero essere: " + pop + " ce ne sono: " + existing + " ora entrano: " + diff
+	If diff > 0
+		Dim i
+		Dim attrs
+		Dim place
+		Dim im
+		For i = 1 To diff
+			place = RndSet(setAll)
+			If debugtype=2
+				place = gateroom
+			End_If
+			If king.type < 10 Or debugtype=2
+				attrs = "type=7,gender=M,Classe=Popolano,Forza=2,pacific,balanceignore,accepts=*"
+				im = NewImage("paesant1.gif",37,96)
+			Else
+				attrs = "type=18,gender=M,Classe=Popolano,Forza=2,balanceignore,accepts=*"
+				im = NewImage("zombie.gif",74,96)
+			End_If
+			Dim new = NewCharacter(place,"un popolano","",im,attrs)
+			If new.type=7
+				new.image("S") = NewImage("paesant1b.gif",37,96)
+			End_If
+			Print king,"Un popolano si trova: " + place.name
+		Next
+	End_If
+End_Sub
+
+Sub SaveContext()
+	saveSetting "ctx_kingTicks",kingTicks
+	saveSetting "ctx_guildkills",guildkills
+	saveSetting "ctx_guildavglvl",guildavglvl
+	If SetLen(garumir.accounts) > 0
+		saveSetting "ctx_accounts",garumir.accounts
+	Else
+		If SetLen(garumir.accounts) < 0
+			Debug "Error in current context - Restarting game" + getTime("dd/MM/yyyy HH:mm")
+			Reset
+		End_If
+	End_If
+End_Sub
+
+Sub LoadContext_Local()
+	If debugtype <> 1
+		mode = getSetting("ctx_mode",mode)
+		kingTicks = Int(getSetting("ctx_kingTicks",kingTicks))
+	End_If
+	If mode = 2
+		Kill asia
+		setAll("bedroom") = bedroom 'Add bedroom
+		Call NewKing(RndSet(getObjectsType($WORLD,11)),false)
+		Move key4, RndSet(setAll)
+		key4appeared = true
+		Move key1, RndSet(setAll)
+		Move key5, RndSet(setAll)
+		Move axe,armory
+		axe.seller = auron
+	End_If
+	garumir.accounts = getSetting("ctx_accounts","!set!")
+	Call MakeGuildIndex()
+	' Load playlist from database
+	Dim tracks = NewArray(getSetting("ctx_trackfiles","sndbackground08.mid|5.5,alchemist.mid|5.5"))
+	jukebox.trackfiles = NewArray()
+	jukebox.tracklen = NewArray()
+	Dim i
+	For i = 1 To SetLen(tracks)
+		Dim parts = Split(tracks(i),"|")
+		jukebox.trackfiles(i) = parts(1)
+		jukebox.tracklen(i) = parts(2)
+	Next
+	jukebox.tracklist = NewArray(getSetting("ctx_tracklist","Track 1,Track 2"))
+	
+	'Journal "Riavvio",gameInfo("site"),"Il gioco è stato riavviato."+Chr(13)+"Potete collegarvi nuovamente.","news"
+End_Sub
+
+Sub onKillRobot_local(loser,winner)
+	If loser = asia
+		Call diePrincess()
+	End_If
+	Dim tmp = winner.name + " ha " + RndSet(arrVerbs) + Concordate(SYS) +" " + loser.name
+	If mode=1
+		Dim x = calcMonstersLeft()
+		If x > 0
+			tmp = tmp + "Rimangono " + x + " mostri."
+		End_If
+	End_If
+	If mode=2
+		If loser.name = "un popolano"
+			population = population - 1
+			If population < 0
+				population = 0
+			End_If
+		End_If
+	End_If
+	If SetLen(getPlayersIn($WORLD)) < 4
+		Speak SYS,$WORLD,tmp
+	End_If
+End_Sub
+
+Sub insurrection(king)
+	Speak SYS,$WORLD,king.name + " viene linciat"+Concordate(king)+" dalla folla inferocita!"
+	Dim villains = getPeopleName($WORLD,"un popolano")
+	For Each v in villains
+		Move v,king.container
+	Next
+	king.killer = v
+	Kill king
+End_Sub
+
+Function guildroom_description
+	Dim txt="Questa è la stanza del capitano delle guardie. Lui conosce tutte le gilde."
+	txt = txt + "<SPAN STYLE=" + Chr(34) + "float:right;padding:10;font-size:10px;" + Chr(34) + "><A HREF="+Chr(34)+gameInfo("site")+"/gilde/"+Chr(34)+" TARGET=" + Chr(34) + "_blank" + Chr(34) + ">" + NewImage("panhelp.gif",16,16).html("Spiega",$AGENT) + "Spiega</A></SPAN>"
+	txt = txt + "<UL>"
+	Dim i
+	Dim owner
+	For i = 1 To SetLen(guildindex)
+		owner = guildindex(i)
+		If guildnames(owner) = ""
+			SetRemove guildkills,owner
+		Else
+			Dim wmembers = 1+4 ' members and enemies
+			If LCase(owner) = LCase($AGENT.name) Or $AGENT.master Or GuildHasDelegate(owner,$AGENT.name)
+				wmembers = wmembers+2 ' Show wanna-be members too
+			End_If
+			txt = txt + "<li>" + getGuildBox(owner,wmembers) + Chr(13)
+		End_If
+	Next
+	txt = txt + "<P><IMG SRC=https://www.dimensionex.net/pics/icoPaper.gif WIDTH=16 HEIGHT=16> <A TARGET=_new HREF=https://www.sottomondo.org/gilde/>Elenco delle Gilde</A>"
+	txt = txt + "</UL>"
+	txt = txt + PanelHtml("pguilds")
+	Return txt
+End_Function
+
+Function doGuildOperation(input)
+	'Speak guildOps(input("guildOp"))
+	Dim changes = false
+	Dim tmp = $AGENT.name
+	Dim guildowner = input("guildsel")
+	Dim persname = input("txtBox")
+	Dim cmd = input("guildOp")
+	If Int(tmp) > 0
+		tmp = "_" + tmp ' fix for number nicks
+	End_If
+	If cmd = "0new"
+		If input("txtBox") <> ""
+			If guildnames(tmp) <> null
+				Speak guilford,$AGENT,"Avete già fondato una gilda, messere."
+				Return
+			End_If
+			If $AGENT.Livello < 3
+				Speak guilford,$AGENT,"Per fondare una gilda dovete avere almeno Livello 3."
+				Return
+			End_If
+			Dim s = guildSubscribed($AGENT)
+			If s <> null
+				Speak guilford,$AGENT,"Dovete lasciare " + guildnames(s) + ", prima."
+				Return
+			End_If
+			guildnames(tmp) = input("txtBox")
+			guildwebs(tmp) = urlGuilds + "/" + input("txtBox")
+			guildsubscribers(tmp) = ""
+			guildrequests(tmp) = ""
+			guilddelegates(tmp) = ""
+			guildfounded(tmp) = getTime("dd/MM/yyyy")
+			guildkills(tmp) = getKillTotal($AGENT)
+			Call MakeGuildIndex()
+			Speak guilford,$AGENT,"La gilda " + guildnames(tmp) + " è stata fondata."
+			Journal $AGENT.name&" ha fondato una gilda",UserCard($AGENT.name),UserCardLink($AGENT.name)&" ha appena fondato la gilda: <b>"&persname&"</b>!","news*utente:"&$AGENT.name&"*gilda:"&persname
+			changes = true
+		Else
+			Speak guilford,$AGENT,"Come si chiamerà? Scrivetelo, messere."
+			Return
+		End_If
+	End_If
+	If cmd = "8del"
+		If guildnames(tmp) = null And Not($AGENT.master)
+			Speak guilford,$AGENT,"Non siete a capo di alcuna gilda, signore."
+			Return
+		End_If
+		If $AGENT.master ' Choose from dropdown
+			tmp = input("guildsel")
+		End_If
+		If war_engaged(tmp)
+			Speak guilford,$AGENT,"Questa gilda è impegnata in un conflitto."
+			Return
+		End_If
+		If input("txtBox") <> "SI"
+			Speak guilford,$AGENT,"Cancellare: " + guildnames(tmp) + " Siete sicuro? Scrivete SI e ripetete l'ordine."
+		Else
+			Speak guilford,$AGENT,"La gilda " + guildnames(tmp) + " non ci sarà più "
+			SetRemove guildnames,tmp
+			SetRemove guildlogos,tmp
+			SetRemove guildwebs,tmp
+			SetRemove guildfounded,tmp
+			SetRemove guildkills,tmp
+			SetRemove guildsubscribers,tmp
+			SetRemove guildrequests,tmp
+			changes = true
+		End_If
+	End_If
+	If cmd = "1edt_logo"
+		If guildnames(tmp) = null And Not($AGENT.master Or GuildHasDelegate(guildSubscribed($AGENT),tmp))
+			Speak guilford,$AGENT,msgNOCHIEF
+			Return
+		End_If
+		If $AGENT.master ' Choose from dropdown
+			tmp = input("guildsel")
+		End_If
+		If input("txtBox") = ""
+			Speak guilford,$AGENT,"Scrivete l'URL del logo e ripetete l'ordine."
+		Else
+			Speak guilford,$AGENT,"Ok, nuovo logo per la vostra gilda!"
+			guildlogos(tmp) = input("txtBox")
+			changes = true
+		End_If
+	End_If
+	If cmd = "2edt_web"
+		If guildnames(tmp) = null And Not($AGENT.master Or GuildHasDelegate(guildSubscribed($AGENT),tmp))
+			Speak guilford,$AGENT,msgNOCHIEF
+			Return
+		End_If
+		If $AGENT.master ' Choose from dropdown
+			tmp = input("guildsel")
+		End_If
+		If input("txtBox") = ""
+			Speak guilford,$AGENT,"Scrivete l'URL della pagina e ripetete l'ordine."
+		Else
+			Speak guilford,$AGENT,"Ok, " + $AGENT.name + ". Fate che quella pagina spieghi con chiarezza la missione della gilda."
+			guildwebs(tmp) = input("txtBox")
+			changes = true
+		End_If
+	End_If
+	If cmd = "4info"
+		If guildnames(tmp) = null And Not($AGENT.master Or GuildHasDelegate(guildSubscribed($AGENT),tmp))
+			Speak guilford,$AGENT,msgNOCHIEF
+			Return
+		End_If
+		If persname = ""
+			Speak guilford,$AGENT,"Scrivete il nome della persona e ripetete l'ordine."
+		Else
+			If InStr(guildsubscribers(tmp),persname+";",1) Or InStr(guildrequests(tmp),persname+";",1) Or $AGENT.master
+				Speak guilford,$AGENT,getPeopleInfo(persname,false)
+			Else
+				Speak guilford,$AGENT,"-" + persname + "- non è un membro della vostra gilda, signore."
+			End_If
+		End_If
+	End_If
+	If cmd = "5appr"
+		If guildnames(tmp) = null And Not($AGENT.master Or GuildHasDelegate(guildSubscribed($AGENT),tmp))
+			Speak guilford,$AGENT,msgNOCHIEF
+			Return
+		End_If
+		If guildnames(tmp) = null And $AGENT.master
+			tmp = input("guildsel")
+		End_If
+		If guildnames(tmp) = null And GuildHasDelegate(guildSubscribed($AGENT),tmp)
+			tmp = guildSubscribed($AGENT)
+		End_If
+		If war_engaged(tmp)
+			Speak guilford,$AGENT,"Questa gilda è impegnata in un conflitto."
+			Return
+		End_If
+		If guildmoney(tmp) < guildmemberprice*getGuildCount(tmp)
+			Speak guilford,$AGENT,"Per ammettere un nuovo membro servono altre ricchezze come garanzia: "+(getGuildCount(tmp)*guildmemberprice-guildmoney(tmp))+" monete"
+			Return
+		End_If
+		If persname = ""
+			Speak guilford,$AGENT,"Scrivete il nome della persona e ripetete l'ordine."
+		Else
+			If Not(InStr(guildrequests(tmp),persname+";"))
+				Speak guilford,$AGENT,"-" + persname + "- non ha fatto richiesta per la vostra gilda, signore."
+			Else
+				guildsubscribers(tmp) = "" + guildsubscribers(tmp) + persname + ";"
+				Call ClearGuildRequests(persname)
+				Speak guilford,$AGENT,"Ora " + persname + " appartiene alla " + guildnames(tmp)
+				link = UserCard(persname)
+				Journal persname&" è entrato in una gilda",link,UserCardLink(persname)&" è stato/a ammesso/a nella gilda: <a target=_blank href="&Chr(34)&guildwebs(tmp)&Chr(34)&">"&guildnames(tmp)&"</a>!","news*utente:"&persname&"*gilda:"&guildnames(tmp)
+				changes = true
+			End_If
+		End_If
+	End_If
+	If cmd = "5ban"
+		If guildnames(tmp) = null And Not($AGENT.master Or GuildHasDelegate(guildSubscribed($AGENT),tmp))
+			Speak guilford,$AGENT,msgNOCHIEF
+			Return
+		End_If
+		If $AGENT.master
+			tmp = input("guildsel")
+		End_If
+		If guildnames(tmp) = null And GuildHasDelegate(guildSubscribed($AGENT),tmp)
+			tmp = guildSubscribed($AGENT)
+		End_If
+		If war_engaged(tmp)
+			Speak guilford,$AGENT,"Questa gilda è impegnata in un conflitto."
+			Return
+		End_If
+		If input("txtBox") = ""
+			Speak guilford,$AGENT,"Scrivete il nome della persona e ripetete l'ordine."
+		Else
+			If Not(GuildUnsubscribe2(tmp,persname))
+				Speak guilford,$AGENT,"-" + persname + "- non è un membro della vostra gilda, né ha fatto richiesta."
+			Else
+				Speak guilford,$AGENT,"Fatto, signore."
+				changes = true
+			End_If
+		End_If
+	End_If
+	If cmd = "5purge"
+		If guildnames(tmp) = null And Not($AGENT.master)
+			Speak guilford,$AGENT,"Non possedete alcuna gilda, signore."
+			Return
+		End_If
+		If $AGENT.master
+			tmp = input("guildsel")
+		End_If
+		If war_engaged(tmp)
+			Speak guilford,$AGENT,"Questa gilda è impegnata in un conflitto."
+			Return
+		End_If
+		Dim s,w
+		For Each s In Split(guildsubscribers(tmp),";")
+			w = getSetting(CookName(s) + "_when","")
+			If w = ""
+				Print "Eliminazione di " + s + getSetting(CookName(s) + "_properties","")
+				Call GuildUnsubscribe2(tmp,s)
+				changes = true
+			End_If
+		Next
+	End_If
+	If cmd = "3fund"
+		If guildnames(tmp) = null And Not($AGENT.master Or GuildHasDelegate(guildSubscribed($AGENT),tmp))
+			Speak guilford,$AGENT,msgNOCHIEF
+			Return
+		End_If
+		tmp = input("guildsel")
+		Dim value = Int(input("txtBox"))
+		If value <= 0
+			Speak guilford,$AGENT,"Scrivete quanto volete dare alla gilda: "+guildnames(tmp)
+			Return
+		End_If
+		If getMoneyFrom($AGENT,value)
+			guildmoney(tmp) = value+guildmoney(tmp)
+			Speak guilford,$AGENT,"Fatto: "+value+" monete versate alla gilda: "+guildnames(tmp)
+			changes = true
+		Else
+			Speak guilford,$AGENT,"Non possedete quel denaro."
+		End_If
+	End_If
+	If cmd = "8type"
+		If guildnames(tmp) = null And Not($AGENT.master Or GuildHasDelegate(guildSubscribed($AGENT),tmp))
+			Speak guilford,$AGENT,msgNOCHIEF
+			Return
+		End_If
+		If $AGENT.master
+			tmp = input("guildsel")
+		Else
+			tmp = guildSubscribed($AGENT)
+		End_If
+		If war_engaged(tmp)
+			Speak guilford,$AGENT,"Questa gilda è impegnata in un conflitto."
+			Return
+		End_If
+		If guildmoney(tmp) >= 5000
+			guildmoney(tmp) = guildmoney(tmp)-5000
+			If guildtypes(tmp) = "p"
+				SetRemove guildtypes,tmp
+			Else
+				guildtypes(tmp)="p"
+			End_If
+			Speak guilford,$AGENT,"Fatto."
+			changes = true
+		Else
+			Speak guilford,$AGENT,"Occorrono 5000 monete in conto gilda per cambiare tipologia."
+		End_If
+	End_If
+	If cmd = "join"
+		If guildnames(tmp) <> null
+			Speak guilford,$AGENT,"Non potete entrare in una gilda se ne guidate una."
+		Else
+			If Not(ProfileExists($AGENT.name))
+				Speak guilford,$AGENT,"Prima dovete fare clic su [SALVA] per salvare la vostra situazione."
+				Return
+			End_If
+			Dim s = guildSubscribed($AGENT)
+			If s <> null
+				Speak guilford,$AGENT,"Dovete lasciare " + guildnames(s) + ", prima."
+				Return
+			End_If
+			If $AGENT.guildrequest <> null And InStr(guildrequests(guildowner),$AGENT.name+";")
+				Speak guilford,$AGENT,"Richiesta già registrata."
+				Return
+			End_If
+			If tournament=2
+				Speak guilford,$AGENT,"Non è possibile durante il torneo."
+				Return
+			End_If
+			Call ClearGuildRequests($AGENT.name)
+			guildrequests(guildowner) = guildrequests(guildowner) + $AGENT.name + ";"
+			$AGENT.guildrequest = guildowner
+			Speak guilford,$AGENT,"La vostra richiesta per la " + guildnames(input("guildsel")) + " deve ora essere approvata da " + guildowner
+			Journal "Richiesta di adesione",guildwebs(guildowner),UserCardLink($AGENT.name)&" chiede di entrare nella gilda: <a target=_blank href="&Chr(34)&guildwebs(guildowner)&Chr(34)&">"&guildnames(guildowner)&"</a>!","news*utente:"&$AGENT.name&"*gilda:"&guildnames(guildowner)
+			changes = true
+		End_If
+	End_If
+	If cmd = "leave"
+		Dim s = guildSubscribed($AGENT)
+		If s = null
+			Speak guilford,$AGENT,"Non appartenete ad alcuna gilda, signore."
+			Return
+		End_If
+		If war_engaged(tmp)
+			Speak guilford,$AGENT,"Questa gilda è impegnata in un conflitto."
+			Return
+		End_If
+		If tournament=2
+			Speak guilford,$AGENT,"Non è possibile durante il torneo."
+			Return
+		End_If
+		If LCase(tmp) = LCase(s)
+			Speak guilford,$AGENT,"La gilda a cui appartenete è vostra, forse la volete <B>eliminare</B>."
+			Return
+		Else
+			Speak guilford,$AGENT,GuildUnsubscribe(s,$AGENT)
+			$AGENT.guild = null
+			changes = true
+		End_If
+	End_If
+	If cmd = "6status"
+		If Not($AGENT.master)
+			guildowner = $AGENT.guild
+		End_If
+		changes = doGuildStatus(guildowner,$AGENT,guilford)
+	End_If
+	If cmd = "7delegate"
+		If guildnames(tmp) = null And Not($AGENT.master)
+			Speak guilford,$AGENT,"Non possedete alcuna gilda, signore."
+			Return
+		End_If
+		If $AGENT.master
+			tmp = input("guildsel")
+		End_If
+		If persname = ""
+			Speak guilford,$AGENT,"Scrivete il nome della persona e ripetete l'ordine."
+		Else
+			If Not(GuildDelegate(tmp,persname))
+				Speak guilford,$AGENT,"Non è possibile delegare a -" + persname + "-"
+			Else
+				Speak guilford,$AGENT,"Fatto, signore."
+				changes = true
+			End_If
+		End_If
+	End_If
+	If cmd = "8deldele"
+		If guildnames(tmp) = null And Not($AGENT.master)
+			Speak guilford,$AGENT,"Non possedete alcuna gilda, signore."
+			Return
+		End_If
+		If $AGENT.master
+			tmp = input("guildsel")
+		End_If
+		If input("txtBox") = ""
+			Speak guilford,$AGENT,"Scrivete il nome del delegato e ripetete l'ordine."
+		Else
+			If Not(GuildUndelegate(tmp,persname))
+				Speak guilford,$AGENT,"-" + persname + "- non è un delegato della gilda."
+			Else
+				Speak guilford,$AGENT,"Fatto, signore."
+				changes = true
+			End_If
+		End_If
+	End_If
+	If Not(changes)
+		Return
+	End_If
+	saveSetting "ctx_guildnames",guildnames
+	saveSetting "ctx_guildlogos",guildlogos
+	saveSetting "ctx_guildsubscribers",guildsubscribers
+	saveSetting "ctx_guildrequests",guildrequests
+	saveSetting "ctx_guildwebs",guildwebs
+	saveSetting "ctx_guildfounded",guildfounded
+	saveSetting "ctx_guildkills",guildkills
+	saveSetting "ctx_guildmoney",guildmoney
+	saveSetting "ctx_guilddelegates",guilddelegates
+	saveSetting "ctx_guildtypes",guildtypes
+	Dim new = NewItem(null,"msg",null,null,"type=msg,cmd=guilds_update")
+	new.guildnames = guildnames
+	new.guildlogos = guildlogos
+	new.guildsubscribers = guildsubscribers
+	new.guildmoney = guildmoney
+	new.guildtypes = guildtypes
+	MoveOutside new,"Sottomondo2"
+	Dim new = NewItem(null,"msg",null,null,"type=msg,cmd=guilds_update")
+	new.guildnames = guildnames
+	new.guildlogos = guildlogos
+	new.guildsubscribers = guildsubscribers
+	new.guildmoney = guildmoney
+	new.guildtypes = guildtypes
+	MoveOutside new,"Sottomondo3"
+	If uw4up
+		Dim new = NewItem(null,"msg",null,null,"type=msg,cmd=guilds_update")
+		new.guildnames = guildnames
+		new.guildlogos = guildlogos
+		new.guildsubscribers = guildsubscribers
+		new.guildmoney = guildmoney
+		new.guildtypes = guildtypes
+		MoveOutside new,"Underworld4"
+	End_If
+END_Function
+
+Function doWarOperation(input)
+	'Speak guildOps(input("warop"))
+	Dim changes = false
+	Dim agentname = $AGENT.name
+	Dim myguild = guildSubscribed($AGENT)
+	Dim guildowner = input("guildsel")
+	Dim txtbox = input("txtBox")
+	Dim cmd = input("warop")
+	If Int(agentname) > 0
+		agentname = "_" + agentname ' fix for number nicks
+	End_If
+	If cmd = "1wardecl"
+		If GuildPacific(myguild)
+			Speak SYS,$AGENT,"Una gilda pacifica non dichiara guerre."
+			Return
+		End_If
+		If getGuildCount(myguild) < 3
+			Speak SYS,$AGENT,"La vostra gilda deve avere almeno "&getGuildCount(myguild)&" membri."
+			Return
+		End_If
+		If guildnames(agentname) = null And Not(GuildHasDelegate(myguild,agentname))
+			Speak SYS,$AGENT,msgNOCHIEF
+			Return
+		End_If
+		If war_engaged(myguild)
+			Speak SYS,$AGENT,"La vostra gilda è già impegnata in un conflitto."
+			Return
+		End_If
+		If war_engaged(guildowner)
+			Speak SYS,$AGENT,"La gilda "+guildnames(guildowner)+" è già impegnata in un conflitto."
+			Return
+		End_If
+		If guildowner = myguild
+			Speak SYS,$AGENT,"Non potete combattere contro voi stessi..."
+			Return
+		End_If
+		If guildmoney(myguild) >= guildwar_cost
+			guildmoney(myguild) = guildmoney(myguild)-guildwar_cost
+		Else
+			Speak SYS,$AGENT,"Occorrono "+guildwar_cost+" monete in conto gilda per dichiarare una guerra!"
+		End_If
+		Dim w = war_enqueue(myguild,guildowner,guildwar_duration)
+		Speak SYS,$AGENT,"E guerra sia!"
+		If war_possiblynotify(w)
+			Speak SYS,$AGENT,"Notifica inviata!"
+		End_If
+		changes = true
+	End_If
+	If cmd = "2warcancel"
+		If Not($AGENT.master)
+			Speak SYS,$AGENT,"Solo un master può annullare una guerra in corso."
+			Return
+		End_If
+		If AreInWar(myguild,guildowner)
+			SetRemove guildwars,myguild+"*"+guildowner
+			SetRemove guildwars,guildowner+"*"+myguild
+			Speak SYS,$AGENT,"Fatto."
+			changes = true
+		Else
+			If SetContainsKey(guildwarsqueue,myguild+"*"+guildowner) Or SetContainsKey(guildwarsqueue,guildowner+"*"+myguild)
+				SetRemove guildwarsqueue,myguild+"*"+guildowner
+				SetRemove guildwarsqueue,guildowner+"*"+myguild
+				Speak SYS,$AGENT,"Fatto."
+				changes = true
+			Else
+				Speak SYS,$AGENT,"Non siete in guerra con: " + guildnames(guildowner)
+			End_If
+		End_If
+	End_If
+	If cmd = "6guildstatus"
+		If $AGENT.master And myguild=null
+			myguild = guildowner
+		End_If
+		changes = doGuildStatus(myguild,$AGENT,SYS)
+	End_If
+	If cmd = "del"
+		'Print "DELLL " & input("war")
+		SetRemove pastwars,input("war")
+		saveSetting "ctx_pastwars",pastwars
+	End_If
+	If Not(changes)
+		Return
+	End_If
+	saveSetting "ctx_guildwars",guildwars
+	saveSetting "ctx_guildwarsqueue",guildwarsqueue
+END_Function
+
+Function warroom_description
+	Dim txt = "<SPAN STYLE=" + Chr(34) + "float:right;padding:10;font-size:10px;" + Chr(34) + "><A HREF=" + Chr(34) + gameInfo("site") + "?page_id=32" + Chr(34) + " TARGET=" + Chr(34) + "_blank" + Chr(34) + ">" + NewImage("panhelp.gif",16,16).html("Spiega",$AGENT) + "Spiega</A></SPAN>"
+	txt = txt + "<h3>Guerre in corso</h3><UL>"
+	If SetLen(guildwars) > 0
+		Dim war
+		For Each war In SetKeys(guildwars)
+			Dim owners = Split(war,"*")
+			'txt = txt + "<li>" + war + ":" + guildwars(war)
+			If guildnames(owners(1)) <> "" And guildnames(owners(2)) <> ""
+				txt = txt + "<LI><B>" + guildnames(owners(1)) + "</B> contro <B>" + guildnames(owners(2)) + "</B>"
+				Dim data = war_data(war)
+				txt = txt + data("comm")
+				txt = txt + "<BR><b>Iniziata il</b>: " + FormatTs(data("timestamp"))
+				txt = txt + "<BR><b>Terminerà il</b>: " + FormatTs(data("finishes"))
+				txt = txt + "<BR><b>Inizialmente</b>: " + data("kills12") + " - " + data("kills21")
+				txt = txt + "<BR><b>Attualmente</b>: " + Int(guildmutualkills(owners(1)+"*"+owners(2))) + " - " + Int(guildmutualkills(owners(2)+"*"+owners(1)))
+				Dim var1 = guildmutualkills(owners(1)+"*"+owners(2))-data("kills12")
+				Dim var2 = guildmutualkills(owners(2)+"*"+owners(1))-data("kills21")
+				txt = txt + "<BR><b>Variazione per "+guildnames(owners(1))+"</b>: " + proportion_guild_kills(var1,owners(1))+" pro capite"
+				txt = txt + "<BR><b>Variazione per "+guildnames(owners(2))+"</b>: " + proportion_guild_kills(var2,owners(2))+" pro capite"
+				txt = txt + "<BR><b>Situazione</b>: " + WarComment(data,owners(1),owners(2),false)
+			Else
+				Debug "ERROR - No more existing fighting Guilds : " + war
+			End_If
+		Next
+	Else
+		txt = txt + "<p>Attualmente non ci sono guerre in corso nel nostro Regno."
+	End_If
+	txt = txt + "</UL>"
+
+	txt = txt + "<h3>Guerre in preparazione</h3><UL>"
+	If SetLen(guildwarsqueue) > 0
+		Dim war
+		For Each war In SetKeys(guildwarsqueue)
+			Dim owners = Split(war,"*")
+			'txt = txt + "<li>" + war + ":" + guildwarsqueue(war)
+			If guildnames(owners(1)) <> "" And guildnames(owners(2)) <> ""
+				txt = txt + "<LI><B>" + guildnames(owners(1)) + "</B> contro <B>" + guildnames(owners(2)) + "</B>"
+				Dim data = war_queue_data(war)
+				If data("starting") <> null
+					txt = txt + "<BR><b>Inizierà il</b>: " + FormatTs(data("starting"))
+					If data("notified") <> null
+						txt = txt + "<BR><b>Notificata il</b>: " + FormatTs(data("notified"))
+					End_If
+				End_If
+				txt = txt + "<BR><b>Dichiarata il</b>: " + FormatTs(data("timestamp"))
+				txt = txt + "<BR><b>Durerà</b>: " + FormatTimeInterval(data("duration"))
+			Else
+				Debug "ERROR - No more existing fighting Guilds : " + war
+			End_If
+		Next
+	Else
+		txt = txt + "<p>Attualmente non ci sono guerre in preparazione."
+	End_If
+	txt = txt + "</UL>"
+
+	txt = txt + war_indications()
+
+	txt = txt + "<p><h3>Guerre passate</h3><UL>"
+	If SetLen(pastwars) > 0
+		Dim war
+		For Each war In SetKeys(pastwars)
+			txt = txt + "<LI>" + war + " - " + pastwars(war)
+			If ($AGENT.master)
+				txt = txt + "<input type=button onClick="+Chr(34)+"javascript:document.location.href='"+gameinfo("navigator")+"?view=scene&cmd=dothis&warop=del&war="&Urlencode(war)&"'"+Chr(34)+" value="+Chr(34)+"Cancella"+Chr(34)+"><br>"
+			End_If
+			txt = txt & "</li>" & Chr(13)
+		Next
+	Else
+		txt = txt + "<p>Nessuna guerra è mai terminata finora."
+	End_If
+	txt = txt + "</UL>"
+
+	txt = txt + PanelHtml("pwar")
+
+	txt = txt + "<br /><IMG SRC=https://www.dimensionex.net/pics/icoPaper.gif WIDTH=16 HEIGHT=16> <A TARGET=_new HREF="+urlGuilds+">Elenco delle Gilde</A>"
+
+	Return txt
+END_Function
+
+' Unsubscribes a person from the guild owned by the
+' specified guildowner.
+' Returns a message to be diplayed to the user
+Function GuildUnsubscribe(guildowner,person)
+	If GuildUnsubscribe2(guildowner,person.name)
+		Return "Avete lasciato " + guildnames(guildowner)
+	Else
+		Return "Non appartenete a questa gilda."
+	End_If
+End_Function
+
+' Unsubscribes a person from the guild owned by the
+' specified guildowner.
+' Returns a message to be diplayed to the user
+Function GuildUnsubscribe2(guildowner,personname)
+	If InStr(guildsubscribers(guildowner),personname+";") Or InStr(guildrequests(guildowner),personname+";")
+		guildsubscribers(guildowner) = Replace(guildsubscribers(guildowner),personname + ";","")
+		guilddelegates(guildowner) = Replace(guilddelegates(guildowner),personname + ";","")
+		guildrequests(guildowner) = Replace(guildrequests(guildowner),personname+";","")
+		Return True
+	End_If
+	Return False
+End_Function
+
+' Delegates chief powers on a person
+' for the guild owned by the specified guildowner.
+' Returns TRUE or FALSE
+Function GuildDelegate(guildowner,personname)
+	If InStr(guildsubscribers(guildowner),personname+";") > 0 And Not(GuildHasDelegate(guildowner,personname))
+		guilddelegates(guildowner) = "" + guilddelegates(guildowner)+personname + ";"
+		Return True
+	End_If
+	Return False
+End_Function
+
+' UN-delegates chief powers on a person
+' for the guild owned by the specified guildowner.
+' Returns a message to be displayed to the user
+Function GuildUndelegate(guildowner,personname)
+	If GuildHasDelegate(guildowner,personname)
+		guilddelegates(guildowner) = Replace(guilddelegates(guildowner),personname + ";","")
+		Return True
+	End_If
+	Return False
+End_Function
+
+Sub popMonster_Local(new)
+	If mode=1
+		' Appearence of Bronze Key
+		If mkilled >= (targkilled * 0.20) And key5.container=null
+			Move key5, new
+		End_If
+		' Appearence of Copper Key
+		If mkilled >= (targkilled * 0.60) And key1.container=null
+			Move key1, new
+		End_If
+	End_If
+End_Sub
+
+Sub ClearGuildRequests(persname)
+	Dim tmp
+	For Each tmp in SetKeys(guildrequests)
+		guildrequests(tmp) = Replace(guildrequests(tmp),persname+";","")
+	Next
+End_Sub
+
+Function bank_description()
+	Dim txt="Questa è la stanza di Garumir.<br />"
+	txt=txt+PanelHtml("pbank")
+	If $AGENT.master
+		txt = txt + "<UL>"
+		Dim i
+		Dim owner
+		Dim sum = 0
+		Dim removals = NewSet()
+		For i = 1 To SetLen(garumir.accounts)
+			owner = SetKey(garumir.accounts,i)
+			If garumir.accounts(owner) > 0
+				txt = txt + "<LI><B>" + owner + "</B>:" + garumir.accounts(owner)
+				sum = sum + garumir.accounts(owner)
+			'Else
+			'	removals(owner) = owner ' schedule removal
+			End_If
+		Next
+		'For Each owner In removals
+		'	SetRemove garumir.accounts,owner ' cleanup
+		'Next
+		txt = txt + "</UL>"
+		txt = txt + "Totale: " + sum
+		txt = txt + "<BR>Media: " + Int(sum/SetLen(garumir.accounts))
+	End_If
+	Return txt
+End_Function
+
+Sub bank_onReceiveSorted
+	If $AGENT.master
+		Dim txt=""
+		txt = txt + "<UL>"
+		Dim i
+		Dim owner
+		Dim sum = 0
+		Dim removals = NewSet()
+		Dim index = SetBuildIndex(garumir.accounts,">")
+		For i = 1 To SetLen(index)
+			owner = index(i)
+			If garumir.accounts(owner) > 0
+				txt = txt + "<LI><B>" + owner + "</B>:" + garumir.accounts(owner)
+				sum = sum + garumir.accounts(owner)
+			'Else
+			'	removals(owner) = owner ' schedule removal
+			End_If
+		Next
+		'For Each owner In removals
+		'	SetRemove garumir.accounts,owner ' cleanup
+		'Next
+		txt = txt + "</UL>"
+		txt = txt + "Totale: " + sum
+		txt = txt + "<BR>Media: " + Int(sum/SetLen(garumir.accounts))
+		Print $AGENT,txt
+	End_If
+END_Sub
+
+EVENT gateroom.onLoose
+	If $TARGET = c1
+		' Teleport comers from other areas to correct places
+		If IsPlayer($AGENT) And Not($AGENT.master) And $AGENT.Livello > 1
+		Print $AGENT,"Io non posso oltrepassare quel cancello. E' un'area riservata a chi ha Livello=1."
+			Return False
+		End_If
+		' User is exiting to Area 3
+		MoveOutside $AGENT,"Sottomondo3"
+		Return False
+	End_If
+End_EVENT
+
+EVENT lake.onLoose
+	If uw4up And $TARGET = wboat
+		Dim item = getContainedType($AGENT,"bottle.antidote")
+		' Teleport comers from other areas to correct places
+		If IsPlayer($AGENT) And Not($AGENT.master) And item = null
+			Print $AGENT,"Non posso attraversare il lago. Ho bisogno di un antidoto, questi luoghi sono infestate dai seprenti."
+			Return False
+		End_If
+		If item <> null
+			Call drinkPotion($AGENT,item)
+		End_If
+		' User is exiting to Area 4
+		MoveOutside $AGENT,"Underworld4"
+		Return False
+	End_If
+End_EVENT
+
+Sub getBranch(plant,person)
+	If plant.branches > 0
+		Print "Ne prenderò un rametto."
+		plant.branches = plant.branches-1
+		Call NewItem(person,"cymbidium","un rametto di Cymbidium Goeringii",NewImage("cymbidium.gif",100,100),"pickable,showmode=2,icon=cymbidium.gif")
+	Else
+		Print person,"C'è rimasto solo un rametto, meglio non martoriare oltre questa povera pianta."
+	End_If
+End_Sub
+
+' At each new game day...
+Sub onNewDay_Local()
+	If mode=2
+		Call updateKingdom("FULL")
+	End_If
+	merlin.asked = NewSet()
+	Call MakeGuildIndex()
+	Call saveContext()
+End_Sub
+
+' Builds guildindex for sorting, by removing non-existent
+' guilds, adding guilds with no kills
+Sub MakeGuildIndex()
+	If SetLen(guildavglvl) < 0
+		Debug "Error in current context: guildavglvl empty - Restarting game" + getTime("dd/MM/yyyy HH:mm")
+		Reset
+	End_If
+	Dim newgkset = NewSet()
+	For Each k In SetKeys(guildnames)
+		If SetContainsKey(guildavglvl,k)
+			newgkset(k) = guildavglvl(k)
+		Else
+			newgkset(k) = 0
+		End_If
+	Next
+	guildindex = SetBuildIndex(newgkset,">")
+End_Sub
+
+Function KingdomStats()
+	Dim tmp = ""
+	tmp = tmp + "<SPAN STYLE=" + Chr(34) + "float:right;padding:10;font-size:10px;" + Chr(34) + "><A HREF=" + Chr(34) + "https://www.sottomondo.org/?page_id=24" + Chr(34) + " TARGET=" + Chr(34) + "_blank" + Chr(34) + ">" + NewImage("panhelp.gif",16,16).html("Spiega") + "Spiega</A></SPAN>"
+	Dim king = null
+	Dim crown = getContainedType($WORLD,"crown")
+	If Exists(crown)
+		king = crown.container
+		If IsCharacter(king)
+			Dim kname = king.name
+			If IsPlayer(king)
+				kname = UserCardLink(kname)
+			End_If
+			tmp = tmp + "<b>"+msgKingQueen(king.gender)+" in carica</b>: "+kname
+			tmp = tmp + "<BR><b>Durata del regno</b>: " + king.kingdays + " giorni"
+		Else
+			tmp = tmp + "Nessuno attualmente governa al castello."
+		End_If
+	Else
+		tmp = tmp + "Nessuno attualmente governa al castello."
+	End_If
+	tmp = tmp + "<BR><b>Popolazione</b>: " + population + " popolani"
+	tmp = tmp + "<BR><b>Ricchezze</b>: " + richness + " monete"
+	tmp = tmp + "<BR>Per dar da mangiare a ogni nuovo popolano, il giorno del suo arrivo, sono necessarie: <b>3 monete</b>, poi si manterrà da solo."
+	tmp = tmp + "<BR><b>Tassa giornaliera</b>: " + taxes + " monete, a persona"
+	If king.type < 10
+		killfriend = hkilled
+		killenemy = mkilled
+	Else
+		killenemy = hkilled
+		killfriend = mkilled
+	End_If
+	tmp = tmp + "<BR><b>Rapporto uccisioni Nemici/Cittadini</b>: " + killenemy + ":" + killfriend
+	tmp = tmp + "<BR><b>Morti di fame</b>: " + starved + " (riferito a ieri)"
+	tmp = tmp + "<BR><b>Reputazione "+msgKingQueen(king.gender)+"</b>: " + confidence + " su 10"
+	If $AGENT=king
+		tmp = tmp + "<fieldset><legend>Comandi "+msgKingQueen(king.gender)+"</legend>"
+		tmp = tmp + PanelHtml("pthrone")
+		tmp = tmp + "</fieldset>"
+	End_If
+	Return tmp
+End_Function
+
+' Taxes current players
+' returns the gathered amount
+Function TaxPlayers(king,tax)
+	Dim p
+	Dim amount
+	Dim tot = 0
+	For Each p In getPlayersIn($WORLD)
+		amount = garumir.accounts(p.name)
+		If p<>king And amount > tax
+			garumir.accounts(p.name) = amount-tax
+			tot = tot + tax
+		End_If
+	Next
+	Return tot
+End_Function
+
+'Unexpected Events
+Sub unexpectedEvents_Local()
+	Dim n = RndInt(800)
+	Dim i
+	If n < 10
+		Dim monoset = NewSet()
+		Dim myroom = RndSet(monstersPopupSet)
+		monoset(myroom.id) = myroom
+		Speak SYS,$WORLD,"Invasione di mostri in " + monoset(1).name + "!!"
+		For i = 1 to 10
+			Call popMonster(avgPowerHumans,monoset)
+		Next
+		Return
+	End_If
+	If n < 14
+		Speak SYS,$WORLD,"I popolani sono stati avvelenati!!"
+		Dim villains = getPeopleName($WORLD,"un popolano")
+		For Each i In villains
+			i.Salute = -10
+		Next
+		Return
+	End_If
+	If n < 16
+		Speak SYS,$WORLD,"Terremoto!!"
+		Dim bombs = getObjectsType($WORLD,"bomb")
+		For Each i In bombs
+			If i.seller = null
+				Call bombExplode(i,i.container,null)
+			End_If
+		Next
+		Dim people = getCharactersIn($WORLD)
+		For Each i In people
+			If Right(i.container.id,7) <> "_myroom" 'Not in master ops!
+				DropItems i
+			End_If
+		Next
+		Return
+	End_If
+	If n < 26
+		Dim monoset = NewSet()
+		Dim myroom = RndSet(monstersPopupSet)
+		monoset(myroom.id) = myroom
+		Speak SYS,$WORLD,"Una legione di soldati è arrivata in " + monoset(1).name + "!!"
+		For i = 1 to 10
+			Call popHuman(avgPowerMonsters,monoset)
+		Next
+		Return
+	End_If
+End_Sub
+
+Function FormatTs(timestamp)
+	Return Mid(timestamp,7,2) + "/" + Mid(timestamp,5,2) + "/" + Left(timestamp,4) + " alle " + Mid(timestamp,9,2) + ":" + Right(timestamp,2)
+End Function
+
+Function FormatTimeInterval(timestamp)
+	Return ""+Int(Mid(timestamp,7,2)) + " giorni, " + Int(Mid(timestamp,9,2)) + " ore, " + Int(Right(timestamp,2))+" minuti"
+End Function
+
+Function war_data(war)
+	Dim owners = Split(war,"*")
+	If guildwars(war) = null
+		Return null
+	End_If
+	If guildnames(owners(1)) <> "" And guildnames(owners(2)) <> ""
+		Dim data = NewSet(Replace(guildwars(war),";",","))
+		'Update stats
+		If guildmutualkills(owners(1)+"*"+owners(2))=null
+			'Speak SYS,$WORLD,"Aggiornamento statistiche gilda "+guildnames(owners(1))
+			Call getGuildKillStats(owners(1),false)
+		End_If
+		If guildmutualkills(owners(2)+"*"+owners(1))=null
+			'Speak SYS,$WORLD,"Aggiornamento statistiche gilda "+guildnames(owners(2))
+			Call getGuildKillStats(owners(2),false)
+		End_If
+		Dim diff = guildmutualkills(owners(1)+"*"+owners(2))-guildmutualkills(owners(2)+"*"+owners(1))
+		data("actdiff") = diff
+		data("comp1") = owners(1)
+		data("comp2") = owners(2)
+		data("name") = guildnames(owners(1)) + " contro " + guildnames(owners(2))
+		Return data
+	Else
+		Debug "ERROR - No more existing fighting Guilds : " + war
+		Return null
+	End_If
+End_Function
+
+Function war_queue_data(war)
+	Dim owners = Split(war,"*")
+	If guildwarsqueue(war) = null
+		Return null
+	End_If
+	If guildnames(owners(1)) <> "" And guildnames(owners(2)) <> ""
+		Dim data = NewSet(Replace(guildwarsqueue(war),";",","))
+		data("comp1") = owners(1)
+		data("comp2") = owners(2)
+		data("name") = guildnames(owners(1)) + " contro " + guildnames(owners(2))
+		Return data
+	Else
+		Debug "ERROR - No more existing fighting Guilds : " + war
+		Return null
+	End_If
+End_Function
+
+'Increments a Timestamp with another timestamp,
+'interpreted as an offset of years,months,days,horus and mins
+'Returns ts1+ts2
+'Both timestamps must be in format yyyyMMddHHmm
+Function incTimeStamp(ts1,ts2)
+	Dim y = Int(Left(ts1,4))
+	Dim m = Int(Mid(ts1,5,2))
+	Dim d = Int(Mid(ts1,7,2))
+	Dim h = Int(Mid(ts1,9,2))
+	Dim min = Int(Right(ts1,2))
+	Dim y2 = Int(Left(ts2,4))
+	Dim m2 = Int(Mid(ts2,5,2))
+	Dim d2 = Int(Mid(ts2,7,2))
+	Dim h2 = Int(Mid(ts2,9,2))
+	Dim min2 = Int(Right(ts2,2))
+	Dim monthlen = NewArray("31,28,31,30,31,30,31,31,30,31,30,31")
+	Dim incr
+
+	min = min + min2
+	If min >= 60
+		incr = Int((min-1)/60)
+		h = h + incr
+		min = min - incr * 60
+	End_If
+	h = h + h2
+	If h >= 24
+		incr = Int((h-1)/24)
+		d = d + incr
+		h = h - incr * 24
+	End_If
+	d = d + d2
+	Dim mdays = monthlen(m)
+	If d >= mdays
+		incr = Int((d-1)/mdays)
+		m = m + incr
+		d = d - incr * mdays
+	End_If
+	m = m + m2
+	If m >= 12
+		incr = Int((m-1)/12)
+		y = y + incr
+		m = m - incr * 12
+	End_If
+	y = y + y2
+	Return "" + y + LeadingZero(m,"00") + LeadingZero(d,"00") + LeadingZero(h,"00") + LeadingZero(min,"00")
+End_Function
+
+' Returns dividend MOD divisor
+' will always be: 0 < result < divisor
+' eg. 8 mod 7 = 1
+' 15 mod 7 = 1
+Function Mod(dividend,divisor)
+	If dividend < divisor
+		Return dividend
+	End_If
+	divisor = Int(divisor)
+	Dim x = Int(dividend / divisor)
+	If x > 1
+		Return Mod(dividend-divisor,divisor)
+	Else
+		Return Int(dividend) - divisor * x
+	End_If
+End_Function
+
+'Returns a comment on the specified result
+Function WarComment(data,owner1,owner2,itsover)
+	Dim var1 = guildmutualkills(owner1+"*"+owner2)-data("kills12")
+	Dim var2 = guildmutualkills(owner2+"*"+owner1)-data("kills21")
+	Dim rel1 = proportion_guild_kills(var1,owner1)
+	Dim rel2 = proportion_guild_kills(var2,owner2)
+	Dim txt
+	If rel1 > guildwar_mindiff Or rel2 > guildwar_mindiff
+		Dim phrase = " sta vincendo "
+		If itsover
+			phrase = " ha vinto "
+		End_If
+		If rel1 > rel2
+			txt = guildnames(owner1) + " " + phrase + " la guerra con <b>" + rel1 + "</b> vittorie pro capite di scarto"
+		Else
+			txt = guildnames(owner2) + " " + phrase + " la guerra con <b>" + rel2 + "</b> vittorie pro capite di scarto"
+		End_If
+	Else
+		txt = "Parità (" + rel1 + "-" + rel2 + " vittorie pro capite di scarto)"
+	End_If
+	Return txt
+End_Function
+
+Function doUse_Local(person,item)
+	If item.type = "book2" And mode=1
+		If person.type < 10
+			If asia.container = person.container And person.gender = "M"
+				Display "- Bé, ecco la mia poesia per te principessa (leggo dal libro)... <BR>...ehm....<BR>...Nelle Braccia dell'Amore,<BR>Il Paradiso dista solo un Batticuore...<BR>Sarò la tua Luce nel Buio,<BR>Il tuo Riparo dalla Pioggia..."
+					asia.status = 2
+					asia.image = "asiabride.gif"
+					person.hooked = asia
+					asia.inlovewith = person.name
+					Speak asia,person,"Ooooohhhhhh.... che uomo romantico.... andiamo a coronare il nostro sogno d'amore!"
+			Else
+				Display "Hmmm... un sacco di testi romantici."
+			End_If
+			Return true
+		Else
+			Display "Che me ne faccio di questa roba, mica so leggere. Rotfl!"
+		End_If
+	End_If
+	If item.type = "gem.affinity"
+		Kill item
+		Call chooseAffinity(person,person.container)
+		Return true
+	End_If
+	Return false
+End_Function
+
+Function doBite_Local(attacker,victim)
+	If attacker.type=16 And victim = asia
+		Display "Devo ucciderla, è il mio destino."
+		Return true 'Managed
+	End_If
+	Return false
+End_Function
+
+Function onAboutDie(person)
+	If person.type = 7 Or person.type = 18
+		population = population-1
+	End_If
+	If person = asia
+		Call diePrincess() 'Die of princess - will work in main area only
+	End_If
+End_Function
+
+Function onAboutAttack(attacker,victim,weapon)
+	' Humans cannot fight the princess
+	If victim = asia And attacker.type < 9
+		Print "Eh no, ci mancherebbe altro."
+		Return True ' Cancel!
+	End_If
+	Return false ' Not cancelled
+End_Function
+
+EVENT jukebox.onLook()
+	Print PanelHtml("pjukebox")
+	If getContainedType($AGENT,"crown") <> null ' Is king?
+		Print PanelHtml("pgetmoneyjb")
+	End_If
+	If ($AGENT.master)
+		Print $AGENT,"<B>Playlist</B>"
+		If SetLen(playlist) < 1
+			Print "Nessuna playlist."
+		Else
+			Dim x
+			Dim msg = "&lt;&lt; Suona adesso!"
+			For Each x In playlist
+				Print getTitle(x) + msg
+				msg = ""
+			Next
+		End_If
+	End_If
+	$AGENT.__clearfocus = true
+End_EVENT
+
+' doCommand
+' multi-purpose event, catches command from
+' context-sensitive menus and triggers an action
+EVENT doCommand_Local(input)
+	cmd = input("guildop")
+	If (cmd <> null)
+		$AGENT.__lastcmd = cmd
+		Return doGuildOperation(input)
+	End_If
+	Dim cmd = input("trackselector")
+	If (cmd <> null)
+		Return jukebox_play(cmd)
+	End_If
+	cmd = input("partnerselector")
+	If (cmd <> null)
+		Return start_marriage(cmd)
+	End_If
+	cmd = input("warop")
+	If (cmd <> null)
+		Return doWarOperation(input)
+	End_If
+	cmd = input("drinkselector")
+	If (cmd <> null)
+		Return doBuyDrink(input)
+	End_If
+	If input("affi") = 1
+		Return finishAffinity()
+	End_If
+	If input("privacyform")
+		cmd = input("accept")
+		If cmd = 1
+			$AGENT.privacyok = $AGENT.remoteAddr
+			$AGENT.created = getTime("yyyyMMddHHmm")
+		Else
+			Print "<font color=yellow>Leggi tutto e metti la crocetta in fondo per confermare che hai letto...</font>"
+		End_If
+	End_If
+	Return False
+END_EVENT
+
+Function jukebox_play(track)
+	track = Int(track)
+	If jukebox.Credits < 1
+		Print "Forse dovrei inserire una monetina..."
+		Return false
+	End_If
+	jukebox.Credits = jukebox.Credits-1
+	' play!
+	If SetLen(playlist) > 0
+		playlist(SetLen(playlist)+1) = Replace(jukebox.trackfiles(track),"$dir$",gameInfo("site")+"downloads")
+		playlistLen(SetLen(playlistLen)+1) = jukebox.tracklen(track)
+		Print "La canzone è stata messa in coda."
+	Else
+		playlist = NewArray()
+		playlistLen = NewArray()
+		playlist(1) = Replace(jukebox.trackfiles(track),"$dir$",gameInfo("site")+"downloads")
+		playlistLen(1) = jukebox.tracklen(track)
+		Call doMusic(playlist(1),playlistLen(1))
+	End_If
+	Return True
+End_Function
+
+EVENT jukebox.onReceiveItem
+	If $TARGET.Monete < 1
+		Print "Non è il caso."
+		Return False
+	Else
+		$OWNER.Credits = $TARGET.Monete+$OWNER.Credits
+		$OWNER.contents = $TARGET.Monete+$OWNER.contents
+		Kill $TARGET
+		Call $OWNER.onLook()
+	End_If
+End_EVENT
+
+EVENT priest_onLook
+	Print PanelHtml("pmarriage")
+	$AGENT.__clearFocus=true
+	$OWNER.__clearInfo=true
+End_EVENT
+
+' Returns the possible partners for the specified person
+Function getPartners(person)
+	Dim setpartners = NewSet()
+	Dim p
+	If person.married = null
+		For Each p In getCharactersIn(person.container)
+			If p.married = null
+				If IsPlayer(p) Or p = asia
+					setpartners(p.id) = "Sposa " + p.name
+				End_If
+			End_If
+		Next
+	Else
+		setpartners("clear") = "Annulla matrimonio precedente"
+	End_If
+	Return setpartners
+End_Function
+
+Function start_marriage(person)
+	If Not(Exists(priest))
+		Print "Che fine ha fatto il prete?!?"
+		Return false
+	End_If
+	If person = "clear"
+		If reallyMarried($AGENT.name,$AGENT.married) Or ($AGENT.married = "Asia" And Exists(asia))
+			Speak priest,$AGENT,"Il matrimonio è un vincolo sacro. Resterete uniti fino a che morte non vi separi."
+		Else
+			Speak chapel,$AGENT,"Siate liberi. Il vincolo ha perso la sua validità."
+		End_If
+		$AGENT.married=null
+		Return
+	End_If
+	If Not(Exists(person))
+		Print "Che fine ha fatto chi dovevo sposare?!?"
+		Return false
+	End_If
+	If agent.married <> null
+		Speak priest,$AGENT,"Non si può fare. Risulta un vincolo nuziale con " + $AGENT.married
+		Return false
+	End_If
+	priest.marry2 = getObject(person)
+	If debugmode=0 And $AGENT.remoteAddr = priest.marry2.remoteAddr
+		Speak priest,$AGENT,"Ehi! Devi trovare un partner REALE!"
+		Return false
+	End_If
+	priest.marry1 = $AGENT
+	priest.step=1
+	Call doMusic("wedding.mid",7)
+	Call priest_celebrate()
+End_Function
+
+Function priest_onHear(what,from)
+	Dim myset
+	'Speak priest,chapel,"Ha detto " + from +": " + what
+	If priest.step=1 And (from<>priest.marry1 Or from.id<>priest.marry2.id) 'Identify witness
+		myset = getPeopleName(chapel,what)
+		If SetLen(myset) <> 1
+			Speak priest,chapel,"Dovete portare qui un testimone e dirmi il suo nome"
+		Else
+			priest.witness = myset(1)
+			If priest.witness = priest.marry1 Or priest.witness = priest.marry2 Or priest.witness.remoteAddr = priest.marry2.remoteAddr Or priest.witness.remoteAddr = priest.marry1.remoteAddr
+				Speak priest,chapel,"No no, serve una terza persona!"
+			Else
+				Speak priest,chapel,"Bene allora " + what + " sarà il vostro testimone di nozze."
+				priest.step=2
+				Call priest_celebrate()
+			End_If
+			Return
+		End_If
+	End_If
+	If priest.step=2  And from=priest.marry1 'YES person1
+		If UCase(what) = "SI"
+			priest.step=3
+			Call priest_celebrate()
+			Return
+		Else
+			Speak priest,chapel,"Non date risposte strane, solo SI o NO!"
+		End_If
+	End_If
+	If priest.step=3 And from=priest.marry2	'YES person2
+		If UCase(what) = "SI"
+			priest.step=4
+			Call priest_celebrate()
+			Return
+		Else
+			Speak priest,chapel,"Non date risposte strane, solo SI o NO!"
+		End_If
+	End_If
+End_Function
+
+Function priest_celebrate
+	If priest.step < 1
+		Return
+	End_If
+	If Not(Exists(priest.marry1))
+		Speak priest,chapel,"Io stavo celebrando un matrimonio, ma uno dei due è morto, purtroppo."
+		priest.step = 0
+		Return false
+	End_If
+	If priest.marry1.container <> chapel
+		Speak priest,chapel,"Io stavo celebrando un matrimonio. Che fine ha fatto " + priest.marry1.name + "?"
+		Return false
+	End_If
+	If Not(Exists(priest.marry2))
+		Speak priest,chapel,"Io stavo celebrando un matrimonio, ma uno dei due è morto, purtroppo."
+		priest.step = 0
+		Return false
+	End_If
+	If priest.marry2.container <> chapel
+		Speak priest,chapel,"Io stavo celebrando un matrimonio. Che fine ha fatto " + priest.marry2.name + "?"
+		Return false
+	End_If
+	If priest.step > 1 And Not(Exists(priest.witness))
+		Speak priest,chapel,"Io stavo celebrando un matrimonio, ma il testimone è morto, purtroppo."
+		priest.step = 0
+		Return false
+	End_If
+	If priest.step > 1 And priest.witness.container <> chapel
+		Speak priest,chapel,"Io stavo celebrando un matrimonio. Che fine ha fatto il testimone " + priest.witness.name + "?"
+		Return false
+	End_If
+
+	If priest.step=1
+		Speak priest,chapel,"Siamo qui riuniti per celebrare il matrimonio tra " + priest.marry1.name + " e " + priest.marry2.name + "... Chi è il testimone?"
+	End_If
+	If priest.step=2
+		Speak priest,chapel,"Vuoi tu " + priest.marry1.name + " sposare " + priest.marry2.name + "?"
+	End_If
+	If priest.step=3
+		Speak priest,chapel,"Vuoi tu " + priest.marry2.name + " sposare " + priest.marry1.name + "?"
+		If priest.marry2 = asia
+			Speak asia,chapel,"SI"
+			priest.step=4
+		End_If
+	End_If
+	If priest.step=4
+		Speak priest,chapel,"" + priest.marry1.name + " dai a " + priest.marry2.name + " l'anello nuziale!"
+	End_If
+	Return true
+End_Function
+
+EVENT whenPicked_Local()
+	Dim type=MainType($OWNER)
+	If type="sand"
+		Print "Mi scivola tra le mani!"
+		Kill $OWNER
+		Return false
+	End_If
+
+	If type="ring"
+		If IsCharacter($TARGET) And $TARGET.container=chapel And Exists(priest) ' Marriage
+			If priest.step=4 And priest.marry2=$TARGET
+				priest.step=5
+				If Not(priest_celebrate())
+					Return
+				End_If
+				If priest.step=5
+					Speak priest,$WORLD,"Oggi sposi!! " + priest.marry1.name + " e " + priest.marry2.name + "!!"
+					priest.step=0
+					priest.marry1.married = priest.marry2.name
+					priest.marry2.married = priest.marry1.name
+					Call doMusic("wedding-procession.mid",2)
+					chapel.effect = NewImage("flyingdoves.gif",400,200)
+					Dim link=gameinfo("site")&"?page_id=40"
+					Dim text = "Il Regno di Graiel è in festa: "&UserCardLink(priest.marry1.name)&" e "&UserCardLink(priest.marry2.name)&" hanno coronato il loro sogno d'amore!"&Chr(13)&"Il testimone "&UserCardLink(priest.witness.name)&" con il parroco e i popolani tutti ne danno il felice annuncio! Evviva!!"
+					Journal "Oggi sposi: "&priest.marry1.name&" e "&priest.marry2.name & "!!",link,text,"news*utente:"&priest.marry2.name&"*utente:"&priest.marry1.name&"*utente:"&priest.witness.name
+				End_If
+			End_If
+		End_If
+	End_If
+End_EVENT
+
+Function reallyMarried(person,name)
+	If LookupProfileDB(person,"married") = name
+		Return true
+	Else
+		Return false
+	End_If
+End_Function
+
+Sub priest_onDie()
+	chapel.effect = null
+End_Sub
+
+Function doGuildStatus(guildowner,person,speaker)
+	Dim changes = false
+	If guildnames(guildowner) = null And Not(person.master Or GuildHasDelegate(guildSubscribed(person),guildowner))
+		Speak speaker,person,"Non siete a capo alcuna gilda né avete alcuna delega, signore, non posso dirvi nulla."
+		Return false
+	End_If
+	If Not(person.master) And guildstatsgenwhen(guildowner) = getTime("hh")
+		Speak speaker,person,"Non posso fare i conti così spesso, tornate domani."
+		Return false
+	End_If
+	If guildowner = ""
+		Speak speaker,person,"Non c'è nulla da dire."
+	Else
+		Dim new = NewItem(person,"situazione "+ guildnames(guildowner),"...",NewImage("pergamena.gif",100,100),"icon=scroll.gif,showmode=2,vanishing,pickable,volume=0")
+		new.description = getGuildKillStats(guildowner,false)
+		guildstatsgenwhen(guildowner) = getTime("hh")
+		changes = true
+	End_If
+	Return changes
+End_Function
+
+' gets title of a track
+Function getTitle(track)
+	Dim i
+	For i=1 To SetLen(jukebox.trackfiles)
+		If track = Replace(jukebox.trackfiles(i),"$dir$",gameInfo("site")+"downloads")
+			Return jukebox.tracklist(i)
+		End_If
+	Next
+	Return "Unknown: " + track
+End_Function
+
+'Updates the winners/losers profiles upon war result
+Sub war_result(data,owner1,owner2,person)
+	Dim var1 = guildmutualkills(owner1+"*"+owner2)-data("kills12")
+	Dim var2 = guildmutualkills(owner2+"*"+owner1)-data("kills21")
+	Dim txt = "<h1>Rapporto di fine Guerra</h1>"
+	txt = txt + "<b>"+guildnames(owner1) + "</b> contro <b>"+guildnames(owner2) + "</b>"+Chr(13)+Chr(10)
+	txt = txt + getTime("dd/MM/yyyy HH:mm") +Chr(13)+Chr(10)
+	txt = txt + "<h2>Vittorie reciproche</h2>"
+	txt = txt + "<b>Inizialmente</b>: " + data("kills12") + " - " + data("kills21")
+	txt = txt + "<BR><b>A fine guerra</b>: " + guildmutualkills(owner1+"*"+owner2) + " - " + guildmutualkills(owner2+"*"+owner1)
+	txt = txt + "<br />"
+	Dim winners,losers
+	Dim rel1 = proportion_guild_kills(var1,owner1)
+	Dim rel2 = proportion_guild_kills(var2,owner2)
+	Dim diffchange
+	If rel1 > guildwar_mindiff Or rel2 > guildwar_mindiff
+		If rel1 > rel2
+			winners = owner1
+			losers = owner2
+			diffchange = rel1
+		Else
+			winners = owner2
+			losers = owner1
+			diffchange = rel2
+		End_If
+		txt = txt + "<h2>Esito della guerra</h2>"
+		txt = txt + "<b>"+guildnames(winners) + "</b> ha vinto la guerra contro <b>"+guildnames(losers) + "</b> con " + diffchange + " vittorie pro capite sui nemici."
+
+		txt = txt + "<h1>Raccolta bottino</h1>"
+		txt = txt + "<b>Bottino di base</b>: "+guildwar_cost+" "+setDict("money")+"<br/><br/>"
+		Dim money = harvestGoods("money",losers,guildwar_prizeperc)
+		txt = txt + money(2)
+		txt = txt + "<br />"
+		Dim lev = harvestGoods("exp",losers,10*guildwar_prizeperc)
+		txt = txt + lev(2)
+		txt = txt + "<h2>Bottino di Guerra</h2>"
+		money(1)=money(1)+guildwar_cost ' Add base prize
+		txt = txt + "<li><b>"+setDict("money")+"</b>: " + money(1)
+		txt = txt + "<li><b>"+setDict("exp")+"</b>: " + lev(1)
+		txt = txt + "<h1>Spartizione bottino</h1>"
+		txt = txt + shareGoods("money",winners,money(1))
+		txt = txt + shareGoods("exp",winners,lev(1))
+		'Debug txt
+	Else
+		txt = txt + "<h2>Esito della guerra</h2>"
+		txt = txt + "<b>Parità</b> (" + rel1 + "-" + rel2 + " vittorie pro capite di scarto)"
+	End_If
+	Dim new = NewItem(person,"report fine guerra",txt,NewImage("pergamena.gif",100,100),"icon=scroll.gif,showmode=2,pickable,volume=0")
+End_Sub
+
+'Harvests the specified good from the specified guild
+'according to the specified percentage
+'what: "money"/"exp"
+'guild: guild to be searched for goods
+'perc: number from 0 to 1 - 0=harvest nothing 1=all
+Function harvestGoods(what,guild,perc)
+	Dim txt = ""
+	Dim res=0
+	Dim tmp = guildsubscribers(guild)
+	If Not(InStr(tmp,guild))
+		tmp = guild + ";" + tmp
+	End_If
+	Dim subs = Split(tmp,";")
+	Dim x
+	Dim w
+	txt = txt + "Raccolta bottino: <b>" + setDict(what) + "</b> da <b>" + guildnames(guild) + "</b>" +Chr(13)+Chr(10)
+	'Debug "---harvestGoods: " + guildnames(guild) + " for " + what
+	For Each x In subs
+		w = 0
+		If what="money"
+			If garumir.accounts(x) > 0
+				w = Round(perc*garumir.accounts(x),0)
+				res = res + w
+				garumir.accounts(x) = garumir.accounts(x)-w
+			End_If
+		End_If
+		If what="exp"
+			Dim lev = LookupProfileDB(x,cstLEVEL)
+			Dim esp = LookupProfileDB(x,cstEXP)
+			Dim g = 10*lev+esp
+			'txt = txt + "g before:"+g
+			w = Round(perc*g,1)
+			res = res + w
+			g = g-w
+			'txt = txt + "g after:"+g
+			Call SaveProperty(x,cstLEVEL,Int(g/10),true)
+			Call SaveProperty(x,cstEXP,Int(g-10*Int(g/10)),true)
+		End_If
+		txt = txt + "<li> " + x + " perde "+setDict(what)+": " + w +Chr(13)+Chr(10)
+		'Debug ". " + x + "("+what+"):" + w
+	Next
+	Dim retarr = NewArray()
+	retarr(1)=Round(res,2)
+	retarr(2)=txt
+	Return retarr
+End_Function
+
+'Shares the specified amount of specified good
+'to the subscribers of the specified guild
+'what: "money"/"exp"
+'guild: guild to give the goods
+'amount: amount of good
+Function shareGoods(what,guild,amount)
+	Dim txt = ""
+	Dim res=amount
+	Dim tmp = guildsubscribers(guild)
+	If Not(InStr(tmp,guild))
+		tmp = guild + ";" + tmp
+	End_If
+	Dim subs = Split(tmp,";")
+	Dim x
+	Dim w
+	txt = txt + "Spartizione bottino su <b>" + guildnames(guild) + "</b>: " + amount + " " + setDict(what) +Chr(13)+Chr(10)
+	'Debug "---shareGoods: " + guildnames(guild) + " for " + amount + " " + what
+	Dim n = SetLen(subs)
+	For Each x In subs
+		If what="money"
+			w = Round(amount/n,0)
+			garumir.accounts(x) = garumir.accounts(x)+w
+			amount = amount-w
+		End_If
+		If what="exp"
+			w = Round(10*amount/n,2)
+			Dim lev = LookupProfileDB(x,cstLEVEL)
+			Dim esp = LookupProfileDB(x,cstEXP)
+			Dim g = 10*lev+esp
+			'txt = txt + "g before:"+g
+			g = g+w
+			'txt = txt + "g after:"+g
+			Call SaveProperty(x,cstLEVEL,Int(g/10),true)
+			Call SaveProperty(x,cstEXP,Int(g-10*Int(g/10)),true)
+			w = Round(w/10,2)
+			amount = amount-w
+		End_If
+		txt = txt + "<li> " + x + " vince <b>"+setDict(what)+"</b>: " + w +Chr(13)+Chr(10)
+		'Debug ". " + x + " got ("+what+"):" + w
+		n=n-1
+	Next
+	Return txt
+End_Function
+
+EVENT bar.onHear
+	If InStr($TARGET,"oste")
+		If Not(Exists(barman))
+			barman = NewCharacter(bar,"l'oste","",NewImage("barman.gif",50,45),"type=3,pacific,nohands,steady,noteleport,showX=320,showY=104")
+			Speak barman,barman.container,"Pronti!!"
+			AttachEvent barman,"onLook","barman_onLook"
+		End_If
+		Return
+	End_If
+	If Exists(barman) And barman.step > 0
+		Return barman_onHear($TARGET,$AGENT)
+	End_If
+End_EVENT
+
+EVENT barman_onLook
+	If getTime("dd/MM/yyyy")=smDay
+		Speak $OWNER,$AGENT,"Oggi è il <b><a target=_blank href=https://www.sottomondo.org/?p=571>Sottomondo Day</a></b>. Scegli qualcosa da bere, non si paga nulla!!"
+	Else
+		Speak $OWNER,$AGENT,"Bene vuoi da bere? Qui facciamo prezzo fisso 4 monete per tutto"
+	End_If
+	Print PanelHtml("pbuydrink")
+	$AGENT.__clearFocus=true
+	$OWNER.__clearInfo=true
+End_EVENT
+
+EVENT doBuyDrink(input)
+	Dim drink = input("drinkselector")
+	If Not(Exists(barman))
+		Print $AGENT,"Non c'è più l'oste..."
+		Return
+	End_If
+	If getTime("dd/MM/yyyy")=smDay
+		Speak barman,$AGENT,"Quindi vuoi: " + arrDrinks(drink) + "... Arriva!","Pronti!","Ecco qua!","Occhio a non esagerare... eh eh eh!"
+		newobj = NewItem($AGENT,arrDrinks(drink),arrDrinks(drink),NewImage("beer.gif",106,159),"pickable,showmode=2,icon=icodrink.gif,type=jar.beverage."+drink+",uses=3")
+		AttachEvent newobj,"onUse","drink_onUse"
+		Return
+	End_If
+	If getMoneyFrom($AGENT,4)
+		Speak barman,$AGENT,"Quindi vuoi: " + arrDrinks(drink) + "... Arriva!","Pronti!","Ecco qua!","Occhio a non esagerare... eh eh eh!"
+		newobj = NewItem($AGENT,arrDrinks(drink),arrDrinks(drink),NewImage("beer.gif",106,159),"pickable,showmode=2,icon=icodrink.gif,type=jar.beverage."+drink+",uses=3")
+		AttachEvent newobj,"onUse","drink_onUse"
+	Else
+		Speak barman,$AGENT,arrDrinks(drink)+"? Costa 4 monete!","e vuoi bere gratis? Ha! Ha!","Dì un pò, ma ce li hai i soldi?"
+	End_If
+END_EVENT
+
+EVENT drink_onUse
+	If $OWNER.uses <= 0
+		Return false
+	End_If
+	$OWNER.uses = $OWNER.uses-1
+	Print $AGENT,"Ahhhhhhh! Ci voleva."
+	Dim sound = "bubblegurggle.wav"
+	Dim effect = 0
+	If Right($OWNER.type,1) = "1"
+		effect = 1
+		If RndInt(20)=1
+			Speak $AGENT,$AGENT.container,"*BURP!*"
+			Print $AGENT,"*BURP!*"
+			sound="burp.wav"
+		End_If
+	End_If
+	If Right($OWNER.type,1) = "2"
+		effect = 2
+	End_If
+	If RndInt(2)=1
+		$AGENT.Salute = $AGENT.Salute+effect
+	Else
+		$AGENT.Salute = $AGENT.Salute-effect
+	End_If
+	Call levelParams($AGENT)
+	PlaySound $AGENT,sound
+	If $OWNER.uses = 0
+		Kill $OWNER
+	End_If
+End_EVENT
+
+Function onUseWith_Local
+	Dim success = false
+'	If $AGENT.type=4
+		' Craftsman operations
+		If ($OWNER = pot And $TARGET = fire) Or ($OWNER = fire And $TARGET = pot)
+			If containsType(pot,"stone",false)
+				pot.image = NewImage("potfull.gif",32,32)
+				Dim x = getContainedType(pot,"stone")
+				x.type = "metal"
+				x.image = NewImage("fire.gif",32,32)
+				x.icon = "fire.gif"
+				x.name = "metallo fuso"
+				x.description = x.name
+				x.pickable = false
+				pot.description = "E' pieno di liquido incandescente."
+				PlaySound $AGENT.container,"bubblegurggle.wav"
+				$AGENT.__clearFocus=true
+				Return true
+			End_If
+			If containsType(pot,"sand",false)
+				pot.image = NewImage("potfull.gif",32,32)
+				Dim x = getContainedType(pot,"sand")
+				x.type = "glass"
+				x.image = NewImage("fire.gif",32,32)
+				x.icon = "fire.gif"
+				x.name = "vetro fuso"
+				x.description = x.name
+				pot.description = "E' pieno di vetro fuso."
+				PlaySound $AGENT.container,"bubblegurggle.wav"
+				$AGENT.__clearFocus=true
+				Return true
+			End_If
+			Return false
+		End_If
+		If ($OWNER = pot And $TARGET = martello) Or ($OWNER = martello And $TARGET = pot)
+			If containsType(pot,"metal",false)
+				Kill getContainedType(pot,"metal")
+				pot.image = NewImage("pot.gif",32,32)
+				pot.description = "Un calderone, in ghisa, molto pesante."
+				PlaySound $AGENT.container,"hitmetal1.wav"
+				Dim new
+				If $AGENT.Livello < 3
+					new = NewItem($AGENT.container,"pugnale","Un normalissimo pugnale.",NewImage("sword1.gif",30,30),"type=weapon.01.01.0000.dagger,pickable,Potenza=1,Valore=10,sound=sword1.wav,icon=sword1.gif,showmode=1,Livello=1")
+				End_If
+				If $AGENT.Livello >= 3 And $AGENT.Livello < 5
+					new = MakeItem("weapon.02.02.0000.sword",$AGENT)
+					Move new,$AGENT.container
+				End_If
+				If $AGENT.Livello >= 5
+					new = MakeItem("weapon.03.03.0000.axe",$AGENT)
+					Move new,$AGENT.container
+				End_If
+				If new <> null
+					new.affinity = $AGENT.affinity
+					new.material = "iron"
+					new.designer = $AGENT.name
+					success=true
+				End_If
+			Else
+				Print "Sto facendo confusione. Se contenesse del metallo fuso, però..."
+			End_If
+		End_If
+		If $OWNER = pot And (MainType($TARGET) = "armour" Or MainType($TARGET) = "shield" Or MainType($TARGET) = "helmet")
+			If containsType(pot,"metal",false)
+				Kill getContainedType(pot,"metal")
+				pot.image = NewImage("pot.gif",32,32)
+				pot.description = "Un calderone, in ghisa, molto pesante."
+				PlaySound $AGENT.container,"hitmetal1.wav"
+				Dim new = NewItem($AGENT.container,$TARGET.name,$TARGET.description,$TARGET.image("N"),"pickable")
+				new.type = $TARGET.type
+				new.Protezione = $TARGET.Protezione
+				new.Livello = $TARGET.Livello
+				new.Valore = $TARGET.Valore
+				new.icon = $TARGET.icon
+				new.showmode = $TARGET.showmode
+				new.affinity = $TARGET.affinity
+				new.material = $TARGET.material
+				new.designer = $TARGET.designer '$AGENT.name
+				success=true
+				$AGENT.Salute=$AGENT.Salute/2
+			Else
+				Print "Sto facendo confusione. Se contenesse del metallo fuso, però..."
+			End_If
+		End_If
+		If ($OWNER = pot And $TARGET = mould) Or ($OWNER = mould And $TARGET = pot)
+			If containsType(pot,"glass",false)
+				Kill getContainedType(pot,"glass")
+				pot.image = NewImage("pot.gif",32,32)
+				pot.description = "Un calderone, in ghisa, molto pesante."
+				PlaySound $AGENT.container,"hitmetal1.wav"
+				Call NewItem($AGENT.container,"bottiglia vuota","La bottiglia è ora vuota.",NewImage("bottlempty.gif",60,90),"pickable,Valore=1,icon=bottlempty.gif,uses=0,showmode=2,type=bottle.empty")
+				success=true
+			Else
+				Print "Sto facendo confusione. Se contenesse del vetro fuso, però..."
+			End_If
+		End_If
+'	End_If
+	If success
+		Call advanceCheck($AGENT,"crafts",1)
+	End_If
+	Return success
+END_Function
+
+Sub chooseAffinity(person,nextroom)
+	Dim tmp_room_id = person.id + "*affinity"
+	NewRoom tmp_room_id
+	Dim tmp_room = getObject(tmp_room_id)
+	If tmp_room <> NULL
+		tmp_room.name = "Scelta affinità"
+		tmp_room.image("N") = NewImage("castlemid.png",pre2.image("N").width,pre2.image("N").height)
+		tmp_room.introductory = true
+		tmp_room.dark = true
+		SetPanel tmp_room,"paffinity"
+		If person.affinity=null
+			'Call SetAffinity(person,"0/0/0/0")
+		End_If
+		Call doAffinity(person,0,0,0,0)
+		person.__nextroom = nextroom
+		person.Salute=10
+		DropItems person
+		Move person,tmp_room
+		AttachEvent tmp_room,"onLoose","affinityRoom_onLoose"
+	End_If
+End_Sub
+
+Sub doAffinity(person,e1,e2,e3,e4)
+	Dim tot = 0+person.affinity(1)+person.affinity(2)+person.affinity(3)+person.affinity(4)
+	Dim left = 4-tot
+	If (left < 1) And ((e1+e2+e3+e4)>0)
+		Print "<DIV STYLE="+Chr(34)+"{border-style:solid;border-width:1;border-color:orange;width:50%;float:right;padding:10px;}"+Chr(34)+">Non ci sono più punti da assegnare. Puoi però togliere punti da un elemento e spostarli su un altro.</DIV>"
+	Else
+		If (e1>0 And person.affinity(1)<4) Or (e1<0 And person.affinity(1)>=-e1)
+			person.affinity(1)=Int(person.affinity(1)+e1)
+		End_If
+		If (e2>0 And person.affinity(2)<4) Or (e2<0 And person.affinity(2)>=-e2)
+			person.affinity(2)=Int(person.affinity(2)+e2)
+		End_If
+		If (e3>0 And person.affinity(3)<4) Or (e3<0 And person.affinity(3)>=-e3)
+			person.affinity(3)=Int(person.affinity(3)+e3)
+		End_If
+		If (e4>0 And person.affinity(4)<4) Or (e4<0 And person.affinity(4)>=-e4)
+			person.affinity(4)=Int(person.affinity(4)+e4)
+		End_If
+	End_If
+	Print htmlAffinities(person)
+	Dim tot = 0+person.affinity(1)+person.affinity(2)+person.affinity(3)+person.affinity(4)
+	Dim left = 4-tot
+	Print "<b>Punti affinità disponibili</b>: "+ left
+End_Sub
+
+Sub finishAffinity()
+	Dim tot = 0+$AGENT.affinity(1)+$AGENT.affinity(2)+$AGENT.affinity(3)+$AGENT.affinity(4)
+	If tot <> 4
+		Print "Distribuire esattamente 4 punti-affinità!"
+		Print htmlAffinities($AGENT)
+		Return
+	End_If
+	person = $AGENT
+	If person.__nextroom = "Start"
+		person.__startnow = true
+	End_If
+	Move person,person.__nextroom
+'	Dim tmp_room_id = person.id + "*affinity"
+'	Kill tmp_room_id
+End_Sub
+
+EVENT Start.onReceive
+	If Not($AGENT.__startnow) ' Normal operation
+		Return onReceive()
+	End_If
+	$AGENT.__startnow = null
+	Speak frontpagetext
+	If $AGENT.type < 10
+		Display "Che l'avventura abbia inizio! "
+	Else
+		Display "La caccia agli umani ha inizio!"
+	End_If
+	PlaySound $WORLD,"connect.wav"
+	Speak "Hai ricevuto una "+htmlIcon("scroll.gif","indizi")+" pergamena con <b>preziosi consigli</b> - cliccala ora per leggerla!"
+	'Speak "Clicca ["+htmlIcon("pansave.gif","Salva")+" SALVA] per salvare e ["+htmlIcon("panmap.gif","Mappa")+" MAPPA] per vedere dove sei sulla mappa. [<font color=yellow>"+htmlIcon("panhelp.gif","Help è nel pannello comandi!")+" Help</font>] per le istruzioni!"
+	Dim newobj
+	newobj = NewItem($AGENT,"indizi importanti","<h2>Informazioni essenziali per giocare</h2>",NewImage("pergamena.gif",100,100),"type=scroll.hints,pickable,showmode=2,icon=scroll.gif,vanishing")
+	newobj.description = newobj.description & "<ol><li>Cerca di restare vivo/a!</li>"
+	newobj.description = newobj.description & "<li>Clicca ["+htmlIcon("pansave.gif","Salva")+" SALVA] per salvare la tua situazione, così non dovrai ricominciare se ti succede qualcosa. (Prova adesso)</li>"
+	newobj.description = newobj.description & "<li>Se ti perdi usa la ["+htmlIcon("panmap.gif","Mappa")+" MAPPA] per capire dove sei.</li>"
+	newobj.description = newobj.description & "<li>Come nuovo giocatore hai un credito di 100 monete d'oro. Vai a ritirarle presso la <b>banca</b> di Garumir. Si trova nell'<b>angolo sud-est</b> del cortile.</li>"
+	newobj.description = newobj.description & "<li>Quando hai ritirato le tue monete, spendile per comprare qualcosa di utile: Non andare in giro senza <b>una pozione rigeneratrice</b> e comprati anche <b>un'arma o un incantesimo</b> e uno <b>scudo</b>!</li>"
+	newobj.description = newobj.description & "<li>Ricorda che nelle catacombe del castello trovi nemici meno esperti e più facili da battere, se vuoi fare un pò di pratica e incrementare <b>Esperienza</b> e <b>Livello</b>.</li>"
+	newobj.description = newobj.description & "<li>Se qualcuno di dà fastidio o ti importuna, non esitare a segnalarlo sulla nostra pagina Facebook (link sul pannello comandi)</li>"
+	newobj.description = newobj.description & "<li>Lo scopo principale del gioco è <b>mantenere il controllo del regno</b>. Ci sono però tanti altri obbiettivi nascosti. Scoprili!</li>"
+	newobj.description = newobj.description & "</ol>"
+	newobj.description = newobj.description & "<p><b>Memorizza queste istruzioni adesso</b>. Se lasci cadere per terra questa pergamena, si autodistruggerà automaticamente.</p>"
+	newobj.description = newobj.description & "<p>Per qualunque dubbio clicca ["+htmlIcon("panhelp.gif","Help è nel pannello comandi!")+" <b>Help</b>] - le istruzioni complete.</p>"
+	newobj.description = newobj.description & "<p><b>IN BOCCA AL LUPO!!</b></p>"
+
+	If $AGENT.type=1
+		SetPanel $AGENT, "pwarrior"
+	End_If
+	If $AGENT.type=2
+		SetPanel $AGENT, "pcleric"
+	End_If
+	If $AGENT.type=4
+		SetPanel $AGENT, "partisan"
+		
+		newobj.description = newobj.description + "<h2>Istruzioni addizionali per gli artigiani</h2>"
+		newobj.description = newobj.description + "<h3>Per creare un arma</h3>"
+		newobj.description = newobj.description + "a) Estrarre il minerale (basta un blocco)<BR>b) Andare nella bottega del fabbro<BR>c) Mettere il minerale nel calderone<BR>d) Mettere il calderone sul fuoco (USA calderone CON fuoco): il contenuto del calderone diventa incandescente.<BR>e) Forgiare con il martello il metallo fuso (USA martello CON calderone)"
+		newobj.description = newobj.description + "<h3>Per creare una bottiglia di vetro</h3>"
+		newobj.description = newobj.description + "a) Procurarsi della sabbia (ne basta una ciotola)<BR>b) Andare nella bottega del fabbro<BR>c) Lasciar cadere la sabbia nel calderone<BR>d) Mettere il calderone sul fuoco (USA calderone CON fuoco): il contenuto del calderone diventa vetro fuso.<BR>e) Colare il vetro fuso nello stampo (USA calderone CON stampo)"
+	End_If
+	If $AGENT.type=19
+		SetPanel $AGENT, "pdarken"
+	End_If
+	If $AGENT.type=14 Or $AGENT.type = 16
+		SetPanel $AGENT, "pvampire"
+		If $AGENT.type = 14
+			' If vampire start from 1st floor
+			Move $AGENT,upstairs
+			Return false
+		End_If
+	End_If
+
+	If debugtype=1
+		Move book2, bedroom
+		Move $AGENT, bedroom
+		door1.open = 1
+		door1.locked = false
+		Move silvering, $AGENT
+		Return false
+	End_If
+
+	If debugtype=3
+		mode=1
+		Move $AGENT, cave7
+		Move cross, cave7
+		Move silvering, cave7
+		Call NewItem(cave7,"bomba","E' una bomba.",NewImage("bomb.gif",40,40),"type=bomb,pickable,Valore=10,sound=match.wav,icon=bomb.gif,showmode=2")
+	End_If
+
+	If debugtype="gem"
+		mode=1
+		Move gemini, $AGENT
+		Move windspell, $AGENT
+		Call NewItem($AGENT,"stone","E' una tavoletta di materiale roccioso.",NewImage("spelltablet.gif",48,48),"pickable,showmode=2,icon=spelltablet.gif,type=stone,Value=3")
+	End_If
+	Dim x = "lo"
+	Dim y = "gli"
+	If $AGENT.gender = "F"
+		x = "la"
+		y = "le"
+	End_If
+	Speak $WORLD,"C'è un nuovo visitatore nel regno: <b>"&$AGENT.name&"</b>! Diamo"&y&" il benvenuto e aiutiamo"&x&" a muoversi in questo nuovo mondo!"
+End_EVENT
+
+EVENT helpAffi
+	Print "Serve <A TARGET=_blank HREF="+gameInfo("site")+"?page_id=12#elements>aiuto riguardo agli elementi</A>?"
+	Print htmlAffinities($AGENT)
+END_EVENT
+
+EVENT affinityRoom_onLoose
+	Kill $OWNER
+END_EVENT
+
+' Enqueues a guild war
+Function war_enqueue(guild1,guild2,duration)
+	Dim timestamp = getTime("yyyyMMddHHmm")
+	guildwarsqueue(guild1 + "*" + guild2) = "timestamp=" + timestamp+";duration="+duration
+	Return war_queue_data(guild1 + "*" + guild2)
+End_Function
+
+' Starts a guild war
+Function war_start(guild1,guild2,duration,warname)
+	'Update stats
+	Call getGuildKillStats(guild1,false)
+	Call getGuildKillStats(guild2,false)
+	Dim diff = guildmutualkills(guild1+"*"+guild2)-guildmutualkills(guild2+"*"+guild1)
+	Dim timestamp = getTime("yyyyMMddHHmm")
+	guildwars(guild1 + "*" + guild2) = "timestamp=" + timestamp + ";diff=" + diff + ";finishes=" + incTimeStamp(timestamp,duration)+";kills12="+Int(guildmutualkills(guild1+"*"+guild2))+";kills21="+Int(guildmutualkills(guild2+"*"+guild1))
+	saveSetting "ctx_guildwars",guildwars
+	SetRemove guildwarsqueue,guild1+"*"+guild2
+	saveSetting "ctx_guildwarsqueue",guildwarsqueue
+	Speak SYS,$WORLD,"La guerra <b>"+warname+"</b> E' INIZIATA!!!"
+	Return True
+End_Function
+
+' Schedules a guild war
+Function war_schedule(guild1,guild2,declared,duration,notificationint)
+	Dim now = getTime("yyyyMMddHHmm")
+	guildwarsqueue(guild1 + "*" + guild2) = "timestamp="+declared+";notified="+now+";duration="+duration+";starting=" + incTimeStamp(now,notificationint) 'incTimeStamp(now,"000000010000")
+	saveSetting "ctx_guildwarsqueue",guildwarsqueue
+	Return True
+End_Function
+
+' Returns a set of the warrior guilds
+' for the guild war operations
+Function getWarriorGuilds(person)
+	Dim guilds = Copy(guildnames)
+	Dim k
+	If Not(person.master)
+		For Each k In SetKeys(guilds)
+			If guildtypes(k)="p" ' Pacific guild - remove from list
+				SetRemove guilds,k
+			End_If
+			If getGuildCount(k) < 3 ' Too small guilds - remove
+				SetRemove guilds,k
+			End_If
+		Next
+	End_If
+	k = guildSubscribed(person)
+	If k <> null
+		SetRemove guilds,k
+	End_If
+	Return guilds
+End_Function
+
+' Is the specified guild owner menaced of war?
+' If so, returns the war data, otherwise returns NULL
+Function war_menaced(guildowner)
+	If guildowner = null
+		Return false
+	End_If
+	Dim war
+	Dim s = "*"+guildowner
+	For Each war In SetKeys(guildwarsqueue)
+		If InStr(war,s) > 0
+			Return war_queue_data(war)
+		End_If
+	Next
+	Return null
+End_Function
+
+' Is the specified guild owner running a war?
+' If so, returns the war data, otherwise returns NULL
+Function war_running(guildowner)
+	Dim war
+	Dim s = "*"+guildowner
+	Dim s1 = guildowner+"*"
+	For Each war In SetKeys(guildwars)
+		If InStr(war,s) > 0 Or InStr(war,s1) = 1
+			Return war_data(war)
+		End_If
+	Next
+	Return null
+End_Function
+
+' Is the specified guild owner ABOUT running a war?
+' If so, returns the war data, otherwise returns NULL
+Function war_starting(guildowner)
+	Dim war
+	Dim s = "*"+guildowner
+	Dim s1 = guildowner+"*"
+	For Each war In SetKeys(guildwarsqueue)
+		If InStr(war,s) > 0 Or InStr(war,s1) = 1
+			Return war_queue_data(war)
+		End_If
+	Next
+	Return null
+End_Function
+
+' Notifies the specified war to person
+' w must not be null
+' person must exist and must be of guild "comp2"
+Function war_notify(w,person)
+	Speak SYS,person,"La gilda <b>"+guildnames(w("comp1"))+"</b> vi ha <b>dichiarato guerra</b>! AVVISA I TUOI ALLEATI!"
+	Dim link=gameinfo("site")&"?page_id=32"
+	Dim text = "La gilda <b>"&guildnames(w("comp1"))&"</b> ha dichiarato GUERRA alla gilda <b>"&guildnames(w("comp2"))&"</b>. La notifica è stata ricevuta da "&UserCardLink(person.name)&" e ora lo scontro sarà inevitabile."&Chr(13)&"Per maggiori informazioni vedi: <a href="&link&">Guerra delle Gilde</a>!"
+	Journal ""&guildnames(w("comp1"))&" dichiara guerra a "&guildnames(w("comp2"))&"!",link,text,"news*utente:"&person.name&"*gilda:"&guildnames(tmp)
+	If w("starting") <> null
+		' Starting time already defined
+		If w("starting") > getTime("yyyyMMddHHmm")
+			Speak SYS,$WORLD,"La guerra <b>"+w("name")+"</b> inizierà il "+FormatTs(w("starting"))+"!"
+		Else
+			' Start now
+			Call war_start(w("comp1"),w("comp2"),w("duration"),w("name"))
+		End_If
+	Else
+		If war_schedule(w("comp1"),w("comp2"),w("timestamp"),w("duration"),notifyinterval)
+			Speak SYS,$WORLD,"La guerra <b>"+w("name")+"</b> inizierà tra "+FormatTimeInterval(notifyinterval)+" da adesso!!!"
+		Else
+			Speak SYS,person,"Impossibile preparare la guerra."
+		End_If
+	End_If
+End_Function
+
+'Tries to notify specified war
+'Returns True if success, False otherwise
+' w must not be null
+Function war_possiblynotify(w)
+	Dim guild2
+	guild2=w("comp2")
+	Dim p
+	For Each p In getPlayersIn($WORLD)
+		If p.guild=guild2
+			Call war_notify(w,p)
+			Return True
+		End_If
+	Next
+	Return False
+End_Function
+
+'Tries to start preparing war
+'Returns True if success, False otherwise
+' w must not be null
+Function war_possiblystart()
+	If SetLen(guildwarsqueue) > 0
+		Dim war
+		For Each war In SetKeys(guildwarsqueue)
+			Dim w = war_queue_data(war)
+
+			If w("starting") <> null
+				' Starting time already defined
+				If w("starting") <= getTime("yyyyMMddHHmm")
+					' Start now
+					Call war_start(w("comp1"),w("comp2"),w("duration"),w("name"))
+					Return True
+				End_If
+			End_If
+		Next
+	End_If
+	Return False
+End_Function
+
+' Returns some indications text for guilds war
+Function war_indications()
+	Dim txt="<h3>Regole attualmente in vigore</h3>"
+	If Int(guildwar_mindiff)>0
+		txt = txt + "<BR>Per vincere una guerra occorre totalizzare almeno <b>"&Int(guildwar_mindiff)&"</b> vittorie pro capite in più degli avversari."
+	Else
+		txt = txt + "<BR>Vince chi totalizza più vittorie sugli avversari, basta anche una sola vittoria di differenza."
+	End_If
+	txt = txt + "<BR>Il <b>bottino di guerra</b> per i vincitori è fissato al <b>"&Round(100*guildwar_prizeperc,2)&"%</b> dei Livelli, dell'Esperienza e dei depositi in denaro degli avversari."
+	txt = txt + "<BR>Il costo per dichiarare guerra è fissato a <b>"&guildwar_cost&"</b> monete."
+	Return txt
+End_Function
+
+Function proportion_guild_kills(kills,guildowner)
+	Dim n = getGuildCount(guildowner)
+	If n > 0
+		Return Round(kills/n,2)
+	End_If
+	Return null
+End_Function
+
+' Is the specified guild war-engaged?
+' If so, returns 1=menaced 2=war running
+' Else returns 0
+Function war_engaged(guildowner)
+	If war_starting(guildowner) <> null
+		Return 1
+	End_If
+	If war_running(guildowner) <> null
+		Return 2
+	End_If
+	Return 0
+End_Function
+
+Sub Hints(person)
+	Dim txt = ""
+	If getContainedType(person,"scroll.hints") <> null ' Already has hints
+		Return
+	End_If
+	If Not(ProfileExists(person.name))
+		txt = "Salva adesso il gioco per poter ritornare quando vuoi e riprendere con l'Esperienza accumulata. Clicca [SALVA] adesso."
+	End_If
+	If txt = "" And person.Crediti = 100
+		txt = "Forse non lo sai, ma all'inizio del gioco hai <b>100 monete</b> da spendere in attrezzatura e oggetti utili!<br>Vai alla Banca (torre sud-est) e chiedi a Garumir il tuo denaro. Se non trovi la banca, usa la [MAPPA] per vedere dove si trova."
+	End_If
+	If txt = "" And getContainedType(person,"bottle.potion") = null
+		txt = "Non andare in giro senza una <b>pozione di cura</b>...Il castello è pieno di pericoli!!<br>Puoi acquistarne una all'<b>armeria</b>.<br><br>Se non riesci a trovarla, usa la [MAPPA]."
+	End_If
+	If txt = "" And person.weapon = null
+		txt = "Stai andando in giro disarmat"+Concordate(person)+", coraggios"+Concordate(person)+" o incosciente? Scherzi a parte, procurati un'arma.<br>Se sei mag"+Concordate(person)+" o entità oscura devi procurarti un <b>incantesimo di attacco</b>. L'arma si impugna usando i comandi [USA],[INFO]"
+	End_If
+	If txt = ""
+		Dim pass = getSetting(CookName(person.name)+"_pass","")
+		If pass = ""
+			txt = "Proteggi il tuo gioco salvato con una password!<br>Per fare questo clicca [SALVA ED ESCI] almeno una volta.<br>Quando hai fatto puoi rientrare anche subito nel gioco e, da quel momento, potrai utilizzare il comando [SALVA] per salvare i tuoi progressi a intervalli regolari.<br>Su, non aspettare, fallo adesso! [SALVA ED ESCI]"
+		End_If
+	End_If
+	If txt <> ""
+		txt = txt + "<br><br>LASCIA questa pergamena a terra se vuoi ricevere altri indizi utili."
+		Dim new = NewItem(person,"Indizi utili",null,NewImage("pergamena.gif",100,100),"type=scroll.hints,icon=scroll.gif,showmode=2,vanishing,pickable,volume=0")
+		new.description = txt
+	End_If
+End_Sub
+
+' The following function is used just in the Italian version
+' Please ignore it
+Function privacy()
+	Dim txt
+	Dim cr
+	cr = "<br />"&Chr(13)
+
+	If True '$AGENT.privacyok <> null
+		txt = "<b>OK</b> - Hai letto e accettato il Regolamento e l'Informativa per la privacy."&cr&cr
+		txt = txt&"<div style="&Chr(34)&"border:1px solid #ff0;margin-right:50px;margin-left:50px;padding:10px;"&Chr(34)&"><img src="&gameinfo("site")&"/images/dontfret.png align=right>Devi sapere che <b>questo gioco ha particolarità uniche e nascoste, dà moltissime possibilità di divertirsi e di fare nuovi amicizie</b>: ma ci vuole un pò di tempo prima di scoprirle e apprezzarlo veramente!"&cr&cr
+		txt = txt&"Ti preghiamo <b>di seguire gli indizi</b> che ti verranno dati entrando nel castello: sono dritte essenziali per goderti di più questo gioco!</div>"&cr&cr
+		txt = txt&"Ora clicca l'icona <b>freccia avanti</b> per iniziare la tua avventura."&cr&cr
+	Else
+		txt = panelhtml("pprivacy")
+	End_If
+
+	return txt
+End_Function
+
+' The following function is used just in the Italian version
+' Please ignore it
+Function privacytext()
+	Dim txt
+	Dim cr
+	cr = "<br />"&Chr(13)
+	Dim infpr = "https://www.sottomondo.org/?page_id=337"
+	Dim regol = "https://www.sottomondo.org/?page_id=63"
+
+	txt = "Questo è un gioco gratuito."&cr
+	txt = txt & "La legge Italiana prevede comunque che, <b>prima di utilizzarlo</b>, tu sia informato/a su come verranno trattati i tuoi eventuali dati personali (informativa sulla privacy)."&cr&cr
+	txt = txt & "Inoltre è necessario accettare i termini del servizio/regolamento di gioco."&cr&cr
+	txt = txt & "Prendine visione adesso cliccando sui link seguenti, poi conferma che accetti (ogni link apre una nuova pagina)."&cr
+	txt = txt & "<ul><li><a href="&infpr&" target=_blank>Informativa sulla privacy</a></li>"
+	txt = txt & "<li><a href="&regol&" target=_blank>Regolamento di gioco/termini del servizio</a></li></ul>"&cr
+	txt = txt & "<input type=hidden name=privacyform value=1 /><input type=checkbox name=accept value=1 /> Mettendo una crocetta qui a fianco dichiaro di aver letto l'informativa dei dati personali e il regolamento di gioco."&cr&cr
+
+	return txt
+End_Function
+
+' The following function is used just in the Italian version
+' Please ignore it
+EVENT	pre1a.onLoose
+If $TARGET = p0a
+	' Check that we are have accepted privacy statement
+	If False '$AGENT.privacyok=null
+		Print "<font color=yellow>Per avere accesso al gioco devi prima accettare i termini dell'informativa sulla privacy e regolamento</font>."
+		Return  0
+	End_If
+End_If
+End_EVENT
+
+END_SCRIPTS
+
+END_WORLD

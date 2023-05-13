@@ -1,0 +1,6124 @@
+'
+' Commons.dxl
+' (for Underworld)
+'
+' by Cris (cris@dimensionex.net)
+' https://www.dimensionex.net
+'
+' This software is Open Source released under the GPL License
+'
+' General Purpose Routines
+'
+' Version 22.2
+'
+
+EVENT Living
+person = getObject($OWNER)
+If person.type=0 'Special characters always live
+	person.Salute=10
+	Return true
+End_If
+' The following is for all remaining characters
+' Restore health a little bit
+person.Salute = person.Salute+0.2
+If person.artdefense = "survival"
+	If person.Salute < 1
+		Dim item = getContainedType(person,"bottle.potion")
+		If item <> null
+			Print person,"Sopravvivenza: prendo la pozione!"
+			Call drinkPotion(person,item)
+		End_If
+	End_If
+End_If
+If person.Salute > 10
+	' Limits health to 10
+	person.Salute = 10
+End_If
+
+If person.toxine > 1
+	person.Salute = person.Salute-0.2*person.toxine
+End_If
+
+person.Salute = Round(person.Salute,1)
+
+'Decreases invulnerability
+If person.invul
+	person.invul = person.invul-1
+End_If
+
+Call checkInvis(person)
+Call levelParams(person)
+
+person.angry=0 ' Calm down werewolves
+person.lastattacker = null ' Clear last attacker
+
+If ExistScript("Living_local")
+	Call Living_local(person)	'Calls local Living() sub, if defined
+End_If
+
+If Not(IsPlayer(person))
+	Call robotAI(person)
+Else	'Player
+	person.ticker=person.ticker+1
+	Call checkCombo(person)
+	person.killcombo=""
+End_If
+
+If person.container = hellfire
+	Dim item
+	For Each item In getItemsIn($TARGET)
+		Move item,RndSet(setAll)
+	Next
+End_If
+
+If Not(Exists(person)) ' If just died, quit
+	Return
+End_If
+
+Call checkLevelAdvance(person)
+
+'Returns result - if positive, character will live
+Dim survives = (person.Salute > 0)
+Return survives
+End_EVENT
+
+Sub incKilledCount(loser,winner)
+	If winner.remoteAddr <> null and winner.remoteAddr = loser.remoteAddr and loser.remoteAddr <> "127.0.0.1"
+		Speak SYS,winner,"In lotta con te stesso? Più sport e meno computer!"
+		Return
+	End_If
+
+	If loser.type=3 ' Neutral type
+		Print winner,"Non ottengo punti uccidendo personaggi neutrali."
+		Return
+	End_If
+
+	If IsPlayer(loser) And IsBeginner(loser) And IsPlayer(winner) And winner.Livello > 1
+		If loser.Livello < 2
+			winner.Salute = winner.Salute/2
+		End_If
+
+		If IsPlayer(loser) And loser.Livello<=Round(winner.Livello/2,0) ' Lower level
+			Print winner,"Non ottengo punti uccidendo giocatori con Livello &lt;= "+Round(winner.Livello/2,0)+"."
+			Return
+		End_If
+	End_If
+
+	'Update global counters
+	If loser.type <= 10
+		hkilled = hkilled+1
+	Else
+		mkilled = mkilled+1
+	End_If
+
+	'Update winner's guild's kills count (effective in area1 only)
+	If IsCharacter(winner)
+		Dim winnerguild = winner.guild
+		If winnerguild <> null
+			If winnerguild = loser.guild
+				Print winner,"Non ottengo punti uccidendo membri della mia gilda."
+				Return
+			End_If
+			If loser.guild = null And IsPlayer(loser)
+				Print winner,"Non ottengo punti uccidendo giocatori che non fanno parte di altre gilde"
+				Return
+			End_If
+			guildkills(winnerguild) = 1 + guildkills(winnerguild)
+		End_If
+
+		' Update own stats on winner
+		Dim loserguild = loser.guild
+		If loserguild = null ' Fix up guild
+			If loser.type <= 10
+				loserguild = "_humans"
+			Else
+				loserguild = "_monsters"
+			End_If
+		End_If
+		If winner.killstats = null ' Fix up kill stats
+			winner.killstats = NewSet()
+		End_If
+		winner.killstats(loserguild) = 1 + winner.killstats(loserguild)
+
+		'Update kills count in profile
+		If IsPlayer(winner)
+			If Len(winner.killcombo)>0
+				winner.killcombo=winner.killcombo&","
+			End_If
+			winner.killcombo=winner.killcombo&loser.type
+			Call advanceCheck(winner,"kills",getKillTotal(winner)-winner.Uccisioni)
+		End_If
+	End_If
+End_Sub
+
+EVENT onNew
+	PlayBackground $AGENT,bakmusic, 0
+	If Not($AGENT.master) And blocked($AGENT.name)
+		$AGENT.name = "un utente in carcere"
+		Call doJail($AGENT,$AGENT.name,SYS)
+		Return false
+	End_If
+	' Suspend masters during tournament
+	If master=1
+		If tournament>0 And Not($AGENT.mastersuper) And (tournament<>5)
+			$AGENT.master = 0
+		End_If
+	Else
+		master=""
+	End_If
+	$AGENT.balanceignore=null
+	If $AGENT.master
+		$AGENT.balanceignore=1
+	End_If
+	If $AGENT.whipper
+		If SetLen(getObjectsType($AGENT,"whip")) < 1
+			Call restore("whip","*",$AGENT)
+		End_If
+	End_If
+	If $AGENT.type > 0
+		' Player is back with a restored game
+		' Fixes
+		If $AGENT.created=null
+			$AGENT.created=getTime("yyyyMMddHHmm")
+		End_If
+		
+		' Fix health if needed
+		If $AGENT.Salute < 1
+			$AGENT.Salute = 1
+		End_If
+		
+		' Fix panel if needed
+		If $AGENT.type = 2
+			If $AGENT.master
+				SetPanel $AGENT, "pmastercleric"
+			Else
+				SetPanel $AGENT, "pcleric"
+			End_If
+		End_If
+		If $AGENT.type = 4
+			If $AGENT.master
+				SetPanel $AGENT, "pmasterartisan"
+			Else
+				SetPanel $AGENT, "partisan"
+			End_If
+		End_If
+		If $AGENT.type < 2
+			If $AGENT.master
+				SetPanel $AGENT, "pmasterwarrior"
+			Else
+				SetPanel $AGENT, "pwarrior"
+			End_If
+		End_If
+		If $AGENT.type>=10
+			' Monster
+			If $AGENT.type=10 Or $AGENT.type=16 Or $AGENT.type=12 Or $AGENT.type=14
+				If $AGENT.master
+					SetPanel $AGENT, "pmastervamp"
+				Else
+					SetPanel $AGENT, "pvampire"
+				End_If
+			End_If
+			If $AGENT.type=19
+				If $AGENT.master
+					SetPanel $AGENT, "pmasterdarken"
+				Else
+					SetPanel $AGENT, "pdarken"
+				End_If
+			End_If
+			If $AGENT.yell = ""
+				$AGENT.yell = "roar1.wav"
+			End_If
+		End_If
+		If getTime("dd/MM/yyyy")=smDay
+			Speak SYS,$AGENT,"Oggi è il <b>Sottomondo Day</b>!! Drink gratis alla locanda del castello e <a target=_blank href=http://www.sottomondo.org/?p=571>bonus per tutti</a>!!"
+			Dim fbid = getSetting($AGENT.name & "_fbid")
+			If fbid=""
+				fbid=getSetting(CookName($AGENT.name)&"_fbid")
+			End_If
+			If fbid
+				fbusers("f"&fbid)=$AGENT.name
+			End_If
+		Else
+			Dim msg = getTournamentMessage()
+			If msg <> ""
+				Speak SYS,$AGENT,msg
+			End_If
+		End_If
+		Speak SYS,$AGENT,frontpagetext
+		$AGENT.ticksaved = kingTicks-9	'Enable saving
+		Call levelParams($AGENT)
+		' Fix guild info
+		$AGENT.guild = guildSubscribed($AGENT)
+		If $AGENT.guildrequest <> null
+			If InStr(guildrequests($AGENT.guildrequest),$AGENT.name+";")
+				Print $AGENT,"La mia richiesta per la gilda " + guildnames($AGENT.guildrequest) + " è ancora in attesa."
+			Else
+				If InStr(guildsubscribers($AGENT.guildrequest),$AGENT.name+";")
+					Speak SYS,$AGENT,"La tua richiesta per la gilda " + guildnames($AGENT.guildrequest) + " è stata ACCETTATA!!"
+				Else
+					Speak SYS,$AGENT,"La tua richiesta per la gilda " + guildnames($AGENT.guildrequest) + " è stata rigettata. Peccato."
+				End_If
+				$AGENT.guildrequest = null
+			End_If
+		End_If
+
+		' Tournament operation
+		If $AGENT.tickertype<>tournament ' If new tournament then reset ticker
+			$AGENT.tickertype = tournament
+			$AGENT.ticker = 0
+		End_If
+	End_If
+	' Hooked
+	$AGENT.__hooked = NewSet()
+
+	'Create missing arrays for protections & weapons
+	Call FixArrays($AGENT)
+
+	'Fix invisibile avatar
+	If LCase(Right($AGENT.image("N").url,9))="blank.gif" Or LCase(Right($AGENT.image("N").url,10))="spacer.gif"
+		Call restoreAvatar($AGENT)
+		If $AGENT.invisible
+			Call doInvis($AGENT)
+		End_If
+	End_If
+	Call checkInvis($AGENT)
+
+	'Credit Score added by husband/wife
+	If $AGENT.score_added > 0
+		If incrScore($AGENT.name,$AGENT.score_added)
+			' Done - reset score_added on disk
+			Dim nick = CookName($AGENT.name)
+			Dim tmp = getSetting(nick + "_properties","")
+			SaveSetting nick + "_properties",tmp+",score_added=0"
+			$AGENT.score_added = NULL
+		Else
+			Debug "Warning: cannot increment by score_added for " + $AGENT
+		End_If
+	Else
+		$AGENT.score_added = NULL
+	End_If
+
+	Dim footprint = $AGENT.getCookie("footprint")
+	If $AGENT.mainpg = ""
+		$AGENT.mainpg = footprint
+		If $AGENT.mainpg = ""
+			Call $AGENT.SaveCookie("footprint",$AGENT.name)
+			$AGENT.mainpg = $AGENT.name
+		End_If
+	Else
+		If footprint = ""
+			Call $AGENT.SaveCookie("footprint",$AGENT.mainpg)
+		Else
+			If $AGENT.mainpg <> footprint
+				$AGENT.lastused=footprint+"/"+getTime("dd/MM/yyyy HH:mm")
+				Call SaveProperty($AGENT.name,"lastused",$AGENT.lastused,false)
+			End_If
+		End_If
+	End_If
+	'Speak SYS,$AGENT,"Alias: " + $AGENT.mainpg
+
+	If IsJailed($AGENT.mainpg)
+		Call doJail($AGENT,$AGENT.name,SYS)
+	End_If
+
+	If dbdown
+		Print "<B>Problema tecnico al DB - Stai giocando con il profilo di riserva</B>"
+		$AGENT.__backupprofile = true
+	End_If
+
+	PlaySound $WORLD,"connect.wav"
+	Call onNew_local ' Calls local onNew subroutine
+End_EVENT
+
+
+EVENT onEnter
+If $OWNER.type=14
+	' Vampires die in sunlight
+	Call checkLight($OWNER)
+End_If
+End_EVENT
+
+
+EVENT onBite
+If $AGENT.type = 14 Or $AGENT.type = 16
+	Call doBite($AGENT,$OWNER)
+Else
+	Print msgNOTNOW
+End_If
+End_EVENT
+
+EVENT onLook
+	If IsPlayer($AGENT) And IsCharacter($OWNER) And areEnemies($OWNER,$AGENT)
+		If $AGENT.quickaction="look"
+			Call onLookWrapped
+			Return
+		End_If
+		If ($AGENT.quickaction="") Or ($AGENT.quickaction="attack")
+			Call doAttack($AGENT,$OWNER,$AGENT.weapon,true)
+		End_If
+		If $AGENT.quickaction="bite"
+			Call doBite($AGENT,$OWNER)
+		End_If
+		Return False
+	End_If
+End_EVENT
+
+
+EVENT onLookWrapped()
+	Dim what = getObject($OWNER)
+	If IsPlayer(what)
+		PrintRight htmlUsedEquip(what)
+		PrintRight htmlArts(what)
+		Dim s = what.guild
+		If s<>null
+			PrintRight "<br />" + getGuildBox(s,0) + GuildDelegateIcon(what.name,s)
+		Else
+			If what.guildrequest <> null
+				PrintRight "<br />" +"Richiesta in corso per: <B>" + guildnames(what.guildrequest) + "</B>"
+			End_If
+		End_If
+
+		If ProfileExists(what.name)
+			PrintRight "<br />" + "Scheda PG: " & UserCardLink(what.name)
+		End_If
+		
+		PrintRight MarriedBox(what)
+		Call printKillStats(what)
+
+		' Amulet
+		If what.invisible
+			If ContainsType($AGENT,"amulet.invis",false)
+				Call doInvis(what)
+			End_If
+		End_If
+
+		Return
+	End_If
+	If IsCharacter(what)
+		' If looking at a character...
+		If areEnemies(what,$AGENT)
+			Dim empathic = false
+			If $AGENT.type=12 Or $AGENT.type=14	'Vampire
+				empathic = empathy($AGENT,what)
+			End_If
+			If empathic
+				Print "<b>Posso ipnotizzarlo</b>!"
+			End_If
+		Else	'Ally
+			If (what.type=1 And what.command=null)
+				Call humanknight_speak()
+			End_If
+		End_If
+		If what.progeny <> null
+			Print "<b>Adept"+Concordate(what)+" di</b>: "+UserCardLink(what.progeny)
+		End_If
+		Print robotCommandForm(what,$AGENT)
+		PrintRight htmlUsedEquip(what)
+		PrintRight htmlArts(what)
+		Call FixArrays(what)
+		Call printKillStats(what)
+	Else
+		If what.getProperty(cstPROT)>0 Or what.getProperty(cstPOWER)>0
+			Print "<b>Codice Articolo</b>: "+what.type
+		End_If
+'		Print $WORLD,"- " + what + " and " + $AGENT + " no enemies"
+		If what.designer <> null
+			Print "<b>Designer</b>: " + UserCardLink(what.designer) + "<br>"
+		End_If
+		If $AGENT.Livello < 3 And what.Protezione > 0
+			Print "["&htmlIcon("panuse.gif","USA")&" USA] questo oggetto per aggiungerlo al tuo equipaggiamento permanente!<br><br>"
+		End_If
+	End_If
+End_EVENT
+
+EVENT beforeOpen
+	If $OWNER.locked And $OWNER.unlocker <> null
+		Dim k = getContainedType($AGENT,$OWNER.unlocker)
+		If k <> null	' Yes you've got the correct key
+			If Not($OWNER.locked)
+				Print "Non è chiusa a chiave."
+				Return false
+			End_If
+			$OWNER.locked=Not($OWNER.locked)
+			Display "Fatto! Ho usato " + k.name + " e ha funzionato alla perfezione."
+
+			If $OWNER.linked <> null
+				$OWNER.linked.locked = $OWNER.locked
+			End_If
+		Else
+			Display "Hmmm... Sembra che io non abbia niente che possa servire."
+		End_If
+	End_If
+End_EVENT
+
+Sub drinkPotion(person,potion)
+	If potion.type = "bottle.poison"
+		Speak "Il liquore è velenoso!"
+		person.Salute = person.Salute - 5
+		Return
+	End_If
+	If potion.uses <= 0
+		Return false
+	End_If
+	If potion.type = "bottle.water"
+		Print person,"Ahhhhhhh! Ci voleva."
+		PlaySound person,"bubblegurggle.wav"
+		person.Salute = person.Salute+1
+		Call levelParams(person)
+	End_If
+	If potion.type = "bottle.potion"
+		' Potion
+		person.Salute = 10
+		Display person,"WOW! Ora mi sento meglio!!"
+		If person.gender = "F"
+			PlaySound person,"woohoof.wav"
+		Else
+			PlaySound person,"woow.wav"
+		End_If
+	End_If
+	If potion.type = "bottle.antidote"
+		person.toxine = 0
+		Display person,"Veleno neutralizzato!!"
+		If person.gender = "F"
+			PlaySound person,"woohoof.wav"
+		Else
+			PlaySound person,"woow.wav"
+		End_If
+	End_If
+	potion.uses = potion.uses-1
+	If potion.uses = 0
+		potion.icon = "bottlempty.gif"
+		potion.image = "bottlempty.gif"
+		potion.name = "bottiglia vuota"
+		potion.Valore = 1
+		potion.type = "bottle.empty"
+		potion.description = "La bottiglia è ora vuota."
+	End_If
+
+EVENT onReceiveItem
+        If $TARGET.vanishing
+            'Vanishing item
+            If $TARGET.vanishing < 2 And Not(IsRoom($OWNER))
+            	Return
+            End_If
+            'Print $AGENT,$TARGET.name + " svanisce"
+            Kill $TARGET
+            Return false
+        End_If
+End_EVENT
+
+EVENT onReceive
+	Dim x = getContainedType($OWNER,"bomb.proximity")
+	Call checkBomb(x)
+	If IsPlayer($TARGET) = false
+		Return
+	End_If
+
+	' This loop looks a little bit strange
+	' I just wanted to avoid bugs when removing items
+	Dim i
+	Dim c
+	Dim setHooked = $TARGET.__hooked
+	Dim n = SetLen(setHooked)
+	For i=0 To n-1
+		c = setHooked(SetKey(setHooked,n-i))
+		If Exists(c)
+			Move c,$OWNER
+		Else
+			SetRemove setHooked,SetKey(setHooked,n-i)
+		End_If
+	Next
+
+	If ExistScript("onReceive_Local")
+		Call onReceive_Local()
+	End_If
+End_EVENT
+
+EVENT whenPicked
+	If $TARGET.type = 0
+		Return true ' Managed by onReceiveItem
+	End_If
+
+	If $OWNER.Livello > $TARGET.Livello
+		Display "Per usare " + $OWNER.name + " è necessario almeno il Livello "+$OWNER.Livello
+		Move $OWNER,$TARGET.container
+		Return false
+	End_If
+
+	' Management of money
+	If $OWNER.Monete>0
+	    ' Money!! Store value for later
+	    Dim value = $OWNER.Monete
+	    If $OWNER = coins And mode<2
+		' If picking up hidden gold then actually hide it somewhere else
+		$OWNER.hidden = 1
+		$OWNER.Monete = 2 + RndInt(5)
+		Move $OWNER, RndSet(setCastle)
+	    Else
+		' If generic money - delete it
+		Kill $OWNER
+	    End_If
+	    ' Create/update another money pack with stored value
+	    Call giveMoney($TARGET,value)
+	    ' Return false, otherwise the moved/deleted money will actually appear in inventory
+	    Return false
+	End_If
+
+	If MainType($OWNER)="weapon" And Not(IsMagician($TARGET))
+		If $TARGET.weapon = null Or getContainedType($TARGET,$TARGET.weapon) = null
+			Dim weapon = getContainedType($TARGET,"weapon")
+			Display $TARGET,"Arma attuale: " + weapon.name + ", Potenza: " + weapon.Potenza
+			$TARGET.weapon = weapon.type
+		End_If
+		Return
+	End_If
+
+	If Left($OWNER.type,12)="spell.attack" And IsMagician($TARGET)
+		If $TARGET.weapon = null Or getContainedType($TARGET,$TARGET.weapon) = null
+			Dim weapon = $OWNER
+			Display $TARGET,"Incantesimo di attacco attuale: " + weapon.name + ", Potenza: " + weapon.Potenza
+			$TARGET.weapon = weapon.type
+		End_If
+		Return
+	End_If
+
+	If $OWNER.type = "amulet.invis" And $TARGET.invisible
+		Call doInvis($TARGET)
+	End_If
+
+	If ExistScript("whenPicked_Local")
+		Return whenPicked_Local()
+	End_If
+End_EVENT
+
+EVENT onTick
+	ticks = 1+ticks ' Increment world's ticker
+	Call onTick_local ' Calls local onTick subroutine
+	Call checkBomb(activebomb) ' Check exploding bombs
+	Call doRndMusic() ' Music update
+	Call manageInfections()	'Infections by vampire
+	Call nightDayCycle()
+	Call balanceGame(monstersPopupSet) 'Balance situation
+	Call unexpectedEvents_Local 'Local sub - optional
+END_EVENT
+
+Function calcMonstersLeft
+	Dim tmp = targkilled-mkilled
+	If tmp < 0
+		tmp = 0
+	End_If
+	Return	tmp
+
+EVENT onBuy
+	If $OWNER.Valore = 0
+		Display "Hmm... Non ha valore, non credo sia in vendita."
+		Return false
+	End_If
+	If $OWNER.seller = ""
+		Display "Non è in vendita, posso prenderlo."
+		Return false
+	End_If
+
+	If InCatalog($OWNER.type)
+		Return buy_item($OWNER.type)
+	End_If
+
+	If $OWNER.Livello > $AGENT.Livello
+		Display "Per acquistare questo oggetto è necessario almeno il Livello "+$OWNER.Livello
+		Return false
+	End_If
+
+	Dim money=0
+	Dim moneypack
+	Dim item
+	For Each item In getItemsIn($AGENT)
+		If item.Monete > 0
+			money=item.Monete
+			moneypack=item
+		End_If
+	Next
+
+	shopkeeper = $AGENT.container.shopkeeper
+	If money >= $OWNER.Valore
+                'You have got enough money
+		item = cloneItem($OWNER)
+		If item = null
+			item = $OWNER
+		End_If
+		item.seller = ""
+		Move item, $AGENT
+		If item.container = $AGENT
+			' Transaction being successful
+			moneypack.Monete = moneypack.Monete - $OWNER.Valore
+			moneypack.name = "" + moneypack.Monete + " monete"
+                        If moneypack.Monete = 0
+                            Kill moneypack
+                        End_If
+			Speak shopkeeper,$AGENT,"Grazie straniero, torna pure se ti servono articoli di qualità!"
+		Else
+			Display "Non posso tenere in mano altro. Dovrei LASCIARE qualcosa."
+			$OWNER.seller = shopkeeper
+		End_If
+	Else
+		Display "Non ho abbastanza soldi. Costa " + $OWNER.Valore + " monete d'oro."
+		Return false
+	End_If
+
+EVENT onSell
+	Dim item = getObject($OWNER)
+	If $OWNER.container <> $AGENT
+		Display "Non è roba mia."
+		Return false
+	End_If
+	If $AGENT.container.shop <> 1
+		Display "Non siamo in un negozio."
+		Return false
+	End_if
+	If $OWNER.Valore = 0
+		Display "Questo non si può vendere."
+		Return false
+	End_If
+	Dim shopkeeper = $AGENT.container.shopkeeper
+	If shopkeeper = null
+		Return false
+	End_If
+	Dim value = Int($OWNER.Valore * 0.8)
+	If value = 0
+		value = 1
+	End_If
+
+	If InCatalog($OWNER.type)
+		Dim dummy
+		If limitedavails And $AGENT.container.shopkeeper.avail(item.type) >= 10 ' Too many items in stock
+			Speak shopkeeper,$AGENT,"Ho già troppa di quella roba, grazie!"
+			Return false
+		End_If
+	Else
+		If IsAcquirable($OWNER)
+			If Not(SanityCheck($OWNER))
+				Speak shopkeeper,$AGENT,"Questo oggetto non si può utilizzare: " & SharedError
+				Return false
+			End_If
+		End_If
+	End_If
+
+	Speak shopkeeper,$AGENT,"OK ti do " + value + " monete per questo, tieni!"
+
+	Call giveMoney($AGENT,value)
+	If InCatalog($OWNER.type)
+		Kill $OWNER
+		If limitedavails
+			If SetContainsKey($AGENT.container.shopkeeper.avail,item.type)
+				$AGENT.container.shopkeeper.avail(item.type) = 1 + $AGENT.container.shopkeeper.avail(item.type)
+			End_If
+		End_If
+		'Print "ON CATALOG"
+		Return
+	Else
+		If IsAcquirable($OWNER)
+			Call CatalogStoreItem(item)
+			Call shops_prepare(arrShopkeepers)
+			Kill item
+			'Print "ACQUIRED AND UPDATED"
+			Return
+		Else
+			Dim dummy
+			'Print "NOT ACQUIRABLE"
+		End_If
+	End_If
+	If SetContainsKey(cloneableTypes,MainType($OWNER))
+		If SetLen(getObjectsType(shopkeeper.container,$OWNER.type)) > 0
+			Kill item
+			Return
+		End_If
+	End_If
+	Move $OWNER, shopkeeper.container
+	If Exists($OWNER)
+		$OWNER.seller = shopkeeper
+	End_If
+End_EVENT
+
+EVENT onYell
+	If $AGENT.type <= 10
+		Print msgNOTNOW
+		Return false
+	End_If
+	PlaySound $AGENT.container, $AGENT.yell
+	Dim c
+	For Each c In getCharactersIn($AGENT.container)
+		If c.type > 0 And c.Livello=1 And c <> $AGENT And c.type <> 3
+			If areEnemies(c,$AGENT)
+				Print c,"EHI!! " + $AGENT.name + " mi sta urlando in faccia!"
+				Call c.go($AGENT.facing)
+			End_If
+		End_If
+	Next
+
+EVENT onDie
+	Dim g = Concordate($OWNER)
+	If Exists($OWNER.killer) And $OWNER.killer <> $OWNER
+		Speak SYS,$WORLD,UserCardLink($OWNER.name) + " è stat"+g+" "+RndSet(arrVerbs)+g+" da " + $OWNER.killer.name + "!"
+		If $OWNER.killer.name = $OWNER.married
+			$OWNER.killer.married = null
+		End_If
+	Else
+		Speak SYS,$WORLD,UserCardLink($OWNER.name) + " è stat"+g+" "+RndSet(arrVerbs)+g+"!"
+	End_If
+	PlaySound $WORLD,"monster_death.wav"
+
+' doRndMusic
+'
+' Updates background music (Juke-Box)
+' with Random track - to be called at each tick
+'
+' global variables
+'	musicSet (input)
+'	musicTicks
+Sub doRndMusic()
+	musicTicks=musicTicks-1
+	If musicTicks<=0 'Time to put on a new track!
+		Dim track,length
+		If SetLen(playlist) > 0 ' Alternate Playlist
+			playlist = CutFirst(playlist) ' Cut first entry away
+			playlistLen = CutFirst(playlistLen) ' Cut first entry away
+		End_If
+		If SetLen(playlist) > 0 ' Alternate Playlist
+			track = playlist(1)
+			length = playlistLen(1)
+			SetRemove playlist,1
+			'Speak SYS,$WORLD,"Playlist is now: " + playlist
+		Else
+			If SetLen(musicSet) < 1
+				Return
+			End_If
+			Dim n = RndInt(SetLen(musicSet))
+			Dim tmp = musicSet(n)
+			Dim tmparr = Split(tmp,"|")
+			track = Replace(tmparr(1),"$dir$",gameInfo("site")+"downloads")
+			length = tmparr(2)
+		End_If
+		'Speak SYS,$WORLD,"playing now " + track + " " + length
+		Call doMusic(track,length)
+	End_If
+End_Sub
+
+' doMusic
+'
+' Updates background music (Juke-Box)
+' with specific track
+'
+' input
+'	track	track to be played
+'	mins	estimated duration
+' global variables
+'	musicTicks
+'	bakmusic
+Sub doMusic(track,mins)
+	bakmusic = track
+	musicTicks = mins*2
+	PlayBackground $WORLD, bakmusic, false
+End_Sub
+
+EVENT onGather
+	If $AGENT.container = lake Or $AGENT.container = cave4 Or $AGENT.container.id = "castlebridge"
+		Dim myset = getObjectsType($AGENT,"bottle.empty")
+		If SetLen(myset) < 1
+			myset = getObjectsType($AGENT,"bottle")
+		End_If
+		If SetLen(myset) >= 1
+			Dim mycont = myset(1)
+			mycont.image = "bottlewater.gif"
+			mycont.icon = "bottlewaterico.gif"
+			mycont.uses = 3
+			mycont.Valore = 2
+			mycont.type = "bottle.water"
+			mycont.name = "bottiglia d'acqua"
+			mycont.description = "Limpida, trasparente, quasi quasi mi vien sete."
+			PlaySound $AGENT,"bubblegurggle.wav"
+			Display "Fatto!"
+			Return
+		End_If
+	End_If
+	If $AGENT.container = cave7
+		If $AGENT.type = 4
+			Call NewItem($AGENT,"pietra","E' un blocco di minerale roccioso.",NewImage("spelltablet.gif",48,48),"pickable,showmode=2,icon=spelltablet.gif,type=stone,Valore=2")
+			$AGENT.Salute = $AGENT.Salute - 2
+			Print $AGENT,msgNOWREST
+		Else
+			Print $AGENT,"Non riesco a staccare nulla dalle rocce, solo un artigiano ne è capace."
+		End_If
+		Return
+	End_If
+	Display $AGENT,"Non ho un contenitore adatto."
+
+EVENT onCombine
+	' Magician operations
+	If $OWNER.type = "bottle.water" And $TARGET.name = "cymbidium"
+		Call refillPotion($OWNER)
+		Call advanceCheck($AGENT,"spells",1)
+		Return 1
+	End_If
+	If $TARGET.type = "bottle.water" And $OWNER.name = "cymbidium"
+		Call refillPotion($TARGET)
+		Call advanceCheck($AGENT,"spells",1)
+		Return 1
+	End_If
+	If $AGENT.Livello >=2 ' Expert
+		If ($OWNER.type = "bottle.potion" And IsCharacter($TARGET))
+			Call drinkPotion($TARGET,$OWNER)
+			If IsPlayer($TARGET) And $TARGET.Salute <= 2
+				Call advanceCheck($AGENT,"spells",2)
+			Else
+				Call advanceCheck($AGENT,"spells",1)
+			End_If
+			Print "Fatto!"
+			Return true
+		Else
+			Print "Non saprei come fare..."
+		End_If
+	Else
+		Print "Per farlo occorre almeno il Livello 2"
+	End_If
+
+EVENT onUse
+        If $OWNER.seller <> ""
+            Print "E' in vendita."
+	    Speak $OWNER.seller, $AGENT, "Hey, quello costa " + $OWNER.Valore + " monete!", "Ti serve " + $OWNER.name + " eh? E' in vendita, sai.", "Guarda: ti faccio un prezzo speciale: "+ $OWNER.Valore + " monete, solo perché sei tu!"
+            Return false
+        End_If
+        If $OWNER.Livello > $AGENT.Livello
+		Print "Occorre almeno il Livello "+$OWNER.Livello
+		Return false
+	End_If
+	Return doUse($AGENT,$OWNER)
+
+
+EVENT onUseWith
+	Dim success = false
+        If $OWNER.Livello > $AGENT.Livello
+		Print msgATLEASTLVL+$OWNER.Livello
+		Return false
+	End_If
+        If $TARGET.Livello > $AGENT.Livello
+		Print msgATLEASTLVL+$TARGET.Livello
+		Return false
+	End_If
+'	If $AGENT.type=4
+		' Craftsman operations
+
+		' BOMB
+		If ($OWNER.type = "powder" And $TARGET.type = "bottle.empty") Or ($OWNER.type = "bottle.empty" And $TARGET.type = "powder")
+			If $AGENT.Livello < 2
+				Print msgATLEASTLVL+2
+				Return false
+			End_If
+
+			Dim powder = $OWNER
+			Dim bomb = $TARGET
+			If $OWNER.type = "bottle.empty" And $TARGET.type = "powder"
+				bomb = $OWNER
+				powder = $TARGET
+			End_If
+			If bomb.container <> $AGENT
+				Return false
+			End_If
+			bomb.image = NewImage("bomb.gif",40,40)
+			bomb.icon = "bomb.gif"
+			bomb.name = "una bomba"
+			bomb.description = "E' una bomba."
+			bomb.Valore = 10
+			bomb.sound = "match.wav"
+			bomb.type = "bomb"
+			PlaySound $AGENT,"fanfare.wav"
+			Kill powder
+			Call advanceCheck($AGENT,"crafts",1)
+			$AGENT.Salute = $AGENT.Salute-1
+			success = true
+		End_If
+
+		' BOMB TRAP
+		If ($OWNER.type = "bomb" And $TARGET.type = "trap") Or ($OWNER.type = "trap" And $TARGET.type = "bomb")
+			Dim bomb = $OWNER
+			Dim trap = $TARGET
+			If $OWNER.type = "trap" And $TARGET.type = "bomb"
+				bomb = $TARGET
+				trap = $OWNER
+			End_If
+			If trap.container <> $AGENT
+				Return false
+			End_If
+			bomb.image = NewImage("bombtrap.gif",40,40)
+			bomb.icon = "bombtrap.gif"
+			bomb.name = "trappola esplosiva"
+			bomb.description = "Una bomba con meccanismo a scatto."
+			bomb.Valore = 22
+			bomb.sound = "click.wav"
+			bomb.type = "bomb.trap"
+			PlaySound $AGENT,bomb.sound
+			Kill trap
+			Call advanceCheck($AGENT,"crafts",1)
+			$AGENT.Salute = $AGENT.Salute-1
+			success = true
+		End_If
+'	End_If
+	If Not(success) And ExistScript("onUseWith_Local")
+		success = onUseWith_Local()
+	End_If
+	Return success
+
+Sub refillPotion(target)
+'	input: "target" should reference the bottle object
+	target.uses = 5
+	target.name = "pozione di cura"
+	target.description = "L'etichetta dice: 'Pozione di Cura'"
+	target.image = "potion.gif"
+	target.icon = "bottle3.gif"
+	target.type = "bottle.potion"
+	target.Valore = 5
+	Display target.container,"La bottiglia si riempie di pozione magica!"
+	PlaySound target.container,"bubblegurggle.wav"
+
+EVENT onSave
+	'If $TARGET = ""
+	'	Print $OWNER,"Save and Exit"
+	'Else
+	'	Print $OWNER,"Save and continue"
+	'End_If
+	If $OWNER.container = bedroom
+		Return "In questa stanza non si può fare."
+	End_If
+	If dbdown
+		Display $OWNER,"Non si può fare a causa di un problema tecnico. Aspettiamo ancora un pò."
+		Return false
+	End_If
+	If $OWNER.__backupprofile
+		Display $OWNER,"Stai usando il profilo di riserva e non lo puoi salvare."
+		Return false
+	End_If
+	If debugmode Or (kingTicks-$OWNER.ticksaved) > 8
+		$OWNER.ticksaved = kingTicks
+		Return 1
+	Else
+		Display $OWNER,"Non posso salvare la partita così spesso. Aspettiamo ancora un pò."
+		Return false
+	End_If
+End_EVENT
+
+' Die for vampires when in sunlight
+' Input: target character
+Sub checkLight(target)
+	If itsday
+		If Not(SetContainsKey(setCovered,target.container.id)) And target.container.dark=false
+			' Not in dark places Nor In buildings
+			Display target,"AAARGHHH!!! La luce del sole mi uccide!!"
+			Kill target
+		End_If
+	End_If
+End_Sub
+
+EVENT onTransform
+Call doTransform($AGENT)
+
+Sub manageInfections()
+	' Is still an existing Player? (Might have disconnected in the meantime)
+	Call infect_SpecialCase
+	If Exists(infected) And Exists(infector)
+		' Normal case
+		infected.prevtype = infected.type
+		infected.type = infectype
+		If IsPlayer(infector) Or infector.progeny = ""
+			infected.progeny = infector.name
+			Print infector,"Nuovo adepto: "+infected.name+" in "+infected.container.name
+		Else
+			infected.progeny = infector.progeny
+			Dim p = getPlayer(infector.progeny)
+			If Exists(p)
+				Speak infector,p,"Ecco un nuovo adepto di "+infected.progeny+": "+infected.name+" in "+infected.container.name+". +2 monete!"
+				If Not(IsPlayer(infected))
+					Call GiveMoney(p,2)
+					Call advanceCheck(p,"infections",1)
+					If infector.command = "progeny"
+						infected.command = "progeny"
+						infected.commander = infector.commander
+						Print p,infector.name + msgEXECUTED
+						Kill infector
+					End_If
+				End_If
+			End_If
+		End_If
+		If infectype = 16
+			infected.Classe = "Lupo Mannaro"
+			infected.type = 10
+			If Not(IsPlayer(infected))
+				infected.angry=1
+				Call doTransform(infected)
+			End_If
+		Else
+			infected.Classe = "Vampiro"
+			If infected.gender = "F"
+				infected.image("N") = NewImage("vampirebride.gif",93,100)
+			Else
+				infected.image("N") = NewImage("vampire.gif",95,100)
+			End_If
+			PlaySound infected.container,"death.wav"
+		End_If
+		Speak SYS,infected, "Ti sei trasformato in un " + infected.Classe + "!!!"
+		infected.yell = "roar2.wav"
+		infected.Forza = infected.Forza + 2
+		If cross.container = infected And infected.type=14
+			Move cross,infected.container
+		End_If
+		SetPanel infected, "pvampire"
+		RefreshView infected.container
+		If infected.type = 14
+			Call checkLight(infected)
+		End_If
+
+		'Credit points to infector
+		If Exists(infector)
+			If SameIPorGuild(infector,infected)
+				Print infector,"Infezione a "+infected.name+" non vale per l'avanzamento."
+			Else
+				Call advanceCheck(infector,"infections",1)
+			End_If
+		End_If
+	End_If
+	infected = null
+	infector = null
+End_Sub
+
+
+
+Function doBite(attacker,victim)
+	If ExistScript("doBite_Local")
+		If doBite_Local(attacker,victim) 'Already Managed?
+			Return false 'Exit
+		End_If
+	End_If
+	If Not(victim.type>0) Or victim.invul Or victim.type=3
+		Display "Non posso..."
+		Return false
+	End_If
+	If victim.type >= 10
+		Display "Non mordo i mostri."
+		Return false
+	End_If
+	If attacker.type=10
+		Display "Adesso non posso."
+		Return false
+	End_If
+	If attacker.type=14 And containsType(victim,"garlic",true)
+		Print attacker,"Non mi posso avvicinare."
+		Return false
+	End_If
+	If (attacker.type=16) And ContainsSubtype(victim,"silver",false)
+		Print attacker,"Non mi posso avvicinare."
+		Return false
+	End_If
+	If Exists(infected)
+		Print attacker,"C'è già una infezione in corso: "+infector.name+" ha morso "+infected.name+". Aspetto un attimo ancora."
+		Return false
+	End_If
+	If attacker.type=16
+		Print victim,"Aaaahhh!!! " + attacker.name + " mi ha morso!!!"
+	Else
+		Print victim,"Aaaahhh!!! " + attacker.name + " mi ha morso sul collo!!!"
+	End_If
+	If victim.gender = "F"
+		PlaySound victim.container,"scream1.wav"
+	Else
+		PlaySound victim.container,"ahh.wav"
+	End_If
+	Dim msgidx = RndInt(3)
+	Dim msg
+	If msgidx = 1
+		msg ="Presto " + victim.name + " riceverà il dono dell'immortalità!! Ha ha ha!!"
+	End_If
+	If msgidx = 2
+		msg =victim.name+"! Non ti senti... come dire... <b>un pò stran"+Concordate(victim)+"</b>?"
+	End_If
+	If msgidx = 3
+		msg ="Carissim"+Concordate(victim)+" "+victim.name+"... stai per entrare nella <b>grande famiglia</b>!!"
+	End_If
+	Speak attacker,victim.container,msg
+	If IsPlayer(attacker)
+		Print attacker,"- " + msg
+	End_If
+	victim.killer = attacker
+	victim.Salute = victim.Salute-1
+	infected = victim
+	infector = attacker
+	infectype = attacker.type
+	If infectype = 12
+		infectype = 14
+	End_If
+	Return 1
+End_Function
+
+Sub giveMoney(target,value)
+'Input: target=(container for the money);
+'	value=(how much money)
+	Dim item
+	For Each item In getItemsIn(target)
+		If item.Monete > 0
+			item.Monete=item.Monete+value
+			PlaySound target,"fanfare.wav"
+			item.name = "" + item.Monete + " monete"
+			Print target,"Adesso ho " + item.Monete + " monete d'oro!"
+			Return
+		End_If
+	Next
+
+	' If we are here, no money packs found
+	Dim newobj = NewItem(target,"" + value + " monete","Le monete sono denaro sonante!",NewImage("money.gif",31,31),"type=money,volume=0,pickable,showmode=2,icon=money.gif,Monete="+value)
+	PlaySound target,"fanfare.wav"
+	Print target,"Adesso ho " + newobj.Monete + " monete d'oro!"
+End_Sub
+
+' CalcAvgPower
+'
+' Calculates the average overall power of both armies
+'
+'side f/x: modifies countHumans,countMonsters,avgPowerHumans,avgPowerMonsters,levMin,levMax
+'
+Sub calcAvgPower()
+	Dim ch
+	Dim totalH = 0
+	Dim totalM = 0
+	countHumans = 0
+	countMonsters = 0
+	avgPowerHumans = 0
+	avgPowerMonsters = 0
+	levMin = 100	'Min level found
+	levMax = 1	'Max level found
+
+	For Each ch In getCharactersIn($WORLD)
+		If ch.type>0 And Not(ch.balanceignore)
+			If ch.type <= 10 ' Human
+				totalH = totalH + ch.Forza
+				countHumans = countHumans+1
+			Else	'Monster
+				totalM = totalM + ch.Forza
+				countMonsters = countMonsters+1
+			End_If
+			If ch.Livello < levMin
+				levMin = ch.Livello
+			End_If
+			If ch.Livello > levMax
+				levMax = ch.Livello
+			End_If
+		End_If
+	Next
+	If countHumans > 0
+		avgPowerHumans = totalH/countHumans
+	End_If
+	If countMonsters > 0
+		avgPowerMonsters = totalM/countMonsters
+	End_If
+End_Sub
+
+
+' popMonster
+'
+' Input: power= Desired Overall power of the monster
+'	 setRooms=Popup place: set of rooms to choose from
+'	 setCovered=Covered Places must be defined for vampires to pop up
+' Returns: reference the popped up monster
+' Side f/x: pops up the monster
+Function popMonster(power,setRooms)
+	Dim mname,image,attrs
+	Dim x
+	If power <= 2
+		x = RndInt(3)
+		If x = 1
+			mname = "uno sludge"
+			image = NewImage("asludge.gif",40,40)
+			attrs = "type=11,nohands=1,Forza=1.5,suffersound=pig.wav,affi=2/0/0/0"
+		End_If
+		If x = 2
+			mname = "un conch"
+			image = NewImage("conch.gif",48,49)
+			attrs = "type=11,nohands=1,Forza=1.5,affi=2/2/0/0"
+		End_If
+		If x=3
+			mname = "un serpente"
+			image = NewImage("snake2.gif",40,40)
+			attrs = "type=11,nohands=1,Forza=2,suffersound=pig.wav,affi=0/2/0/0,artdefense=counterattack"
+		End_If
+	End_If
+	If power > 2 And power <= 2.5
+		x = RndInt(2)
+		If x = 1
+			mname = "uno sludge"
+			image = NewImage("asludge.gif",40,40)
+			attrs = "type=11,nohands=1,Forza=2.2,suffersound=pig.wav,affi=4/0/0/0"
+		End_If
+		If x = 2
+			mname = "una sanguisuga"
+			image = NewImage("bloodskr.gif",50,29)
+			attrs = "type=11,nohands=1,Forza=2.5,suffersound=pig.wav,affi=4/0/0/0"
+		End_If
+	End_If
+	If power > 2.5 And power <= 3.5
+		x = RndInt(3)
+		If x = 1
+			mname = "un biruburu"
+			image = NewImage("biruburu.gif",70,54)
+			attrs = "type=11,nohands=1,Forza=2.6,suffersound=pig.wav,affi=0/4/0/0"
+		End_If
+		If x = 2
+			mname = "un chorking"
+			image = NewImage("chorking.gif",80,73)
+			attrs = "type=11,nohands=1,Forza=2.8,suffersound=pig.wav"
+		End_If
+		If x = 3
+			mname = "una sanguisuga"
+			image = NewImage("bloodskr.gif",50,29)
+			attrs = "type=11,nohands=1,Forza=3,suffersound=pig.wav"
+		End_If
+	End_If
+	If power > 3.5 And power <= 4
+		mname = "un giovane lupo mannaro"
+		image = NewImage("werewolf.gif",80,90)
+		attrs = "type=16,Forza=4,suffersound=wolfhit.wav"
+	End_If
+	If power > 4 And power <= 4.5
+		mname = "un verme mutante"
+		image = NewImage("horror091.gif",90,115)
+		attrs = "type=11,Forza=4.2,affi=0/4/0/0"
+	End_If
+	If power > 4.5 And power <= 5
+		mname = "un lupo mannaro"
+		image = NewImage("werewolf.gif",90,100)
+		attrs = "type=16,Forza=5,suffersound=wolfhit.wav"
+	End_If
+	If power > 5 And power <= 5.5
+		mname = "un verme gigante"
+		image = NewImage("horror091.gif",100,125)
+		attrs = "type=11,Forza=5.2,vuln_mob=1,affi=0/4/0/0"
+	End_If
+	If power > 5.5 And power <= 6
+		If RndInt(2) = 1
+			mname = "un vampiro"
+			image = NewImage("vampire.gif",95,100)
+			attrs = "type=14,Forza=5.7,yell=roar2.wav,artdefense=counterattack"
+		Else
+			mname = "un fantasma"
+			image = NewImage("2003ghost.gif",80,100)
+			attrs = "type=11,Forza=5.7,yell=roar2.wav"
+		End_If
+	End_If
+	If power > 6 And power <= 6.5
+		If RndInt(2) = 1
+			mname = "un Mostro Serpente"
+			image = NewImage("horror104.gif",115,150)
+			attrs = "type=11,Forza=6.2"
+		Else
+			mname = "un Beholder"
+			image = NewImage("beholder.gif",80,100)
+			attrs = "type=11,nohands,Forza=6.5,vuln_mob"
+		End_If
+	End_If
+	If power > 6.5 And power <= 7
+		x = RndInt(2)
+		If x = 1
+			mname = "una mummia"
+			image = NewImage("mummy.gif",92,100)
+			attrs = "type=11,Forza=6.7,affi=0/4/0/0"
+		End_If
+		If x = 2
+			mname = "un troll"
+			image = NewImage("troll.png",74,110)
+			attrs = "type=11,Forza=7,vuln_mob"
+		End_If
+	End_If
+	If power > 7 And power <= 8
+		x = RndInt(5)
+		If x = 1
+			mname = "un Bruco della Morte"
+			image = NewImage("dethpede.png",84,80)
+			attrs = "type=11,nohands,Forza=7.2"
+		End_If
+		If x = 2
+			mname = "un golem"
+			image = NewImage("sgolem.png",110,98)
+			attrs = "type=11,Forza=8,affi=0/4/0/0"
+		End_If
+		If x = 3
+			mname = "un Orco"
+			image = NewImage("horror076.gif",140,133)
+			attrs = "type=11,Forza=8,yell=roarlong2.wav,affi=0/4/0/0"
+		End_If
+		If x = 4
+			mname = "uno Scheletro"
+			image = NewImage("skeleton.gif",120,120)
+			attrs = "type=11,Forza=7.5,yell=roar2.wav,vuln_mob"
+		End_If
+		If x = 5
+			mname = "un Ciclope"
+			image = NewImage("cyclops.gif",120,120)
+			attrs = "type=11,Forza=7.6,yell=roar2.wav,affi=0/4/0/0"
+		End_If
+	End_If
+	If power > 8 And power <= 8.5
+		x = RndInt(2)
+		If x = 1
+			mname = "un vampiro anziano"
+			image = NewImage("vampire.gif",95,100)
+			attrs = "type=14,Forza=8.3,yell=roar2.wav,vuln_mob,artdefense=counterattack"
+		End_If
+		If x = 2
+			mname = "un'Entità Oscura"
+			image = NewImage("horror047.gif",121,144)
+			attrs = "type=11,Forza=8.5,artdefense=counterattack"
+		End_If
+	End_If
+	If power > 8.5 And power <= 9.5
+		x = RndInt(3)
+		If x = 1
+			mname = "un demone"
+			image = NewImage("daemon.png",121,117)
+			attrs = "type=11,Forza=9,artdefense=counterattack"
+		End_If
+		If x = 2
+			mname = "un demone volante"
+			image = NewImage("tn_an22.gif",152,105)
+			attrs = "type=11,Forza=8.7,vuln_mob,affi=0/0/4/0"
+		End_If
+		If x = 3
+			mname = "un folletto volante"
+			image = NewImage("flyinggoblin.gif",95,113)
+			attrs = "type=11,Forza=9.2,affi=0/0/4/0"
+		End_If
+	End_If
+	If power > 9.5 And power <= 10.5
+		x = RndInt(3)
+		If x = 1
+			mname = "un demone guardiano"
+			image = NewImage("daemonguard.gif",121,100)
+			attrs = "type=11,Forza=10"
+		End_If
+		If x = 2
+			mname = "un uomo-lucertola"
+			image = NewImage("lizardman.gif",84,110)
+			attrs = "type=11,Forza=9.7,affi=0/4/0/0"
+		End_If
+		If x = 3
+		        mname = "un serpente velenoso"
+		        image = NewImage("snake2.gif",84,110)
+		        attrs ="type=11,Forza=10.5,affi=0/4/0/0,artdefense=counterattack"
+		End_If
+	End_If
+	If power > 10.5 And power <= 11.5
+		x = RndInt(4)
+		If x = 1
+			mname = "un mostro ectoplasmico"
+			image = NewImage("monst52.gif",78,100)
+			attrs = "type=11,Forza=11"
+		End_If
+		If x = 2
+		        mname = "uno scheletro combattente"
+		        image = NewImage("skeleton2.gif",78,100)
+		        attrs = "type=11,Forza=10.6"
+		End_If
+		If x = 3
+			mname = "un demone ciclope"
+			image = NewImage("demoncyclops.gif",144,120)
+			attrs = "type=11,Forza=11,artdefense=counterattack"
+		End_If
+		If x = 4
+			mname = "un Demone"
+			image = NewImage("deamona.gif",88,105)
+			attrs = "type=11,Forza=11.3,vuln_mob"
+		End_If
+	End_If
+	If power > 11.5 And power <= 12
+		x = RndInt(3)
+		If x = 1
+			mname = "un Demone multibraccia"
+			image = NewImage("multiarm.gif",76,120)
+			attrs = "type=11,Forza=11,vuln_mob"
+		End_If
+		If x = 2
+			mname = "un Dragone gigante"
+			image = NewImage("gdragon.gif",125,117)
+			attrs = "type=11.8,Forza=11"
+		End_If
+		If x = 3
+			mname = "un Dragone volante"
+			image = NewImage("fdragon.gif",64,100)
+			attrs = "type=11,Forza=11.5,affi=0/0/4/0"
+		End_If
+	End_If
+	If power > 12 And power < 15
+		x = RndInt(2)
+		If x = 1
+			mname = "un cavaliere oscuro"
+			image = NewImage("darkknight.gif",95,102)
+			attrs = "type=11,Forza=12.5,affi=4/0/0/0"
+		End_If
+		If x = 2
+			mname = "un profeta della Morte"
+			image = NewImage("deathevanfront.gif",110,82)
+			attrs = "type=11,Forza=14,affi=0/0/4/0,artdefense=counterattack"
+		End_If
+		'If x = 3
+		'        mname = "un drago"
+		'        image = NewImage("drago.gif",95,102)
+		'        attrs = "type=11,Forza=13"
+		'End_If
+	End_If
+	If power = 15
+		mname = "l'Uomo-Diavolo"
+		image = NewImage("horror046.gif",140,175)
+		attrs = "type=17,Forza=15,keeper=1,vuln_mob,affi=0/0/0/4"
+	End_If
+	If power > 15
+		x = RndInt(8)
+		If x = 1
+			mname = "l'Uomo-Diavolo Sterminatore"
+			image = NewImage("horror046.gif",145,180)
+			attrs = "type=11,Forza=" + Round(power,0) + ",keeper=1,vuln_mob,terminator,affi=0/0/0/4,artdefense=counterattack"
+		End_If
+		If x = 2
+			mname = "un diavolo rosso"
+			image = NewImage("reddevil.gif",150,150)
+			attrs = "type=11,Forza=" + Round(power,0) + ",keeper=1,affi=0/0/0/4"
+		End_If
+		If x = 3
+			mname = "un gargoyle"
+			image = NewImage("gargoyle.gif",167,115)
+			attrs = "type=11,affi=0/0/4/0,Forza=" + Round(power,0)
+		End_If
+		If x = 4
+			mname = "una morte nera"
+			image = NewImage("deathreaper.gif",144,120)
+			attrs = "type=11,affi=0/0/4/0,Forza=" + Round(power,0)
+		End_If
+		If x = 5
+			mname = "un gigabat"
+			image = NewImage("gigabat.gif",120,100)
+			attrs = "type=11,Forza=" + Round(power,0) + ",terminator,affi=0/0/4/0"
+		End_If
+		If x = 6
+			mname = "una sterminatrice"
+			image = NewImage("monst11.gif",130,100)
+			attrs = "type=11,Forza=" + Round(power,0) + ",terminator"
+		End_If
+		If x = 7
+			mname = "un demone pipistrello"
+			image = NewImage("batdevil.gif",64,100)
+			attrs = "type=11,Forza=" + Round(power,0) + ",terminator,affi=0/0/4/0"
+		End_If
+		If x = 8
+			mname = "un gargoyle sterminatore"
+			image = NewImage("monst28.gif",100,100)
+			attrs = "type=11,Forza=" + Round(power,0) + ",terminator,affi=0/0/4/0,artdefense=counterattack"
+		End_If
+	End_If
+
+	Dim new
+	Dim setWhere = setRooms
+	If InStr(attrs,"type=14")
+		setWhere = setCovered
+	End_If
+	new = NewCharacter(RndSet(setWhere),mname,"",image,attrs+",dyncreated,accepts=*")
+
+	'Check - it happened we got a null character
+	If new.type = null
+		Debug "Problem in popMonster. New.type = null. Power was: " + power + " setRooms=" + setRooms + " x= " + x
+		$WORLD.debuginfo = "" + $WORLD.debuginfo + ",problem in popMonster"
+		return null
+	End_If
+	If new.type = 0
+		Debug "Problem in popMonster. New has type=0. Power was: " + power
+		$WORLD.debuginfo = "" + $WORLD.debuginfo + ",problem in popMonster"
+		Kill new
+		return null
+	End_If
+
+	new.Livello = levMax
+	Display $WORLD,"" + mname + " è apparso, ha Forza: " +  (new.Forza)
+	' Fix description now
+	new.description = ""
+	If new.suffersound=""
+		new.suffersound="pig.wav"
+	End_If
+	new.__hooked = NewSet()
+
+	new.arts = SetKeys(artNames) 'Knowledge of all arts
+	If new.artdefense = null ' Survival Art by default
+		new.artdefense = "survival"
+	End_If
+
+	Call FixArrays(new)
+
+	If ExistScript("popMonster_Local")
+		Call popMonster_Local(new)
+	End_If
+
+	Return new
+End_Function
+
+
+' popHuman
+'
+' Input: power= Desired Overall power
+'	 setRooms=Popup place: set of rooms to choose from
+' Returns: reference the popped up robot
+' Side f/x: pops up the robot
+Function popHuman(power,setRooms)
+	If power = 0
+		power = 1
+		Debug "popHuman: power=0"
+	End_If
+	Dim mname,image,attrs
+	Dim str = Round(power,1)
+	Dim x = RndInt(4)
+	If x = 1
+		mname = RndSet(arrNames)
+		image = NewImage("karmor.gif",100,140)
+		attrs = "type=1,gender=M,Classe=Guerriero,Forza=" + str
+	End_If
+	If x = 2
+		mname = RndSet(arrNames)
+		image = NewImage("blueknight.gif",85,106)
+		attrs = "type=1,gender=M,Classe=Guerriero,Forza=" + str
+	End_If
+	If x = 3
+		mname = RndSet(NewArray("Ofelia,Marianna,Diana"))
+		image = NewImage("girlknight.gif",49,103)
+		attrs = "type=1,gender=F,suffersound=bighit1.wav,Classe=Guerriero,Forza=" + str
+	End_If
+	If x = 4
+		mname = RndSet(arrNames)
+		image = NewImage("cler.gif",74,106)
+		attrs = "type=1,gender=M,Classe=Guerriero,Forza=" + str
+	End_If
+	Dim new
+	new = NewCharacter(RndSet(setRooms),mname,"",image,attrs+",dyncreated,accepts=*")
+	Display $WORLD,"" + mname + " è qui vicino, Forza: " +  (new.Forza)
+
+	new.Livello = levMax
+	' Fix description and type
+	new.description = ""
+
+	new.__hooked = NewSet()
+	new.type = Int(new.type)
+
+	'Check - it happened we got a null character
+	If new.type = 0
+		Debug "Problem #1 in popHuman: new.type=0"
+		Debug "new=" + new + " power=" + power
+		$WORLD.debuginfo = $WORLD.debuginfo + ",problem in popHuman"
+		Kill new
+		return null
+	End_If
+
+	'Check - it happened we got a null character
+	If new.Forza = 0
+		Debug "Problem #2 in popHuman: new.Forza=0"
+		Debug "new=" + new + " power=" + power
+		Speak SYS,$WORLD,"Problem #2 in popHuman: new.Forza=0"
+		Speak SYS,$WORLD,"new=" + new + " power=" + power
+		$WORLD.debuginfo = $WORLD.debuginfo + ",problem in popHuman"
+		Kill new
+		return null
+	End_If
+
+	AttachEvent new,"onHear","humanknight_speak"
+
+	new.arts = SetKeys(artNames) 'Knowledge of all arts
+	If new.artdefense = null ' Survival Art by default
+		new.artdefense = "survival"
+	End_If
+
+	Call FixArrays(new)
+
+	Return new
+End_Function
+
+
+
+' robotAI
+' Artificial Intelligence routine for robots
+'
+' input: person=who will perform the action
+Sub robotAI(person)
+If person.Salute <= 0
+	'Debug "robotAI: "+person.name+" dieing"
+	If person.type <= 10
+		hkilled = hkilled+1
+	Else
+		mkilled = mkilled+1
+	End_If
+	If ExistScript("onAboutDie")
+		Call onAboutDie(person)
+	End_If
+	' Person will die, do nothing
+	Return
+End_If
+
+' If we are here, robot will live
+
+Dim cmd = person.command
+If cmd = ""
+	Call robotAIstandard(person)
+Else
+	Call robotAIcommand(person,cmd)
+End_If
+
+' robotAIstandard
+' standard AI procedure for robots who are NOT in command
+Sub robotAIstandard(person)
+
+' Attack should be first action choice
+Dim nearPeople = getCharactersIn(person.container)
+
+If Not(person.pacific) And SetLen(nearPeople)>0
+	Dim aggressivity = 3
+	If person.terminator
+		If IsCharacter(person.aimed)
+			aggressivity = 4	'raise aggressivity
+		End_If
+	End_If
+
+	'Examine attackable people
+	Dim tobeattacked = null
+	Dim c
+	For Each c In nearPeople
+		If areEnemies(person,c) And Not(c.invisible Or c.invul) And c.Forza < (person.Forza*2)
+			tobeattacked = c
+			'Display $WORLD,person.name + " sees " + c.name
+		End_If
+	Next
+	If tobeattacked <> null And RndInt(3)<aggressivity
+		'Display $WORLD,person.name + " now attacks " + tobeattacked.name
+		Call doAttack(person,tobeattacked,person.weapon,true)
+		Return
+	End_If
+End_If
+
+' Other choices
+Dim possibilities = ""
+Dim nearItems = getItemsIn(person.container)
+Dim ownedItems = getItemsIn(person)
+' Remove money items - hope this loop is remove-safe!
+Dim item
+For Each item In ownedItems
+	If item.type = "money"
+		SetRemove ownedItems,item.id
+	End_If
+Next
+If SetLen(nearItems)>0 And Not(person.nohands)
+	possibilities = possibilities + "/pick"
+End_If
+If Not(person.steady)
+	possibilities = possibilities + "/go"
+End_If
+If SetLen(ownedItems)>0 And Not(person.keeper)
+	possibilities = possibilities + "/drop/use"
+End_If
+If (person.type=14 Or person.type=16) And SetLen(nearPeople)>0
+	possibilities = possibilities + "/bite"
+End_If
+If person.terminator
+	If IsCharacter(person.aimed) ' Just attack
+		possibilities = Replace(possibilities,"/go","")
+	Else
+		possibilities = possibilities + "/aim"
+		'possibilities = "aim"
+	End_If
+End_If
+
+'Print $WORLD,"possibilities for: " + person.name + ":" + possibilities
+possibilities = Split(possibilities,"/") ' Turn it into an ARRAY of strings
+If SetLen(possibilities) = 0
+	'Display $WORLD,person.name + " has NO CHOICES!!"
+	Return
+End_If
+Dim choice = RndSet(possibilities)
+'Display $WORLD,person.name + "'s choice is: " + choice
+
+'Debug person.name + " is in " + person.container.name
+If choice = "aim"
+	'Speak SYS,$WORLD,person.name + " would like to aim somebody."
+	Dim tobeattacked = null
+	Dim c
+	For Each c In nearPeople
+		If Not(c.invisible) And areEnemies(person,c) And IsPlayer(c)
+			person.aimed = c
+			If SetLen(c.__hooked) < 0
+				c.__hooked = NewSet()
+			End_If
+			SetAdd c.__hooked,person.id,person
+			Print c,person.name + " mi ha preso di mira!"
+			Return
+		End_If
+	Next
+	choice = "go"
+End_If
+If choice = "pick"
+	'Display $WORLD,person.name + " would like to pick up something."
+	For Each item In nearItems
+		If item.pickable And Not(item.hidden)
+			Move item,person
+			'Display $WORLD,person.name + " picks up: " + item.name
+			Return
+		End_If
+	Next
+End_If
+If choice = "go"
+	'Display $WORLD,person.name + " would like to go away."
+	Return stepAway(person)
+	Return
+End_If
+If choice = "drop"
+	Dim aset = getItemsIn(person)
+	If SetLen(aset)
+		Dim o = RndSet(aset)
+		If o.type <> "money" And o.Valore < 5
+			Move o,person.container
+			Return
+		End_If
+	End_If
+	choice = "use" ' Dropped nothing? Then use!
+	If person.yell
+		PlaySound person.container,person.yell
+	End_If
+End_If
+If choice = "use"
+	'Display $WORLD,person.name + " uses something"
+	Call doUse(person,RndSet(ownedItems))
+End_If
+If choice = "bite" 'Bite
+	If Not(person.type=14 Or person.type=16)
+		Return
+	End_If
+	'Display $WORLD,person.name + " would like to bite somebody."
+	Dim tobeattacked = null
+	Dim c
+	For Each c In nearPeople
+		If Not(c.invisible) And c.type > 0 And c.type <= 10
+			tobeattacked = c
+			'Debug person.name + " sees " + c.name
+		End_If
+	Next
+	If tobeattacked <> null
+		'Display $WORLD,person.name + " would like to bite " + tobeattacked.name
+		Call doBite(person,tobeattacked)
+		Return
+	End_If
+End_If
+End_Sub
+
+' robotAIcommand
+' standard AI procedure for robots who are in command
+Sub robotAIcommand(robot,cmd)
+	Dim commander = getPlayer(robot.commander)
+	If debugtype="cmds"
+		Print $WORLD,"robot: "+robot.name+" mission:"+cmd+" "+robot.commandaux+" for "+commander
+	End_If
+	Dim item
+	If cmd="findobj"
+		Dim nearItems = getItemsIn(robot.container)
+		For Each item In nearItems
+			If item.pickable And Not(item.hidden)
+				Move item,robot
+				If item.container = robot
+					'Display $WORLD,robot.name + " picks up: " + item.name
+					If Exists(commander)
+						Move item,commander
+						Speak robot,commander,"Trovato per voi: "+item.name
+					End_If
+				End_If
+				Return
+			End_If
+		Next
+	End_If
+	If cmd="hunt"
+		Dim nearPeople = getCharactersIn(robot.container)
+		Dim c
+		For Each c In nearPeople
+			If Not(c.invisible) And areEnemies(robot,c)
+				Return doAttack(robot,c,robot.weapon,true)
+			End_If
+		Next
+	End_If
+	If cmd="wave"
+		Dim nearPeople = getCharactersIn(robot.container)
+		Dim c
+		For Each c In nearPeople
+			If Not(c.invisible) And Not(areEnemies(robot,c)) And c.command=null
+				c.command="hunt"
+				c.commander=robot.commander
+				Return
+			End_If
+		Next
+	End_If
+	If cmd="progeny"
+		Dim nearPeople = getCharactersIn(robot.container)
+		Dim c
+		For Each c In nearPeople
+			If Not(c.invisible) And c.type > 0 And c.type < 10
+				Return doBite(robot,c)
+			End_If
+		Next
+	End_If
+	If cmd="terminate"
+		If Not(Exists(commander)) ' Disconnect robots
+			robot.command = null
+			robot.commander = null
+			robot.commandaux = null
+		Else
+			If robot.aimed <> null
+				If Exists(robot.aimed)
+					If robot.container <> robot.aimed.container
+						Move robot,robot.aimed.container
+						SetAdd robot.aimed.__hooked,robot.id,robot
+					End_If
+					Call doAttack(robot,robot.aimed,robot.weapon,true)
+					If Not(Exists(robot.aimed)) ' Mission: completed
+						Speak robot,commander,"Missione compiuta! "+robot.commandaux+" è stato ucciso."
+						Call GiveMoney(commander,5)
+						Print commander,robot.name + msgEXECUTED
+						Kill robot
+					End_If
+				Else
+					robot.aimed = null
+				End_If
+			End_If
+			Dim nearPeople = getCharactersIn(robot.container)
+			Dim c
+			For Each c In nearPeople
+				If Not(c.invisible) And (InStr(c.name,robot.commandaux)>0)
+					Speak robot,c,"Ti ho trovato!!"
+					robot.aimed = c
+					'robot.terminator = 1
+					If SetLen(c.__hooked)<0
+						Debug "Strange case: NO __hooked set for " & c
+					Else
+						SetAdd c.__hooked,robot.id,robot
+					End_If
+					Print c,person.name + " mi ha preso di mira!"
+					Return true
+				End_If
+			Next
+		End_If
+	End_If
+	Return stepAway(robot)
+End_Sub
+
+' person=robot which should step away
+Sub stepAway(person)
+Dim myset = getRoomsFrom(person.container)
+'Display "Accessible rooms for " + person.name + " sono: " + myset
+Dim destination = RndSet(myset)
+If person.type=14
+	If Not(SetContainsKey(setCovered,destination.id)) ' If vampire and destination is in sunlight then cancel action
+		destination = null
+	End_If
+End_If
+If destination <> null
+	'Display $WORLD,person.name + " va in " + destination.name
+	Move person,destination
+End_If
+End_Sub
+
+' balanceGame
+' balances Game by determining the number of the two armies and adding extra robots to the defaulting army
+' a difference up the 30% of the total is tolerated
+'Input:
+'	 setRooms=Popup place for monsters: set of rooms to choose from
+Sub balanceGame(setRooms)
+	' Calc stats
+	Dim humanPlayers = countHumanPlayers()
+	Dim monsterPlayers = countMonsterPlayers()
+
+	' If no or perfectly balanced players - try to reduce number of robots
+	If humanPlayers-monsterPlayers=0
+		Dim victim = RndSet(getCharactersIn($WORLD))
+		If victim <> null
+			If victim.dyncreated And key4.container <> victim
+				Display $WORLD,victim.name + " se ne va."
+				Kill victim
+			End_If
+		End_If
+		Return
+	End_If
+
+	' If here, might need to balance
+	' calc statistics
+	Call calcAvgPower()
+
+	If monsterPlayers > 0 And countHumans < 4
+		'Debug "Fixing problem #1 - monster players and no humans to kill"
+		Call popHuman(avgPowerMonsters,setRooms)
+		Return
+	End_If
+
+	If humanPlayers > 0 And countMonsters < 4+humanPlayers
+		'Fixes problem #2 - human players and no monsters to kill
+		Call popMonster(avgPowerHumans,setRooms)
+		Return
+	End_If
+
+	If monsterPlayers-humanPlayers >= countHumans
+		'Debug "Fixing problem #3 - there are unmatched monster players"
+		Call popHuman(avgPowerMonsters,setRooms)
+		Return
+	End_If
+
+	If countMonsters-monsterPlayers + countHumans-humanPlayers > 30
+		'Debug "Fixing problem #4 - too many computer controlled characters"
+		Call cleanup()
+	End_If
+
+	Return
+End_Sub
+
+
+Function countHumanPlayers()
+Dim count = 0
+Dim ch
+For Each ch In getPlayersIn($WORLD)
+	If ch.type <= 10
+		count=count+1
+	End_If
+Next
+Return count
+
+Function countMonsterPlayers()
+Dim count = 0
+Dim ch
+For Each ch In getPlayersIn($WORLD)
+	If ch.type > 10
+		count=count+1
+	End_If
+Next
+Return count
+
+
+Sub doTransform(person)
+	If person.type = 12
+		' Bat to Vampire
+		person.image("N") = person.oldimage
+		If person.oldstrength > 0
+			person.Forza = person.oldstrength
+		End_If
+		person.oldstrength = null
+		person.type = 14
+		Display person,"Sono ritornato normale!"
+		PlaySound person.container,"roarlong2.wav"
+		RefreshView person.container
+		Call checkLight(person)
+		Call levelParams(person)
+		Return
+	End_If
+	If person.type = 16
+		'Werewolf to human
+		Dim swap = person.image("N")
+		person.image("N") = person.oldimage
+		person.oldimage = swap
+		person.Forza = person.oldstrength
+		person.type = 10
+		person.yell = "ahh.wav"
+		Display person,"Adesso ho sembianze umane!"
+		PlaySound person.container,"music.wav"
+		RefreshView person.container
+		Return
+	End_If
+	If person.type = 14
+		'Vampire to Bat
+		person.oldimage = person.image("N")
+		person.image("N") = NewImage("bat.gif",16,100)
+		person.type = 12
+		Display person,"Sono diventato un pipistrello!"
+		PlaySound person.container,"music.wav"
+		RefreshView person.container
+		Return
+	End_If
+	If person.type = 10
+		'Human to Werewolf
+		If person.angry
+			Dim swap = person.oldimage
+			If swap = null
+				swap = NewImage("werewolf.gif",90,100)
+			End_If
+			person.oldimage = person.image("N")
+			person.oldstrength = person.Forza
+			person.Forza = person.Forza * 2
+			person.image("N") = swap
+			person.type = 16
+			person.yell = "roar2.wav"
+			person.angry = 0
+			Display person,"Sono diventato un uomo-lupo!"
+			PlaySound person.container,"roarlong2.wav"
+			RefreshView person.container
+			Call levelParams(person)
+		Else
+			Print person,"Non sono abbastanza arrabbiato."
+		End_If
+		Return
+	End_If
+End_Sub
+
+' p1 potential attacker
+' p2 potential victim
+Function areEnemies(p1,p2)
+	If ((p1.type>10) And (p2.type>0 And p2.type<=10))
+		' Monster and Human
+		Return 1
+	End_If
+	If ((p2.type>10) And (p1.type>0 And p1.type<=10))
+		' Human and Monster
+		Return 1
+	End_If
+	If ((p1.type=12 Or p1.type=14) And p2.type=16)
+		' Vampire and Werewolf
+		Return 1
+	End_If
+	If ((p2.type=12 Or p2.type=14) And p1.type=16)
+		' Werewolf and Vampire
+		Return 1
+	End_If
+	Return false
+End_Function
+
+' containsType
+' checks whether the specified container contains a specified object type
+' returns true or false
+Function containsType(container,type,recursive)
+	If SetLen(getObjectsType(container,type)) > 0
+		Return true
+	End_If
+	Dim res = False
+	If recursive ' another chance: look inside objects
+		Dim setobjects = getItemsIn(container)
+		Dim o
+		For Each o In setobjects
+			res = res Or containsType(o,type,true)
+		Next
+		Return res
+	End_If
+	Return res
+End_Function
+
+' containsSubtype
+' checks whether the specified container contains a specified object type or subtype
+' returns true or false
+Function containsSubtype(container,type,recursive)
+	If SetLen(getObjectsSubtype(container,type)) > 0
+		Return true
+	End_If
+	Dim res = False
+	If recursive ' another chance: look inside objects
+		Dim setobjects = getItemsIn(container)
+		Dim o
+		For Each o In setobjects
+			res = res Or containsSubtype(o,type,true)
+		Next
+		Return res
+	End_If
+	Return res
+End_Function
+
+' getContainedType
+' gets from the specified container
+' the first item of the specified type, null if none
+Function getContainedType(container,type)
+	Dim myset = getObjectsType(container,type)
+	If SetLen(myset) < 1
+		Return null
+	End_If
+	Return myset(1)
+End_Function
+
+' getPeopleName
+' Returns a set of characters of specified name contained in specified container
+' returns a set
+Function getPeopleName(container,aname)
+	Dim setPeople = NewSet()
+	'Print "setPeople= " + setPeople + "."
+	Dim c
+	For Each c In getCharactersIn(container)
+		'Print $WORLD,"-" + c.name + ":" + c.type + "<>" + type
+		If LCase(c.name) = LCase(aname)
+			setPeople(c.id) = c
+		End_If
+	Next
+	Return setPeople
+End_Function
+
+
+Sub checkBomb(activeBomb)
+	If activeBomb <> null
+		If Exists(activeBomb)	' Explode
+			Dim activator = activeBomb.activator
+			Dim cont = activeBomb.container
+			Call bombExplode(activeBomb,cont,activator)
+			Dim myset = getObjectsType(cont,"bomb")
+			Dim x  ' Now lets explode all near bombs
+			For Each x In myset
+				If x.seller = ""
+					Call bombExplode(x,cont,activator)
+				End_If
+			Next
+		End_If
+	End_If
+	If Not(Exists(activebomb))
+		activeBomb = null
+	End_If
+End_Sub
+
+' Bomb exlosion routine
+' bomb = Bomb exploding
+' cont = where bomb is exloding
+' activator = ID of who activated the bomb
+Sub bombExplode(bomb,cont,activator)
+	If Not(Exists(bomb))
+		Return
+	End_If
+	Display cont,"BOOOOOOOM!!!!<BR>E' esplosa una bomba!"
+	PlaySound $WORLD,"bomb.wav"
+	'SendPage cont,flash,4
+	If IsCharacter(cont) And cont.invul <= 0
+		Dim healthy = (cont.Salute >= 0)
+		cont.Salute=cont.Salute-20
+		If activator = cont
+			DropItems cont	'If self blow up then drop all
+		End_If
+		If healthy And cont.Salute < 0
+			cont.killer = activator
+			Call incKilledCount(cont,activator)
+			If Not(IsPlayer(cont))
+				Call onKillRobot(cont,activator)
+			End_If
+		End_If
+	End_If
+	If IsRoom(cont)
+		Dim x
+		For Each x In getCharactersIn(cont)
+			If x.type>0 And x.invul <= 0
+				Dim arrProtections = NewArray()
+				arrProtections(1) = getContainedType(x,x.helmet)
+				arrProtections(2) = getContainedType(x,x.armour)
+				arrProtections(3) = getContainedType(x,x.shield)
+				Dim shieldpower = arrProtections(1).Protezione+arrProtections(2).Protezione+arrProtections(3).Protezione
+				Dim damage = 10-shieldpower/Sqr(1+x.Livello)
+				If damage > 0
+					Dim healthy = (x.Salute >= 0)
+					x.Salute=x.Salute-damage
+					If healthy And x.Salute < 0
+						x.killer = activator
+						Call incKilledCount(x,activator)
+						If Not(IsPlayer(x))
+							Call onKillRobot(x,activator)
+						End_If
+					End_If
+				End_If
+			End_If
+		Next
+		If ExistScript("bombExplode_local")
+			Call bombExplode_local(cont)
+		End_If
+	End_If
+	kill bomb
+End_Sub
+
+Function doUse(person,item)
+	Dim type = MainType(item)
+	If type = "bottle"
+		Return drinkPotion(person,item)
+	End_If
+	If item.type = "pill.blue"
+		person.invul = person.invul+10
+		person.toxine = person.toxine+1
+		Kill item
+		If person.toxine > 1
+			Print person,"Mi sto intossicando!"
+		End_If
+		Return true
+	End_If
+	If item.type = "spell.water"
+		If IsMagician(person)
+			Display "Forse dovremmo provare 'Incantesimo' su ..."
+		Else
+			Display "Non posso - non so usare la magia..."
+		End_If
+	End_If
+	If item.type = "spell.tele"
+		If IsMagician(person)
+			Dim success = doTeleport(person,person)
+			If success
+				If person.Livello < 2
+					Call advanceCheck($AGENT,"spells",1)
+				End_If
+				Return true
+			End_If
+		Else
+			Display "Non posso - non so usare la magia..."
+		End_If
+	End_If
+	If item.type = "spell.invis"
+		If IsMagician(person)
+			$AGENT.Salute = 1
+			Return doInvis(person)
+		Else
+			Display "Non posso - non so usare la magia..."
+		End_If
+	End_If
+	If type = "bomb"
+		item.activator = $AGENT
+		PlaySound item.container,item.sound
+		If item.type = "bomb.trap"
+			item.type = "bomb.proximity"
+			item.icon = "bombtrapactive.gif"
+			item.image = NewImage("bombtrapactive.gif",40,40)
+			item.description = item.description + " E' INNESCATA!"
+			Print $AGENT,"Trappola INNESCATA!"
+		End_If
+		If item.type = "bomb"
+			activeBomb = item
+			Print item.container,"Sento puzza di bruciato..."
+		End_If
+		Return true
+	End_If
+	If type = "gem"
+		If Mid(item.type,5,4) = "art."
+			Dim art = Mid(item.type,9,Len(item.type)-8)
+			Speak SYS,person,"Hai imparato l'Arte del "+artNames(art)+" ("+artTypes(art)+")."
+			If SetLen(person.arts) < 1
+				person.arts = NewArray(art)
+			Else
+				person.arts(SetLen(person.arts)+1)=art
+			End_If
+			Kill item
+			Return true
+		End_If
+	End_If
+	If item.type = "book1"
+		If item.uses > 0
+			Display "Sul libro si legge: 'Awakananda wakandu orcaddu g'htulu'"
+			Display "Sento un brivido lungo la schiena......."
+			item.uses = item.uses-1
+			Call popMonster(avgPowerHumans,monstersPopupSet)
+			Return true
+		Else
+			Display "Le parole sono illeggibili. E' stato usato troppe volte."
+		End_If
+	End_If
+	' Is it an acquirable object?
+	If IsAcquirable(item)
+		If Not(SanityCheck(item))
+			Print "Questo oggetto non si può utilizzare: " & SharedError
+			Return false
+		End_If
+		If acquireObject(person,item)
+			Print "Adesso fa parte del mio equipaggiamento permanente. Clicca ["+htmlIcon("paninfo.gif","Info")+"Info] per verificare e ricorda di SALVARE!"
+			Kill item
+			Return true
+		End_If
+	End_If
+	If ExistScript("doUse_Local")
+		Return doUse_Local(person,item)
+	End_If
+	Return false
+End_Function
+
+' Cleans the castle from computer-controlled characters
+Sub cleanup
+	Dim c
+	For Each c In getCharactersIn($WORLD)
+		If Not(IsPlayer(c)) And c.type <> 0
+			Kill c
+		End_If
+	Next
+End_Sub
+
+EVENT onFindObject
+	Dim name = $TARGET
+	If Exists(name)
+		name = name.id
+	End_If
+	If name = ""
+		Display $AGENT,"Digitare parte del nome da cercare nella casella di testo PRIMA di cliccare il pulsante."
+		Return
+	End_If
+	Dim found=0
+	Dim c
+	For Each c In getItemsIn($WORLD)
+		If InStr(c.name,name)
+			found=1
+			Display $AGENT,"<LI>" + c.name + " è qui: " + c.container.name
+		End_If
+	Next
+	For Each c In getCharactersIn($WORLD)
+		If InStr(c.name,name)
+			found=1
+			Display $AGENT,"<LI>" + c.name + " è qui: " + c.container.name
+		End_If
+	Next
+	If Not(found)
+		Display "Non trovato: " + name
+	End_If
+End_Event
+
+EVENT doMasterPanel
+	' Creates dynamic room for special op
+	Dim battleroomid = $AGENT.id + "_myroom"
+	If $AGENT.container.id = battleroomid
+		Print "Clicca RETURN"
+		Return
+	End_If
+	NewRoom battleroomid
+	battleroomid.name = "Pannello Master"
+	battleroomid.image("N") = NewImage("uw2_clouds.jpg",400,230)
+	$AGENT.comingfrom = $AGENT.container
+	SetPanel battleroomid, "pmasterspecial"
+	Move $AGENT,battleroomid
+	AttachEvent $AGENT.container,"onLoose","masterroom_onLoose"
+End_Event
+
+EVENT doMasterReturn
+	Move $AGENT,$AGENT.comingfrom
+	$AGENT.comingfrom = null
+End_Event
+
+EVENT masterroom_onLoose
+	Kill $OWNER
+End_EVENT
+
+Sub humanknight_speak
+	Speak "Hey! Voi pensate che questo luogo sia sicuro?", "Io sono qui per combattere il male!", "Per l'onore del Re!"
+
+' Common init code
+Sub common_onStart()
+	arrVerbs=NewArray("sconfitt,eliminat,massacrat,uccis,battut")
+	setDict = NewSet("score=Score,kills=Uccisioni,spells=Incantesimi,crafts=Prodotti,infections=Infettati,money=Crediti,exp=Esperienza")
+	arrNames=Split("Sir Richard/John/Jack/Lord Hastings/Sir Jones/Sir Duncan/Sir McCormack/Lord Jeremy/Sir Jeffrey/soldato","/")
+	setSndBeastYell=Split("roar1.wav/roar2.wav/gnarl1.wav/roarlong2.wav","/")
+	setSndHumanYell=NewArray("death.wav,yell.wav,ahh.wav")
+	setRobotCmds=NewSet("findobj=Trovare oggetti,hunt=Uccidere i nemici,progeny=Fare altri adepti,terminate=Uccidere ...,escort=Fare da scorta,wave=Ordinare a tutti di uccidere nemici")
+	masterOps = NewSet("_0=(Comando),exp=Dai punti Esperienza a ...,eqp=Equipaggia arma*persona *,money=Accredita denaro a ...,kill=Elimina (persona),jail=Incarcera (scegli o scrivi),unjail=Scarcera (scegli o scrivi),ban=Banna (persona),move=Sposta (persona) in (stanza),moveo=Sposta (oggetto) in (stanza),rstavatar=Ripristina avatar a (persona),vip=Vedi IP di (giocatore),vipb=Vedi/cambia lista IP bannati*,restart=Riavvia gioco,restart1=Riavvia gioco da fase 1,purge=Purge*,fix=Ripara Catalogo*,resetpwd=Resetta password di...,info=Info su giocatore...,catsave=Catalogo-Salva*,catload=Catalogo-Carica,catadd=Catalogo-Aggiungi oggetto+,catview=Catalogo-Vedi oggetto,tournament=Imposta modo torneo...*,makemaster=Rendi master...*")
+	cloneableTypes = NewSet("bomb,weapon,spell,helmet,armour,shield,bottle,stone,pill,garlic,trap")
+	uniqueTypes = NewSet("crown,key1,key2,key3,key4,key5,cross,book1,book2")
+	itsday = "?" ' For day/night cycle
+	tournament=Int(getSetting("ctx_tournament","0"))
+	limitedavails = false ' Decides if items in shops are in limited amounts
+	If dbdown
+		gamelocked = true
+	End_If
+	main_imagedir = gameinfo("imagesfolder")
+	levMax =1	'Maximum level for monsters
+	cstMaxLocked = 6 ' Max locked items in shops
+	cstHELMET = "helmet"
+	cstSHIELD = "shield"
+	cstARMOUR = "armour"
+	cstATTACK = "attacco"
+	cstDEFENSE = "difesa"
+	cstLEVEL = "Livello"
+	cstEXP = "Esperienza"
+	cstPROT = "Protezione"
+	cstPOWER = "Potenza"
+	cstOBJECT = "object"
+	msgNOCHIEF = "Non siete fondatore né delegato di alcuna gilda. (<A HREF="+gameinfo("site")+"?page_id=10 TARGET=_blank>Altro..</A>)"
+	msgATLEASTLVL = "Per questo serve almeno il Livello "
+	msgEXECUTED = " ha eseguito gli ordini e se ne va."
+	msgNOWREST = "Fatto. Però mi devo riposare adesso."
+	msgNOTNOW = "In questo stato non posso farlo, devo prima trasformarmi!"
+	visitsperinc = 500	'Required visits to ch card per increment
+	cstAffiNames = NewArray("Acqua,Terra,Aria,Fuoco")
+	artNames=NewSet("counterattack=Contrattacco,doublehit=Doppio colpo,survival=Sopravvivenza,rogue=Potere Rogue,heavyshot=Colpo pesante,poisonattack=Colpo Avvelenato,gainlife=Prendi Vita,equilibrium=Equilibrio")
+	artTypes=NewSet("counterattack=difesa,doublehit=attacco,survival=difesa,rogue=difesa,heavyshot=attacco,poisonattack=attacco,gainlife=attacco,equilibrium=difesa")
+	urlTermsOfUse = "https://www.sottomondo.org/regolamento-del-gioco/"
+	urlTelegram = "https://t.me/SottomondoMMORPG"
+	urlGuilds = "https://www.sottomondo.org/gilde"
+	hellfire.description = "Sei stato incarcerato/a a causa di un tuo comportamento non ammesso dal <a target=_blank href="+urlTermsOfUse+">Regolamento di gioco</A>.<br><br>"
+	hellfire.description = hellfire.description+"Si tratta di una misura temporanea ma ti consigliamo di leggere e rispettare il regolamento per evitare di essere escluso dal gioco (banning).<br><br>"
+	hellfire.description = hellfire.description+"Puoi chiedere chiarimenti a un master postando sul nostro <a target=_blank href="+urlTelegram+">Gruppo Telegram</A>."
+	tourntypes = NewSet("t0=Gioco normale,t1=Umani contro Mostri,t2=La gilda assassina,t3=la Guerra delle gilde,t4=Trofeo delle gilde,t5=Torneo NewComers,t6=Tutti Contro Tutti,t7=Competizione Permanente")
+	tournpages = NewSet("t1=?page_id!202,t2=?page_id!13,t3=?page_id!13,?page_id!129,t5=?page_id!163,t6=?page_id!289,t7=?page_id!512")
+	arrShopkeepers = NewArray() ' To be overridden in local area
+	fbusers = NewSet("0=dummy")
+	smDay="20/09/2011"
+End_Sub
+
+' Common load context code
+' Calls local load context, if exists
+Sub LoadContext()
+	musicSet = NewArray(getSetting("ctx_soundtrack","$dir$/Scott-Holmes-Music_-_Against_All_Odds.mp3|2,$dir$/mint_attack-let_there_be_dark.mp3|2.5,$dir$/mint_attack-purple_particles.mp3|3.5,$dir$/sentry.mp3|2,$dir$/finalbattle_ziurerdna.mp3|3,$dir$/danosongs_com_dream_player.mp3|3.5,$dir$/danosongs_com_owl_named_orion.mp3|3.5,$dir$/danosongs_com_crazy_from_the_message.mp3|3.5"))
+	uw4up = getSetting("ctx_uw4up","")
+	guildnames = getSetting("ctx_guildnames","!set!Cris=Gilda dei Leoni")
+	guildlogos = getSetting("ctx_guildlogos","!set!Cris=https://www.dimensionex.net/underworld/uwpics/odin.gif")
+	guildsubscribers = getSetting("ctx_guildsubscribers","!set!")
+	guilddelegates = getSetting("ctx_guilddelegates","!set!")
+	guildtypes = getSetting("ctx_guildtypes","!set!")
+	guildmoney = getSetting("ctx_guildmoney","!set!")
+	guildtypes = getSetting("ctx_guildtypes","!set!")
+	guildwars = getSetting("ctx_guildwars","!set!")
+	guildwarsqueue = getSetting("ctx_guildwarsqueue","!set!")
+	pastwars = getSetting("ctx_pastwars","!set!")
+	'Fix subscribers
+	Dim k
+	For Each k In SetKeys(guildsubscribers)
+		If guildsubscribers(k) = "0"
+			Debug "Dummy guild subscriber '0' to be removed in guild by: " + k
+			guildsubscribers(k) = ""
+		End_If
+	Next
+	'Fix delegates
+	Dim k
+	For Each k In SetKeys(guilddelegates)
+		If guilddelegates(k) = "0"
+			Debug "Dummy guild delegate '0' to be removed in guild by: " + k
+			guilddelegates(k) = ""
+		End_If
+	Next
+	guildrequests = getSetting("ctx_guildrequests","!set!")
+	guildwebs = getSetting("ctx_guildwebs","!set!Cris=https://www.dimxwiki.tk/wiki/DimensioneX/underworld/lyonsguild")
+	guildkills = getSetting("ctx_guildkills","!set!")
+	guildavglvl = getSetting("ctx_guildavglvl","!set!")
+	guildmutualkills = NewSet()
+	guildfounded = getSetting("ctx_guildfounded","!set!")
+	guildstatsgenwhen = NewSet()
+	arrIps = NewSet()	'ip numbers of beginners
+	_bannedclients = getSetting("ctx_bannedclients",_bannedclients)
+	If tournament=2
+		assassinguild = getSetting("ctx_assassin","")
+	End_If
+
+	Call buildWCatalog()
+	Call shops_prepare(arrShopkeepers)
+
+	If ExistScript("LoadContext_Local")
+		Call LoadContext_Local()
+	End_If
+	Call nightDayCycle()
+End_Sub
+
+' Checks if the specified person is subscribed to a guild
+' if so, returns the guild's owner, null otherwise
+Function guildSubscribed(person)
+	Dim i
+	Dim n = person.name
+	For i=1 To SetLen(guildsubscribers)
+		Dim arrnames = Split(guildsubscribers(i),";")
+		If SetIndexOf(arrnames,person.name) > 0
+			Return SetKey(guildsubscribers,i)
+		End_If
+	Next
+	If Int(n) > 0
+		n = "_" + n ' fix for number nicks
+	End_If
+	If guildnames(n) <> null
+		Return n
+	End_If
+	Return null
+End_If
+
+'withmembers > 0 - show additional info (see below)
+'withmembers AND 1 - show members
+'withmembers AND 2 - show wanna-be members
+'withmembers AND 4 - show enemies
+Function getGuildBox(owner,withmembers)
+	Dim txt = ""
+	Dim tmp
+	Dim link1 = ""
+	Dim link0 = ""
+	If Int(owner) > 0
+		owner = "_" + owner
+	End_If
+	If guildwebs(owner) <> null
+		link1 = "<a target=_blank href=" + Chr(34) + guildwebs(owner) + Chr(34) + ">"
+		link0 = "</a>"
+	End_If
+	If guildlogos(owner) <> ""
+		tmp = link1 + "<IMG ALT=logo SRC=" + guildlogos(owner) + " WIDTH=32 HEIGHT=32 ALIGN=MIDDLE BORDER=0>" + link0
+	End_If
+	txt = txt + tmp + "<B>" + link1 + guildnames(owner) + link0 + "</B> fondata da <b>" + UserCardLink(owner) + "</b>"
+	If guildfounded(owner) <> ""
+		txt = txt + " il " + guildfounded(owner)
+	End_If
+	If guildtypes(owner) = "p"
+		txt = txt + " <img src="+gameinfo("imagesfolder")+"icopeace.gif width=16 height=16 alt="+Chr(34)+"peace and love"+Chr(34)+" title="+Chr(34)+"gilda pacifica"+Chr(34)+" />"
+	End_If
+	If ExistScript("war_engaged")
+		If war_engaged(owner)
+			txt = txt + " <img src="+gameinfo("imagesfolder")+"panattack.gif width=16 height=16 alt="+Chr(34)+"impegnata in un conflitto"+Chr(34)+" title="+Chr(34)+"impegnata in un conflitto"+Chr(34)+" />"
+		End_If
+	End_If
+	If withmembers > 0
+		Dim d
+		txt = txt + "<BR><B>Livello medio</B>: " + guildavglvl(owner)
+		txt = txt + "<BR><B>Vittorie</B>: " + guildkills(owner)
+		txt = txt + "<BR><B>Ricchezze</B>: " + Int(guildmoney(owner))
+		Dim n = InStrCount(guilddelegates(owner),";")
+		If n > 0
+			txt = txt +"<br /><img src=" + gameinfo("imagesfolder")+ "knight.gif width=16 height=16 title=Delegati /> <B>Delegati</B>: "
+			For Each d In Split(guilddelegates(owner),";")
+				txt = txt + UserCardLink(d) + ", "
+			Next
+		End_If
+		If withmembers And 4
+			Dim n = 0 ' Dummy: Print guilds fighting with
+		End_If
+		If withmembers And 1
+			txt = txt + "<br>"+Chr(13)
+			If ($AGENT.guildrequest=owner)
+				txt = txt + "<font color=YELLOW>TUA RICHIESTA IN ATTESA DI APPROVAZIONE</font><br>"
+			End_If
+			If ($AGENT.guild=NULL And $AGENT.guildrequest<>owner)
+				txt = txt + "<input type=button onClick="+Chr(34)+"javascript:document.location.href='"+gameinfo("navigator")+"?view=scene&cmd=guildcmd&guildop=join&guildsel="+owner+"'"+Chr(34)+" value="+Chr(34)+"Entra in questa gilda"+Chr(34)+"><br>"
+			End_If
+			If ($AGENT.guild=owner And $AGENT.name<>owner)
+				txt = txt + "<input type=button onClick="+Chr(34)+"javascript:document.location.href='"+gameinfo("navigator")+"?view=scene&cmd=guildcmd&guildop=leave&guildsel="+owner+"'"+Chr(34)+" value="+Chr(34)+"Abbandona questa gilda"+Chr(34)+"><br>"
+			End_If
+
+			txt = txt + "<B>Membri</B>: "
+			For Each d In Split(guildsubscribers(owner),";")
+				txt = txt + UserCardLink(d) + ", "
+			Next
+			Dim n = InStrCount(guildrequests(owner),";")
+			If n > 0
+				If withmembers And 2
+					txt = txt + "<BR><B>Vogliono entrare</B>: "
+					For Each d In Split(guildrequests(owner),";")
+						txt = txt + UserCardLink(d) + ", "
+					Next
+				Else
+					txt = txt + "<BR><B>" + n + "</B> candidati in attesa di approvazione! Avvisare " + UserCardLink(owner)
+				End_If
+			End_If
+			txt = txt + "</li>"
+		End_If
+	End_If
+	Return txt
+End_Function
+
+Sub levelParams(person)
+	If person.Forza > (8 + person.Livello*2)
+		person.Forza = 8 + person.Livello*2
+	End_If
+	If person.Salute > 10
+		person.Salute = 10
+	End_If
+End_Sub
+
+EVENT doSpecialOp(cmd,input)
+	Print masterOps(cmd)
+	Dim person = input("charsel")
+	Dim txt = input("txtBox")
+	If cmd = "kill"
+		If person <> "_0"
+			If input("txtBox") = "SI"
+				If IsCharacter(person)
+					Kill person
+					Speak SYS,$AGENT,"Fatto."
+					SendCmd $AGENT,"custom:refresh!ctrls"
+				Else
+					Speak SYS,$AGENT,"Non esiste più."
+					Return
+				End_If
+			Else
+				Speak SYS,$AGENT,"Scrivi SI nella textbox per confermare."
+				Return
+			End_If
+		Else
+			Speak SYS,$AGENT,"Scegli la persona."
+			Return
+		End_If
+	End_If
+	If cmd = "jail"
+		Call prepareJail(person,txt)
+	End_If
+	If cmd = "unjail"
+		Call unJail(person,txt)
+	End_If
+	If cmd = "ban"
+		If input("charsel") <> "_0"
+			If input("txtBox") = "SI"
+				If IsPlayer(person)
+					Speak SYS,$WORLD,"Eliminazione immediata di: " + name
+					Debug $AGENT.name + " ha bannato " + person.name + " in data/ora: " + getTime("dd/MM/yyyy HH:mm")
+					Ban person
+					'Kill input("charsel")
+					Speak SYS,$AGENT,"Bannato. Operazione loggata."
+					SendCmd $AGENT,"custom:refresh!ctrls"
+				Else
+					Speak SYS,$AGENT,"Non puoi bannare un robot."
+					Return
+				End_If
+			Else
+				Speak SYS,$AGENT,"Scrivi SI nella textbox per confermare."
+				Return
+			End_If
+		Else
+			Speak SYS,$AGENT,"Scegli la persona."
+			Return
+		End_If
+	End_If
+	If cmd = "rstavatar"
+		If input("charsel") <> "_0"
+			If restoreAvatar(input("charsel"))
+				Speak SYS,$AGENT,"Fatto."
+			End_If
+		Else
+			Speak SYS,$AGENT,"Scegli la persona."
+			Return
+		End_If
+	End_If
+	If cmd = "move"
+		If input("charsel") <> "_0"
+			If input("roomsel") <> "_0"
+				Move input("charsel"),input("roomsel")
+				Speak SYS,$AGENT,"Fatto."
+			Else
+				Speak SYS,$AGENT,"Scegli la stanza."
+				Return
+			End_If
+		Else
+			Speak SYS,$AGENT,"Scegli la persona."
+			Return
+		End_If
+	End_If
+	If cmd = "moveo"
+		If input("itemsel") <> "_0"
+			If input("roomsel") <> "_0"
+				Move input("itemsel"),input("roomsel")
+				Speak SYS,$AGENT,"Fatto."
+			Else
+				Speak SYS,$AGENT,"Scegli la stanza."
+				Return
+			End_If
+		Else
+			Speak SYS,$AGENT,"Scegli l'oggetto."
+			Return
+		End_If
+	End_If
+	If cmd = "vip"
+		If input("charsel") <> "_0" And IsPlayer(input("charsel"))
+			Print $AGENT,"Numero IP di " + input("charsel").name + ": " + input("charsel").remoteAddr
+		Else
+			Speak SYS,$AGENT,"Scegli un giocatore."
+			Return
+		End_If
+	End_If
+	If cmd = "vipb" And $AGENT.mastersuper
+		Print $AGENT,"IP bannati: " + _bannedclients
+		Print $AGENT,"La lista deve essere separata da pipe | e finire con |"
+		Print $AGENT,"Inserire | nella textbox per resettare la lista"
+		If input("txtBox") <> ""
+			_bannedclients = input("txtBox")
+			saveSetting "ctx_bannedclients",_bannedclients
+			Print $AGENT,"Lista appena modificata: " + _bannedclients
+		End_If
+	End_If
+	If cmd = "restart1"
+		If input("txtBox") = "RIAVVIA"
+			If mode=2
+				Print "<a href=" & gameInfo("site")+"/gioca/" & " target=_top>CLICCA QUI PER COMPLETARE IL RIAVVIO</a>"
+				saveSetting "ctx_mode",null
+				saveSetting "ctx_kingTicks",null
+				Call BroadcastOtherWorlds("reset","")
+				Reset
+			Else
+				Display "Possibile solo in fase 2"
+			End_If
+		Else
+			Print "Scrivere RIAVVIA nella textbox e rifare."
+		End_If
+	End_If
+	If cmd = "restart"
+		If input("txtBox") = "RIAVVIA"
+			Print "<a href=" & gameInfo("site")+"?page_id=17" & " target=_top>CLICCA QUI PER COMPLETARE IL RIAVVIO</a>"
+			Call BroadcastOtherWorlds("reset","")
+			Reset
+		Else
+			Print "Scrivere RIAVVIA nella textbox e rifare."
+		End_If
+	End_If
+	If cmd = "purge" And $AGENT.mastersuper
+		Print "<h3>Ripulitura Gilde</h3>"
+		Dim k
+		For Each k In SetKeys(guildnames)
+			If Not(ProfileExists(k))
+				Print "(!) Eliminare manualmente <B>GILDA " + guildnames(k) + "</B> di " + k
+			Else
+				Print "Ripulitura <B>" + guildnames(k) + "</B>"
+				Print "<UL>"
+				Call purgeGuild(k)
+				Print "</UL>"
+			End_If
+		Next
+		saveSetting "ctx_guildsubscribers",guildsubscribers
+		Print "<h3>Ripulitura conti correnti</h3>"
+		For Each k In SetKeys(garumir.accounts)
+			If Not(ProfileExists(k))
+				Print "Eliminato conto di " + k + "=" + garumir.accounts(k)
+				SetRemove garumir.accounts,k
+			End_If
+		Next
+	End_If
+	If cmd = "resetpwd"
+		If txt <> ""
+			Dim nick = CookName(txt)
+			If getSetting(nick + "_name","") <> ""
+				saveSetting nick + "_pass",""
+				Speak SYS,$AGENT,"Password di " + txt + " resettata a (blank)."
+			Else
+				Speak SYS,$AGENT,"Non esiste profilo salvato per: " + txt
+				Return
+			End_If
+		Else
+			Speak SYS,$AGENT,"Scrivi il nickname del giocatore e riprova."
+			Return
+		End_If
+	End_If
+	If cmd = "info"
+		If txt <> ""
+			Print getPeopleInfo(txt,true)
+		Else
+			Speak SYS,$AGENT,"Scrivi il nickname del giocatore e riprova."
+			Return
+		End_If
+	End_If
+	If cmd = "exp"
+		If txt <> ""
+			Dim data = Split(txt,"*")
+			If SetLen(data) < 2
+				Print "Scrivi: puntiesp*nickname e riprova"
+				Return
+			Else
+				Dim nick = data(2)
+				Dim tmp = getSetting(CookName(nick) + "_properties","")
+				If tmp = ""
+					Print "Utente inesistente: " + nick
+					Return
+				End_If
+				Dim pts = Int(data(1))
+				If pts <= 0 Or pts > 10
+					Print "Prima di * devi scrivere un numero. Hai scritto: " + data(1)
+					Return
+				End_If
+				Call SaveProperty(nick,cstEXP,LookupProfileDB(nick,cstEXP)+pts,true)
+				Print "Concessi " + pts + " punti Esperienza a "+nick
+				Debug $AGENT.name + " ha dato " + pts + " punti Esperienza a "+nick+" in data/ora: " + getTime("dd/MM/yyyy HH:mm")
+			End_If
+		Else
+			Print "Scrivi: puntiesp*nickname e riprova"
+			Return
+		End_If
+	End_If
+	If cmd = "eqp" And $AGENT.mastersuper
+		If txt <> ""
+			Dim data = Split(txt,"*")
+			If SetLen(data) < 2
+				Print "Scrivi: arma*persona e riprova"
+				Return
+			Else
+				Dim nick = data(2)
+				Dim tmp = getSetting(CookName(nick) + "_properties","")
+				If tmp = ""
+					Print "Utente inesistente: " + nick
+					Return
+				End_If
+				Dim weap = data(1)
+				If Not(InCatalog(weap))
+					Print "Prima di * devi scrivere un codice articolo di arma esistente. Hai scritto: " + weap
+					Return
+				End_If
+				Dim arr = LookupProfileDB(nick,"weapons")
+				If SetIndexOf(arr,weap) > 0
+					Print "Già in equipaggiamento: " & weap
+					Return
+				End_If
+				If SetLen(arr) > 0
+					arr(LeadingZero(SetLen(arr)+1,"000")) = weap
+				Else
+					Print "Problema nell'assegnazione (nessun array armi)"
+				End_If
+				Call SaveProperty(nick,"weapons",arr,true)
+				Print "Equipaggiato con " + weap + " il giocatore "+nick&arr
+				Debug $AGENT.name + " ha equipaggiato con " + weap + " il giocatore "+nick+" in data/ora: " + getTime("dd/MM/yyyy HH:mm")
+			End_If
+		Else
+			Print "Scrivi: codicearma*nickname e riprova"
+			Return
+		End_If
+	End_If
+	If cmd = "fix" And $AGENT.mastersuper
+		Call FixCatalog()
+	End_If
+	If cmd = "money"
+		If txt <> ""
+			Dim data = Split(txt,"*")
+			If SetLen(data) < 2
+				Print "Scrivi: soldi*nickname e riprova"
+				Return
+			Else
+				Dim nick = data(2)
+				Dim tmp = getSetting(CookName(nick) + "_properties","")
+				If tmp = ""
+					Print "Utente inesistente: " + nick
+					Return
+				End_If
+				Dim pts = Int(data(1))
+				If pts <= 0
+					Print "Prima di * devi scrivere un numero. Hai scritto: " + data(1)
+					Return
+				End_If
+				If Exists(garumir)
+					garumir.accounts(nick)=pts+garumir.accounts(nick)
+					Print "Concessi " + pts + " monete a "+nick
+					Debug $AGENT.name + " ha dato " + pts + " monete a "+nick+" in data/ora: " + getTime("dd/MM/yyyy HH:mm")
+				End_If
+			End_If
+		Else
+			Print "Scrivi: soldi*nickname e riprova"
+			Return
+		End_If
+	End_If
+	If cmd = "tournament" And $AGENT.mastersuper
+		If txt = ""
+			Print "Scrivi:"
+			Dim tt
+			For Each tt In SetKeys(tourntypes)
+				Print "<b>"+Mid(tt,2,Len(tt)-1)+"</b> per <b>"+tourntypes(tt)+"</b>"
+			Next
+		Else
+			SaveSetting "ctx_tournament",txt
+			Print "Impostato modo torneo: <b>"+txt+"</b> ("+tourntypes("t"+txt)+")"
+		End_If
+	End_If
+	If cmd = "makemaster" And $AGENT.mastersuper
+		If txt = ""
+			Print "Scrivi il nome della persona da rendere master"
+		Else
+			If Not(ProfileExists(txt))
+				Print "Utente inesistente: " + txt
+				Return
+			End_If
+			Dim nick = CookName(txt)
+			Call SaveProperty(nick,"master",Not(LookupProfileDB(nick,"master")),true)
+			Print "Stato <b>master</b> di "+txt+": <b>"+LookupProfileDB(nick,"master")+"</b>"
+		End_If
+	End_If
+	If cmd = "catsave" And $AGENT.mastersuper
+		Call saveWCatalog()
+	End_If
+	If cmd = "catload"
+		Print "" + buildWCatalog() + " oggetti caricati."
+	End_If
+	If cmd = "catadd" And $AGENT.itemmaster
+		If txt <> ""
+			Dim nitems = SetLen(wcatalog)
+			Dim arrData = Split(txt,"*")
+			wcatalog_names(arrData(1)) = arrData(2)
+			wcatalog(arrData(1)) = arrData(3)
+			If SetLen(arrData) > 3
+				wcatalog_desc(arrData(1)) = arrData(4)
+			End_If
+			Print "Il nuovo oggetto è ora in catalogo, tipo: "+arrData(1)
+		Else
+			Speak SYS,$AGENT,"Scrivi la stringa che definisce il nuovo oggetto, poi riprova"
+			Return
+		End_If
+	End_If
+	If cmd = "catview"
+		If txt <> ""
+			Print "Oggetto tipo: "+txt+"<hr />"
+			Dim x = Replace(Replace(wcatalog_desc(txt),"<","&lt;"),">","&gt;")
+			Print txt+"*"+wcatalog_names(txt)+"*"+wcatalog(txt)+"*"+x
+		Else
+			Speak SYS,$AGENT,"Scrivi il tipo dell'oggetto, poi riprova"
+			Return
+		End_If
+	End_If
+End_EVENT
+
+Function getKillable(exclude)
+	Dim fullset = getCharactersIn($WORLD)
+	Dim myset = NewSet()
+	SetAdd myset,"_0","(scegliere persona)"
+	Dim c
+	For Each c In fullset
+		If c.type <> 0 And c.type <> null And c <> exclude
+			SetAdd myset,c.id,c
+		End_If
+	Next
+	Return myset
+End_Function
+
+
+' Checks whether the specified name is blocked
+Function blocked(aname)
+	Dim addrset = NewArray("voce,garumir,morubar")
+	Dim x
+	For Each x In addrset
+		If InStr(aname,x)
+			Return true
+		End_If
+	Next
+	Return false
+End_Function
+
+Function restoreAvatar(person)
+	If Not(IsPlayer(person))
+		Speak SYS,$AGENT,"Non si può eseguire sui personaggi robot"
+		Return False
+	End_If
+	If person.invisible
+		Call doInvis(person)
+	End_If
+	If person.type=1 And person.gender = "M"
+		person.image = NewImage("uomo.gif",64,100)
+		Return true
+	End_If
+	If person.type=1 And person.gender = "F"
+		person.image = NewImage("guerriera.gif",100,100)
+		Return true
+	End_If
+	If person.type=2 And person.gender = "M"
+		person.image = NewImage("cleric.gif",64,100)
+		Return true
+	End_If
+	If person.type=2 And person.gender = "F"
+		person.image = NewImage("mystic.gif",64,100)
+		Return true
+	End_If
+	If person.type=4
+		person.image = NewImage("paesant.gif",64,100)
+		Return true
+	End_If
+	If person.type=10
+		person.image = NewImage("paesant.gif",64,100)
+		person.oldimage = NewImage("werewolf.gif",90,100)
+		Return true
+	End_If
+	If person.type=12 And person.gender = "M" ' bat
+		person.image = NewImage("bat.gif",16,100)
+		person.oldimage = NewImage("vampire.gif",95,100)
+		Return true
+	End_If
+	If person.type=12 And person.gender = "F" ' bat
+		person.image = NewImage("bat.gif",16,100)
+		person.oldimage = NewImage("vampirebride.gif",94,100)
+		Return true
+	End_If
+	If person.type=14 And person.gender = "F"
+		person.image = NewImage("vampirebride.gif",94,100)
+		Return true
+	End_If
+	If person.type=14 And person.gender = "M"
+		person.image = NewImage("vampire.gif",95,100)
+		Return true
+	End_If
+	If person.type=16
+		person.image = NewImage("werewolf.gif",90,100)
+		person.oldimage = NewImage("paesant.gif",64,100)
+		Return true
+	End_If
+	If person.type=19
+		person.image = NewImage("horror047.gif",121,144)
+		Return true
+	End_If
+	Speak $AGENT,"Ancora non disponibile per questo tipo di personaggio."
+	Return False
+End_Function
+
+Function getKillTotal(person)
+	Dim tot = 0
+	If person.killstats <> null
+		Dim x
+		For Each x In person.killstats
+			tot = tot + x
+		Next
+	End_If
+	Return tot
+End_Function
+
+Sub printKillStats(person)
+	Dim tot = 0
+	If person.killstats <> null
+		Dim owner, link1, link0, txt, tmp, name
+		txt = "<TABLE BORDER CELLPADDING=5 CELLSPACING=0><TR><TH CLASS=text>Gilda/Razza</TH><TH CLASS=text>Vittorie</TH></TR>"
+		For Each owner In SetKeys(person.killstats)
+			skip = false
+			link1 = ""
+			tmp = ""
+			If Int(owner) > 0 Or owner = "0"
+				owner = "_" + owner
+			End_If
+			If guildwebs(owner) <> null
+				link1 = "<A HREF=" + Chr(34) + "javascript:parent.popupWin('" + guildwebs(owner) + "',-1,-1);" + Chr(34) + ">"
+				link0 = "</A>"
+			End_If
+			If guildlogos(owner) <> ""
+				tmp = link1 + "<IMG SRC=" + guildlogos(owner) + " WIDTH=32 HEIGHT=32 ALIGN=MIDDLE BORDER=0>" + link0 + " "
+			End_If
+			name = guildnames(owner)
+			If name = ""
+				If owner = "_monsters"
+					name = "Mostri"
+				Else
+					If owner = "_humans"
+						name = "Umani"
+					Else ' No more existing guild
+						'Move killstats under uncategorized
+						person.killstats("_humans") = Int(person.killstats(owner)/2) + person.killstats("_humans")
+						person.killstats("_monsters") = Int(person.killstats(owner)/2) + person.killstats("_monsters")
+						SetRemove person.killstats, owner
+						skip = true
+					End_If
+				End_If
+			End_If
+			If Not(skip)
+				txt = txt+"<TR><TD CLASS=text>" + tmp + "<B>" + link1 + name + link0 + "</B></TD><TD CLASS=text>" + person.killstats(owner) + "</TD></TR>"
+			End_If
+			tot = tot + person.killstats(owner)
+		Next
+		txt = txt+"<TR><TD CLASS=text ALIGN=RIGHT><I>Totale</I></TD><TD CLASS=text><B>" + tot + "</B></TD></TR>"
+		txt = txt+"</TABLE>"
+		Print txt
+	End_If
+End_Sub
+
+Function myExtract(haystack,needle)
+	If Left(haystack,Len(needle)) = needle
+		x = 1
+	Else
+		x = InStr(haystack,","+needle,2)
+		If x=0
+			Return null
+		Else
+			x=x+1
+		End_If
+	End_If
+	Dim y = InStr(haystack,",",x+1)
+	If y = 0
+		y = Len(haystack)+1
+	End_If
+	Dim startcut=x+Len(needle)+1
+	Dim ret = Mid(haystack,startcut,y-startcut)
+	'Print $WORLD,"Extract: " + needle + "=" + ret
+	Return ret
+End_Function
+
+' Transforms a user name into the userid format
+' used by DimensioneX.Player.saveGame
+Function CookName(aname)
+	aname = Replace(LCase(aname)," ","_")
+	return aname
+End_Function
+
+'Looks up in the Users' profile DB
+'Searches for specified user NAME and parameter
+'Returns a string value
+Function LookupProfileDB(user_name,parameter)
+	Dim props = getPlayerProperties(user_name)
+	Return props(parameter)
+End_Function
+
+Sub MakeWhip(person)
+	Dim new = NewItem(person,"frusta diabolica","Frusta magica per bannare i giocatori molesti. Scrivere il nome della persona da bannare e guardare la frusta.",NewImage("whip.gif",75,100),"type=whip,icon=whip.gif,vanishing=2,pickable,volume=0,hideable")
+	AttachEvent new,"onLook","whip_onUse"
+	AttachEvent new,"whenPicked","whip_whenPicked"
+End_Sub
+
+Sub whip_onUse()
+	If Not($AGENT.whipper) And Not($AGENT.master)
+		Print $AGENT,"Non la so usare"
+		Return False
+	End_If
+	Dim name = input("txtBox")
+	If name = ""
+		Speak "Scrivere nella texbox il nome di chi vuoi incarcerare"
+		Return
+	End_If
+	Dim person = getPlayer(name)
+	If person <> null
+		Print $AGENT,"Swisssshhhhh.... SNAP!!"
+		Speak SYS,$WORLD,"Incarcerazione immediata di: " + name
+		Debug $AGENT.name + " ha incarcerato " + name + " in data/ora: " + getTime("dd/MM/yyyy HH:mm")
+		Call doJail(person,person.name,$AGENT)
+		Return
+	End_If
+	Speak "'" + name + "' non è un giocatore"
+End_Sub
+
+Sub whip_whenPicked
+	If Not($TARGET.whipper) And Not($TARGET.master)
+		Print $TARGET,"Lascio la frusta, non la so usare e potrei danneggiare qualcuno"
+		Kill $OWNER
+		Return False
+	End_If
+End_Sub
+
+Function cloneItem(item)
+	Dim new
+	If item.type = null
+		Return null
+	End_If
+	If SetContainsKey(cloneableTypes,MainType(item))
+		new = NewItem(null,item.name,item.description,item.image("N"),"type="+item.type)
+		new.pickable = item.pickable
+		new.showmode = item.showmode
+		new.icon = item.icon
+		new.sound = item.sound
+		new.volume = item.volume
+		new.Valore = item.Valore
+		new.affi = item.affi
+		new.designer = item.designer
+		If item.Livello
+			new.Livello = item.Livello
+		End_If
+		If item.Potenza
+			new.Potenza = item.Potenza
+		End_If
+		If item.Protezione
+			new.Protezione = item.Protezione
+		End_If
+		If MainType(item) = "bottle"
+			new.uses = item.uses
+		End_If
+		Return new
+	End_If
+	Return null
+End_Function
+
+' Sends a command message to another area
+Sub SendMessage(area,command,properties)
+	Dim props = "type=msg,cmd="+command
+	If properties <> ""
+		props = props + "," + properties
+	End_If
+	Dim new = NewItem(null,"msg",null,null,props)
+	MoveOutside new,area
+End_Sub
+
+' Prints current time of day
+Function getTimeOfDay()
+	Dim realsecs = 60*getTime("mm")+getTime("ss")
+	Dim uwsecs = 24*realsecs
+	Dim uwhrs = Int(uwsecs/3600)
+	uwsecs = uwsecs - uwhrs*3600
+	Dim uwmins = Int(uwsecs/60)
+	If uwhrs < 10
+		uwhrs = "" + "0" + uwhrs
+	End_If
+	If uwmins < 10
+		uwmins = "" + "0" + uwmins
+	End_If
+	'uwsecs = uwsecs - uwmins*60
+	Return "" + uwhrs + ":" + uwmins
+End_Function
+
+Function htmlTimeOfDay
+	Dim tod = getTimeOfDay()
+	Dim todicon = "sun.gif"
+	Dim hr = Int(Left(tod,2))
+	If hr < 6 Or hr > 20
+		todicon = "moon.gif"
+	End_If
+	Dim ico = "<img alt="+Chr(34)+Chr(34)+" src=" + Chr(34) + NewImage(todicon,32,32).url + Chr(34) + " WIDTH=16 HEIGHT=16 ALIGN=middle />"
+	Return ico + " nel regno sono le <b>" + tod + "</b>"
+End_Function
+
+Sub nightDayCycle
+	Dim hr = Int(Left(getTimeOfDay(),2))
+	Dim nowday = (hr >= 7 And hr <= 21)
+	If hr = 6 Or hr = 20
+		$WORLD.bgcolor = "#FF2B6C"
+	End_If
+	If nowday <> itsday ' sunset/dawn
+		If nowday
+			Speak SYS,$WORLD,"E' un nuovo giorno nel regno...","Il sole si è alzato!","Vampiri in ritirata!"
+			$WORLD.bgcolor = "#9DB9E9"
+			Call onNewDay()
+		Else
+			Speak SYS,$WORLD,"Un giorno finisce...inizia la notte!","Il sole è tramontato!","Attenzione ai vampiri!"
+			$WORLD.bgcolor = "#000055"
+		End_If
+		PlaySound $WORLD,"churchbell.wav"
+		itsday = nowday
+	End_If
+End_Sub
+
+' Calculates the specifed guilds' statistics
+' Returns: a text description
+' Side F/X: Sends a message to area1 with total OR saves into guildkills
+Function getGuildKillStats(guildowner,sendmsg)
+	Dim res
+	Dim totkills = 0
+	Dim totlvl = 0
+	Dim tmp = guildsubscribers(guildowner)
+	Dim subs = Split(tmp,";")
+	If Not(SetContainsKey(subs,guildowner))
+		subs(SetLen(subs)+1) = guildowner
+	End_If
+	Dim x
+	Dim thisguildstats = NewSet()
+	For Each x In subs
+		If garumir <> null And SetLen(garumir.accounts)>0
+			res = res + Int(garumir.accounts(x))
+		End_If
+		Dim props = getPlayerProperties(x)
+		If props <> null
+			Dim personkillstats = props("killstats")
+			'Print "-" + x + "=" + personkillstats
+			If personkillstats <> null
+				Dim owner
+				For Each owner In SetKeys(personkillstats)
+					If Int(owner) > 0 Or owner = "0"
+						owner = "_" + owner
+					End_If
+					thisguildstats(owner) = Int(personkillstats(owner)) + thisguildstats(owner)
+				Next
+			End_If
+			totlvl = totlvl + props(cstLEVEL)
+		End_If
+	Next
+	Dim txt = "<TABLE BORDER CELLPADDING=5 CELLSPACING=0>"
+	txt = txt + "<TR><TH CLASS=text>Gilda/Razza</TH><TH CLASS=text>Vittorie</TH></TR>"
+	For Each owner In SetKeys(thisguildstats)
+		Dim tmp,link1="", link0, tmp, name, skip
+		skip = false
+		If Int(owner) > 0 Or owner = "0"
+			owner = "_" + owner
+		End_If
+		If guildwebs(owner) <> null
+			link1 = "<A HREF=" + Chr(34) + "javascript:parent.popupWin('" + guildwebs(owner) + "',-1,-1);" + Chr(34) + ">"
+			link0 = "</A>"
+		End_If
+		If guildlogos(owner) <> ""
+			tmp = link1 + "<IMG SRC=" + guildlogos(owner) + " WIDTH=32 HEIGHT=32 ALIGN=MIDDLE BORDER=0>" + link0
+		End_If
+		name = guildnames(owner)
+		If name = ""
+			If owner = "_monsters"
+				name = "Mostri"
+			Else
+				If owner = "_humans"
+					name = "Umani"
+				Else ' No more existing guild
+					skip = true
+				End_If
+			End_If
+		End_If
+		If Not(skip)
+			x = thisguildstats(owner)
+			txt = txt + "<TR><TD CLASS=text>" + tmp + "<B>" + link1 + name + link0 + "</B></TD><TD CLASS=text>" + x + "</TD></TR>"
+			guildmutualkills(guildowner+"*"+owner)=x
+			totkills = totkills + x
+		End_If
+	Next
+	txt = "<P>" + txt + "</TABLE>"
+	txt = "<B>Nemici sconfitti in totale</B>: " + totkills + "<BR>" + txt
+	guildkills(guildowner)=totkills
+	guildavglvl(guildowner)=Round(totlvl/SetLen(subs),1)
+	txt = "<b>Livello medio</b>: " + guildavglvl(guildowner) + "<BR/>"+txt
+	If garumir <> null
+		txt = "<B>Totale crediti dei membri</B>: " + res + "<BR>" + txt
+	End_If
+	txt = "<B>Situazione della gilda</B>: <I>" + guildnames(guildowner) + "</I><br><B>Prodotta il</B>: " + getTime("dd/MM/yyyy HH:mm") + "<BR>" + txt
+	txt = txt + "<P><B>NB.</B>: Questo foglio si autodistruggerà se lasciata cadere a terra."
+	If sendmsg
+		Call SendMessage("Sottomondo","upd_guildkills","guild="+guildowner+",guildkills="+totkills+",guildavglvl="+guildavglvl(guildowner))
+	End_If
+	Return txt
+End_Function
+
+Function SettingStringToSet(setstring)
+If Left(setstring,5) <> "!set!"
+	Return null
+End_If
+setstring = Right(setstring,Len(setstring)-5)
+setstring = Replace(setstring,"*",",")
+Return NewSet(setstring)
+End_Function
+
+'Builds a sorting index for the specified SET
+' sort_type can be "<" or ">"
+Function SetBuildIndex(set,sort_type)
+	Dim ret = NewSet()
+	Dim x
+	Dim origsize = SetLen(set)
+	Dim setcopy = Copy(set)
+	Dim i
+	For i = 1 To origsize
+		If sort_type = "<"
+			x = SetKeyOfMin(setcopy)
+		Else
+			x = SetKeyOfMax(setcopy)
+		End_If
+		'Debug "pos " + i + " key " + x
+		ret(i) = x
+		SetRemove setcopy,x
+	Next
+	Return ret
+End_Function
+
+'Given a set, returns the key of the MAX element
+Function SetKeyOfMax(set)
+	If SetLen(set) < 1
+		Return null
+	End_If
+	Dim maxk = SetKey(set,1)
+	Dim max = set(1)
+	If SetLen(set) > 1
+		Dim i
+		For i = 2 To SetLen(set)
+			If set(i) > max
+				maxk = SetKey(set,i)
+				max  = set(i)
+			End_If
+		Next
+	End_If
+	Return maxk
+End_Function
+
+'Given a set, returns the key of the MIN element
+Function SetKeyOfMin(set)
+	If SetLen(set) < 1
+		Return null
+	End_If
+	Dim mink = SetKey(set,1)
+	Dim min = set(1)
+	If SetLen(set) > 1
+		Dim i
+		For i = 2 To SetLen(set)
+			If LCase(set(i)) < LCase(min)
+				mink = SetKey(set,i)
+				min  = set(i)
+			End_If
+		Next
+	End_If
+	Return mink
+End_Function
+
+' onNewDay
+' Things to do at each new game day
+Sub onNewDay()
+	Dim p
+	For Each p In getPlayersIn($WORLD)
+		p.toxine = null
+	Next
+	If ExistScript("onNewDay_Local")
+		Call onNewDay_Local()
+	End_If
+End_Sub
+
+'Attack with bare hands or weapons (all except magicians)
+EVENT onAttack
+	If IsCharacter($OWNER)
+		Dim w = $AGENT.weapon
+		p = getInfoOwnedOrCatalog($AGENT,w,"power")
+		If p < 1 And IsMagician($AGENT)
+			Print $AGENT,"Devo possedere e selezionare un incantesimo di attacco (clicca ["+htmlIcon("paninfo.gif","Info")+"Info])."
+			Return false
+		End_If
+		Call doAttack($AGENT,$OWNER,w,true)
+	End_If
+End_EVENT
+
+
+
+'Input: attacker, victim, weapon, arts_allowed
+'Return: true - attacked, false= no attack
+Function doAttack(attacker,victim,weapon,arts_allowed)
+	If Not(Exists(victim)) Or attacker.container <> victim.container
+		Print attacker,"Non è più qui."
+		Return false
+	End_If
+
+	' Nobody can attack protected characters
+	If Not(victim.type>0) Or victim.invul
+		Print attacker,"Non si può attaccare."
+		Return false
+	End_If
+
+	If IsPlayer(victim)
+		If GuildPacific(attacker)
+			Print attacker,"Non si può attaccare. Appartengo a una gilda pacifica."
+			Return false
+		End_If
+
+		If IsPlayer(attacker) And GuildPacific(victim)
+			Print attacker,"Non si può attaccare. Appartiene a una gilda pacifica."
+			Return false
+		End_If
+	End_If
+
+	If ExistScript("onAboutAttack")
+		If onAboutAttack(attacker,victim,weapon) 'Already Managed?
+			Return false
+		End_If
+	End_If
+
+	If weapon <> null
+		If SetIndexOf(attacker.weapons,weapon)=0
+			If Not(containsType(attacker,weapon,false))
+				weapon = null
+			End_If
+		End_If
+	End_If
+
+	If weapon <> null
+		Dim maintype=Left(weapon,5)
+		If maintype="spell" And Not(IsMagician(attacker))
+			weapon=null
+			Print attacker,"L'arma predefinita non si può usare. Clicca [INFO] e selezionane un'altra."
+		End_If
+	End_If
+
+	If weapon <> null
+		attacker.attacksound = getInfoOwnedOrCatalog(attacker,weapon,"sound")
+	Else
+		attacker.attacksound = attacker.yell
+		If attacker.attacksound = null
+			If attacker.type<=10
+				attacker.attacksound = "robshortest.wav"
+			Else
+				attacker.attacksound = rndSet(setSndBeastYell)
+			End_If
+		End_If
+	End_If
+	If attacker.suffersound = ""
+		If attacker.type<=10
+			attacker.suffersound = rndSet(setSndHumanYell)
+		Else
+			attacker.suffersound = "pig.wav"
+		End_If
+	End_If
+
+	Call subFight(attacker,victim,weapon,arts_allowed)
+
+	'**************
+	'ARTS OF ATTACK
+	'**************
+	If arts_allowed
+		If attacker.artattack = "doublehit"
+			If attacker.Salute > 0 And Exists(victim)
+				Print attacker,"Doppio Colpo!"
+				Call subFight(attacker,victim,weapon,false)
+			End_If
+		End_If
+	End_If
+	Return true
+End_Function
+
+
+'
+' The following is a shared procedure for fights
+'
+' Input: attacker, victim, weapon, arts_allowed
+Sub subFight(attacker,victim,weapon,arts_allowed)
+	'Allow transform to werewolves
+	victim.angry=1
+	Dim sound=null
+
+	'******************
+	' WEAPON PREAPARATION
+	'******************
+	Dim weapname = "a mani nude"
+	Dim wpower=0
+	Dim weapaffi=null
+	If weapon <> ""
+		weapname = "con " + getInfoOwnedOrCatalog(attacker,weapon,"name")
+		wpower = getInfoOwnedOrCatalog(attacker,weapon,"power")
+		weapaffi = getInfoOwnedOrCatalog(attacker,weapon,"affi")
+		'If weapon.bestagainst = victim.type
+		'	wpower = wpower * 1.3
+		'	weapname = weapname + ", <b>efficacia +30%</b>"
+		'End_If
+		'If weapon.badagainst = victim.type
+		'	wpower = wpower * 0.7
+		'	weapname = weapname + ", calo efficacia -30%"
+		'End_If
+		If attacker.type = 4
+			If wpower > 2
+				wpower = 2
+				weapname = weapname + ", con limite Potenza a 2"
+			End_If
+		End_If
+	End_If
+
+	' Battle algorhithm calculations
+	Dim txtattack
+	Dim txtdefense
+
+	'******************
+	' ATTACK
+	'******************
+
+	Dim target=RndInt(3)
+	Dim arrTargets=NewArray("testa,corpo,arti")
+
+	txtattack = "<DIV CLASS=attack STYLE="+Chr(34)+"border-style:solid;border-width:1;border-color:red;width:50%;float:right;clear:right;"+Chr(34)+">"
+	txtdefense = "<DIV CLASS=defense STYLE="+Chr(34)+"border-style:solid;border-width:1;border-color:orange;width:50%;float:right;clear:right;"+Chr(34)+">"
+	txtattack = txtattack+"<b>" + attacker.name +"</b> attacca "+ victim.name +", <b>" + arrTargets(target)+"</b>, "+weapname+"<br />"+Chr(13)
+	txtdefense = txtdefense+victim.name +": "
+
+	'txtattack = txtattack+"Forza: " + attacker.Forza + "+<br />"
+	'txtattack = txtattack+"Arma: " + wpower + " ("+weapname+")<br />"
+
+	'******************
+	' PROTECTION CHOICE
+	'******************
+	Dim prot = null
+
+	Dim arrProtections = NewArray()
+	arrProtections(1) = victim.helmet
+	arrProtections(2) = victim.armour
+	arrProtections(3) = victim.shield
+
+	prot = arrProtections(target)
+	If prot = "0"
+		prot = null
+	End_If
+
+	Dim maxhits = Round(Sqr(2*attacker.Forza+wpower),2)
+
+	Dim bonus=0
+	If attacker.Livello<4 
+		bonus=4-attacker.Livello
+		txtattack = txtattack+"Bonus Principiante: +"&bonus&" Danni!<br />"
+	End_If
+
+	txtattack = txtattack+"Danno max: " + maxhits + "<br />"
+
+	'******************
+	' DEFENSE
+	'******************
+	Dim hits = Round(1+bonus+RndInt(maxhits),2)
+
+	txtdefense=txtdefense+"<b><font color=yellow>Danni a segno: "+hits+"</font></b><br />"
+
+	If hits > 0
+
+		'*******************
+		'SPECIAL PROTECTIONS
+		'*******************
+		If victim.vuln_mob 'Vulnerable to mob attacks
+			If victim.lastattacker = attacker.name Or victim.lastattacker = null
+				txtdefense=txtdefense+"Protezione speciale: vulnerabile solo ad attacchi di gruppo<br />"
+				hits = 0
+				victim.lastattacker=attacker.name
+			Else
+				txtdefense=txtdefense+"Attaccato anche da "+victim.lastattacker+", è ora vulnerabile!<br />"
+				If hits >= 0
+					victim.lastattacker="*" 'Breach opened!
+				End_If
+			End_If
+		End_If
+		If victim.invul > 0
+			txtdefense=txtdefense+"Protezione speciale: invulnerabilità"
+			hits=0
+		End_If
+		If attacker.invisible And ContainsType(victim,"amulet.invis",false)
+			txtdefense=txtdefense+"Protezione speciale: anti-invisibilità"
+			Call doInvis(attacker)
+		End_If
+
+		Dim protval = 0
+
+		If prot <> null
+			protval=getCatalogItemInfo(prot,"protection")/(victim.Livello*2)
+			txtdefense=txtdefense+"Protezione "+arrTargets(target)+": "
+			txtdefense=txtdefense+wcatalog_names(prot)+", protezione "+Int(100*protval)+"%<br />"
+		End_If
+
+		Dim shielded = hits*protval
+
+		If shielded > 0
+			txtdefense=txtdefense+"<b>Para "+shielded+" punti-danno</b><br />"
+			hits=hits-shielded
+		End_If
+
+	End_If ' Damage to be shielded
+
+	'**************
+	'ARTS OF ATTACK
+	'**************
+	If arts_allowed
+		If attacker.artattack = "heavyshot"
+			If attacker.Salute > 0 And Exists(victim) And hits > 0
+				Dim morehits = Round(hits*0.7,1)
+				txtdefense = txtdefense+"Colpo Pesante! +"+morehits+"<br />"
+				hits = hits+morehits
+			End_If
+		End_If
+		If attacker.artattack = "poisonattack"
+			If Exists(victim) And hits > 0
+				victim.toxine = 1+victim.toxine
+				txtdefense = txtdefense+"Colpo Avvelenato! "+victim.toxine+" gocce di veleno totali<br />"
+				Print victim,"Colpo Avvelenato: "+victim.toxine+" gocce di veleno totali<br />"
+			End_If
+		End_If
+		If attacker.artattack = "gainlife"
+			If Exists(victim) And hits > 0
+				Dim got = Round(hits*0.3,1)
+				txtdefense = txtdefense+"Prendi Vita! +"+got+" punti Salute acquisiti<br />"
+				attacker.Salute = Round(attacker.Salute+got,1)
+			End_If
+		End_If
+	End_If
+
+	'txtdefense=txtdefense+"<b><font color=yellow>Danni: "+hits+" punti</font></b><br />"
+	txtdefense=txtdefense+"</div>"
+	txtattack = txtattack+"</div>"
+
+	If attacker.expert
+		Print attacker,txtattack+Chr(13)+txtdefense
+	End_If
+	If victim.expert
+		Print victim,txtattack+Chr(13)+txtdefense
+	End_If
+
+	' Sounding - always according to the attacker
+	' loser's Salute is updated here
+	hits = Round(hits,2)
+	If hits < 0.1	' No damages
+		If protval < 0.1 ' Dodge
+			Display attacker,victim.name + " schiva il mio attacco"
+			Display victim,"L'ho schivato, whew!"
+			sound = "swordswing1.wav"
+		Else
+			Display attacker,victim.name + " para il colpo"
+			Display victim,"Parata!"
+			sound = "swordswing2.wav"
+		End_If
+		PlaySound attacker.container,sound
+	Else
+		' We have a winner and a loser
+		Dim winner,loser
+
+		If Left(weapon,12) = "spell.attack"
+			Call advanceCheck(attacker,"spells",1)
+		End_If
+
+		sound = attacker.attacksound
+
+		victim.Salute = Round(victim.Salute - hits,1)
+		winner = attacker
+		loser = victim
+		'Display attacker,"La sua Salute è ora a <B>" + victim.Salute + "</B>!!"
+		'Display victim,"Perdo <B><FONT COLOR=RED>" + hits + "</FONT></B> punti Salute."
+		
+		Print attacker,victim.name&": <b>"&(-hits)&"</b>"
+		Display attacker,barDamage(victim.Salute,hits)
+		Print victim,"<b>"+attacker.name+"</b> colpisce: "&myDamage(hits)
+
+		PlaySound attacker.container,sound
+
+		'SendPage loser,flash,2
+		Call battleResult(winner,loser,arts_allowed)
+	End_If
+
+	If victim <> $AGENT And victim.container <> ""
+            RefreshView victim
+	End_If
+
+	'***************
+	'ARTS OF DEFENSE
+	'***************
+	If arts_allowed=false
+		Return
+	End_If
+
+	If victim.artdefense = "counterattack"
+		If victim.Salute > 0
+			Print victim,"Controattacco!"
+			Call doAttack(victim,attacker,getContainedType(victim,victim.weapon),false)
+		End_If
+	End_If
+
+	If victim.artdefense = "rogue"
+		If victim.Salute > 0 And hits > 0
+			Print victim,"Potere Rogue!"
+			Print attacker,victim.name+" usa il potere Rogue!"
+			attacker.Salute = Round(attacker.Salute - hits/2,1)
+		End_If
+	End_If
+End_Sub
+
+
+Sub battleResult(winner,loser,arts_allowed)
+	'***************
+	'ARTS OF DEFENSE
+	'***************
+	If loser.artdefense = "survival"
+		If Not(IsPlayer(loser)) And loser.Salute < 1
+			' For robots only. Players are managed in Living()
+			Dim item = getContainedType(loser,"bottle.potion")
+			If item <> null
+				Call drinkPotion(loser,item)
+			End_If
+		End_If
+	End_If
+
+	If loser.Salute <= 0
+		' Opponent is dieing...
+
+		If loser.killer <> winner
+			' If winning not yet recorded...
+			' Calculate improvements for winner
+			Dim improvement = calcImprovement(loser.Forza-winner.Forza)
+			winner.Forza = Round(winner.Forza+improvement,1)
+
+			Call levelParams(winner)
+
+			Call incKilledCount(loser,winner)
+
+			' Record winning now
+			loser.killer = winner
+		End_If
+
+		' Manage the loser
+		If IsPlayer(loser)
+			Display loser, "Mi sento così debole..."
+			If (loser.artdefense <> "equilibrium" And RndInt(5)=1) Or (loser.artdefense="equilibrium" And RndInt(100)=1)
+				Move RndSet(getItemsIn(loser)),loser.container
+			End_If
+		Else	'Robot
+			If winner.type = 1 And AreEnemies(winner,loser)
+				Call GiveMoney(winner,loser.getProperty(cstLevel))
+				Speak SYS,winner,"Ricompensa per la vittoria: "&loser.getProperty(cstLevel)&" monete!"
+			End_If
+
+			Call onKillRobot(loser,winner)
+			Kill loser
+		End_If
+	Else
+		' Actions to be performed when loser is a robot
+		If Not(IsPlayer(loser))
+			If loser.Salute < 3 And loser.type > 10 And RndInt(6)=1 And Not(loser.steady)
+				' Salute is low and loser is a monster - escape
+				Move loser,RndSet(escapeSet)
+				Display winner,loser.name + " fugge!!"
+				Return
+			End_If
+			If loser.type = 10 And RndInt(2)=1
+				' loser is a werewolf - transform
+				Call doTransform(loser)
+				Return
+			End_If
+		End_If
+	End_If
+End_Sub
+
+' calcImprovement
+' input: difference (for any parameter)
+' returns: improvement
+Function calcImprovement(difference)
+If difference <= 0
+	' Loser was weaker or equal - little increase
+	Return 0.1
+Else
+	' Loser was stronger - increase
+	Return difference/2
+End_If
+
+' **************
+' Shows player's profile
+' ***************
+Sub doCheckup()
+	Dim s,guild
+	Dim txt
+
+	txt = "<fieldset><legend><font color=yellow>Equipaggiamento</font></legend>"
+	If IsMagician($AGENT)
+		txt = txt + PanelHtml("pchoose_spell")
+	Else
+		txt = txt + PanelHtml("pchoose_weapon")
+	End_If
+	'txt = txt + "<form><input type=button onClick="+Chr(34)+"javascript:document.location.href='"+gameinfo("navigator")+"?view=scene&cmd=dothis&selector_item="&$AGENT.weapon&"'"+Chr(34)+" value="+Chr(34)+"Vedi arma"+Chr(34)+"></form>"
+
+	txt = txt + PanelHtml("pchoose_armour")
+	txt = txt + PanelHtml("pchoose_shield")
+	txt = txt + PanelHtml("pchoose_helmet")
+	Print txt+"</fieldset>"
+
+	Dim link = gameInfo("site")+"?page_id=12#arts"
+	txt = "<fieldset><legend><font color=yellow>Arti [<a target=_blank href="+link+">?</a>]</font></legend>"
+	txt = txt + PanelHtml("pchoose_artattack")
+	txt = txt + PanelHtml("pchoose_artdefense")
+	Print txt+"</fieldset>"
+
+	Dim txt = "<fieldset><legend><font color=yellow>Stato attuale</font></legend>"
+	txt = txt+htmlTimeOfDay()+"<br/>"+Chr(13)
+
+	s = $AGENT.guild
+	If s=null
+		guild = "Nessuna."
+		If $AGENT.guildrequest <> null
+			guild = guild + " (richiesta in corso per: <B>" + guildnames($AGENT.guildrequest) + "</B>)"
+		End_If
+	Else
+		guild = getGuildBox(s,0) + GuildDelegateIcon($AGENT.name,s)
+	End_If
+	txt = txt+"<b>Gilda</b>: " + guild + "<br />"+Chr(13)
+
+	txt = txt + MarriedBox($AGENT)
+	txt = txt+"<DIV ID=info_preview STYLE=" + Chr(34) + "{float:right;clear:right;padding:10;}" + Chr(34) + ">"+$AGENT.image("N").html("il mio avatar: gli altri mi vedono così")+"</DIV>"+Chr(13)
+	txt = txt + "<b>Forza</b>: " + $AGENT.Forza + " punti su " + (8+$AGENT.Livello*2) + "<br />"
+	If $AGENT.invul
+		txt = txt + "<b>Invulnerabilità</b>: ancora " + ($AGENT.invul/2) + " minuti<br />"
+	End_If
+
+	If $AGENT.toxine > 0
+		txt = txt + "<b>Particelle veleno</b>: " + $AGENT.toxine + "<br/>"
+	End_If
+	Dim app = "normale"
+	If $AGENT.type > 9
+		If $AGENT.type = 10
+			app = "umano"
+		End_If
+		If $AGENT.type = 16
+			app = "lupo"
+		End_If
+		If $AGENT.type = 14
+			app = "vampiro"
+		End_If
+		If $AGENT.type = 12
+			app = "pipistrello"
+		End_If
+	End_If
+	Dim left = checkInvis($AGENT)
+	If left > 0
+		app = app + ", invisibile ("+Round(left/2,0)+" min. rimasti)"
+	Else
+		app = app + ", visibile"
+	End_If
+	Dim link = gameInfo("site")+"?page_id=12#avatar"
+	txt = txt + "<b>Aspetto</b>: " + app + " [<a target=_blank href="+link+">custom?</a>]<br/>"
+
+	Print $AGENT,txt
+
+	Dim v="Semplice"
+	If $AGENT.expert
+		v="Esperto"
+	End_If
+
+	Print $AGENT,"<b>Tipo Vista</b>:  <span id='expertmode'>"&v&"</span> <a href='#' onClick="&Chr(34)&"ajax('expertmode','"+gameinfo("navigator")+"?cmd=expertswitch',null);return false;"&Chr(34)&">Cambia</a>"
+
+	Dim v="Attacca"
+	If $AGENT.quickaction="look"
+		v="Guarda"
+	End_If
+	If $AGENT.quickaction="bite"
+		v="Mordi"
+	End_If	
+	Print $AGENT,"<b>Azione rapida</b>:  <span id='quickaction'>"&v&"</span> <a href='#' onClick="&Chr(34)&"ajax('quickaction','"+gameinfo("navigator")+"?cmd=quickactsw',null);return false;"&Chr(34)&">Cambia</a>"
+
+	Print $AGENT,"<br/><b>Uccisioni, dettaglio</b>"
+	Call printKillStats($AGENT)
+	Print "</fieldset>"+Chr(13)
+
+	Dim link = gameInfo("site")+"?page_id=12#community"
+
+	Print $AGENT,"<br/><fieldset><legend><font color=yellow>Community [<a target=_blank href="+link+">?</a>]</font></legend><b>La mia scheda pg:</b>"
+	Print $AGENT,"("+UserCardLink($AGENT.name)+")"
+	Print $AGENT,"</fieldset>"
+
+	Print advanceBox($AGENT)+Chr(13)
+
+	Dim link = gameInfo("site")+"?page_id=12#security"
+	Print $AGENT,"<br/><fieldset><legend><font color=yellow>Sicurezza [<a target=_blank href="+link+">?</a>]</font></legend><b>Ultimo uso da altri pg</b>:"
+	Print $AGENT,$AGENT.lastused&"</fieldset>"
+End_Sub
+
+EVENT onCastSpell
+	Dim success = false
+	Dim skipcount = false ' Set to true to skip spell counting
+	Dim item = $OWNER
+	Dim attacker = $AGENT
+	Dim target = $TARGET
+	If MainType(item) <> "spell"
+		Print item.name + " non è un incantesimo."
+		Return
+	End_If
+        If item.seller <> "" Or target.seller <> ""
+            Print "E' in vendita."
+            Return false
+        End_If
+	If item.type = "spell.water"
+		If MainType(target) = "bottle"
+			Display "Lancio l'incantesimo dell'Acqua sulla bottiglia..."
+			Call refillPotion(target)
+			success = true
+			attacker.Salute = attacker.Salute-1
+		End_If
+	End_If
+	If Left(item.type,12) = "spell.attack"
+		If IsCharacter(target)
+			attacker.attacksound = item.sound
+			success = doAttack(attacker,target,item,true)
+			skipcount = true
+		End_If
+	End_If
+	If item.type = "spell.tele"
+		If attacker.Livello >= 2
+			If doTeleport(attacker,target)
+				Display "Fatto!"
+				Display target, attacker.name + " mi ha fatto l'incantesimo del teletrasporto!"
+				success = true
+			End_If
+		Else
+			Display "Serve almeno il Livello 2 per farlo."
+		End_If
+	End_If
+	If item.type = "spell.invis"
+		If doInvis(target)
+			Display "Fatto!"
+			Display target, attacker.name + " mi ha fatto l'incantesimo dell'invisibilità !"
+			success = true
+		End_If
+	End_If
+	If item.type = "spell.whirl"
+		If attacker.Livello >= 4
+			If CanAttackAB(attacker,target)=false
+				Print "Un membro di una gilda pacifica non fa queste cose."
+				Return false
+			End_If
+			success = doWhirl(attacker,target)
+		Else
+			Display "Serve almeno il Livello 4 per farlo."
+		End_If
+	End_If
+	If item.type = "spell.gemini"
+		success = doGemini()
+	End_If
+	If item.type = "spell.blood"
+		If attacker.Livello >= 10
+			If IsCharacter(target) And target.invul < 1 And CanAttackAB(attacker,target)
+				If doBlood(attacker,target)
+					success = true
+				End_If
+			Else
+				Print "Un membro di una gilda pacifica non fa queste cose."
+			End_If
+		Else
+			Display "Serve almeno il Livello 10 per farlo."
+		End_If
+	End_If
+	If item.type = "spell.eye"
+		If target.vuln_mob
+			If attacker.Livello < 4
+				target.lastattacker = "*"
+			Else
+				target.vuln_mob = 0
+			End_If
+			PlaySound target.container,item.sound
+			Display "Fatto!"
+			Display target, attacker.name + " mi ha fatto l'incantesimo dell'occhio!"
+			success = true
+			attacker.Salute = attacker.Salute-1
+		Else
+			Display "Su questo obbiettivo è inefficace."
+		End_If
+	End_If
+	If Not(success) And ExistScript("doCastSpell_Local")
+		success = doCastSpell_Local(attacker,item)
+	End_If
+	If success
+		If item.type <> "spell.water" And item.type <> "spell.tele" And Not(skipcount)
+			Call advanceCheck(attacker,"spells",1)
+		End_If
+	Else
+		Print "Non succede nulla."
+	End_If
+	Return success
+End_EVENT
+
+Function doBlood(attacker,victim)
+	Dim bloodrain = 0
+	Dim atthealthdiff = 10 - attacker.Salute
+	If victim.Salute > 0
+		bloodrain = RndInt(victim.Salute*100)/100 + 1
+	End_If
+	If bloodrain > atthealthdiff
+		bloodrain = atthealthdiff
+	End_If
+	If bloodrain > victim.Salute
+		bloodrain = victim.Salute
+	End_If
+	If victim.Salute < 0
+		bloodrain = 0
+	End_If
+	victim.Salute = victim.Salute - bloodrain
+	attacker.Salute = attacker.Salute + bloodrain
+	Display victim, "Hai perso " + bloodrain + " punti salute per l'incantesimo del Sangue fatto da " + attacker.name + "!"
+	Display attacker, "Hai ottenuto " + bloodrain + " punti salute!"
+	If victim.type = 0
+		Print attacker,"Non si può uccidere." 'Translate this
+		Return 1
+	End_If
+	call battleResult(attacker,victim,false)
+	Return 1
+End_Function
+
+Function doTeleport(attacker,victim)
+	If IsCharacter(victim.container)
+		' Avoids teleport to be used to steal objects
+		Display "Non posso farlo."
+		Return 0
+	End_If
+	If attacker <> victim
+		If attacker.Salute > 2
+			attacker.Salute = Int(attacker.Salute/2)
+		Else
+			attacker.Salute = -1
+		End_If
+	End_If
+	If (Not(IsCharacter(victim)) And victim.pickable) Or (IsCharacter(victim) And victim.type <> 0 And victim.noteleport=0)
+		PlaySound victim.container,teleport.sound
+		Move victim,rndSet(setAll)
+		PlaySound victim.container,teleport.sound
+		If victim.type=15
+			victim.description = "Sembra voglia sbarrarmi la strada, ma non riesce."
+		End_If
+		Return 1
+	End_If
+	Display attacker,"Non funziona."
+	Return 0
+
+
+Function doWhirl(attacker,victim)
+	If IsCharacter(victim)
+		If attacker.Salute > 2
+			attacker.Salute = Int(attacker.Salute/2)
+		Else
+			attacker.Salute = -1
+		End_If
+		If victim.type=17
+			Speak victim,victim.container,"Quel ridicolo incantesimo non ha effetto su di me! Har! Har! Har!"
+			Return false
+		End_If
+		PlaySound victim.container,whirl.sound
+		If victim.artdefense="equilibrium" And RndInt(100)>4
+			Print victim,attacker.name+" ha tentato di rubarmi gli oggetti con l'incantesimo del Vortice, ma non ha funzionato!"
+			Print attacker,victim.name+" usa l'Arte dell'Equilibrio e l'incantesimo non ha funzionato."
+			Return false
+		End_If
+		Dim items = getItemsIn(victim)
+		Dim phrase = attacker.name+" mi ha lanciato l'incantesimo del Vortice"
+		If SetLen(items) > 0
+			Move RndSet(items),victim.container
+		Else
+			phrase = phrase + ", ma questa volta non ha funzionato"
+		End_If
+		Print attacker,"Fatto!"
+		Print victim, phrase+"!"
+		If Not(IsPlayer(victim))
+			Call doAttack(victim,attacker,getContainedType(victim,victim.weapon),true)
+		End_If
+		Return 1
+	Else
+		Print "Sugli oggetti non funziona..."
+	End_If
+	Return false
+End_Function
+
+Function doInvis(victim)
+	If Not(IsPlayer(victim)) Or (victim.invisible=0 And ContainsType(victim,"amulet.invis",false))
+		' Avoids invisibility to be used on robots and objects
+		Print "L'amuleto anti-invisibilità fa effetto."
+		Return false
+	End_If
+	PlaySound victim.container,invis.sound
+	If victim.invisible > 0
+		victim.invisible = 0
+		victim.invisticks = null
+		Display victim,"Sono ritornato visibile!"
+	Else
+		victim.invisible = 1
+		victim.invisticks = instanceid+"*"+Int(ticks)
+		Display victim,"Sono diventato invisibile!"
+	End_If
+	If victim.container <> null
+		RefreshView victim.container
+	End_If
+	Return true
+
+Function doGemini()
+	If $AGENT.Salute < 5
+		Print $AGENT,"Sono troppo stanco."
+		Return false
+	End_If
+	If $TARGET.type = "spell.blood"
+		Print $AGENT,"Questo non si può duplicare."
+		Return false
+	End_If
+	If InstrCount($TARGET.type,"spell")>0
+		' OK, trying to clone a spell
+		Dim x = getContainedType($AGENT,"stone")
+		If x<>null
+			' I got a stone
+			Kill x
+			Call NewItem($AGENT,$TARGET.name,$TARGET.description,$TARGET.image("N"),"pickable,showmode=2,Valore=" + $TARGET.Valore + ",Potenza=" + $TARGET.Potenza + ",type="+ $TARGET.type + ",icon=" + $TARGET.icon + ",sound=" + $TARGET.sound)
+			PlaySound $AGENT,"music.wav"
+			$AGENT.Salute = $AGENT.Salute - 5
+			Print $AGENT,msgNOWREST
+			Return true
+		Else
+			Display "Non possiedo tavolette di roccia."
+			Return false
+		End_If
+	End_If
+	Display "Non succede nulla."
+	Return false
+End_Function
+
+' Increment a parameter for the specified person, then check
+' for advancement: if it passes the threshold, the Experience
+' is incremented
+Sub advanceCheck(person,param,incr)
+	Dim setMax = NewSet("score=0,kills=0,spells=0,crafts=0,infections=0")
+	Dim k
+
+	For Each k In SetKeys(setMax)
+		setMax(k) = getNextAdvance(person,k)
+	Next
+
+	k = null
+	If param = "score"
+		If incr+person.Score >= setMax("score")
+			k = "Score"
+		End_If
+		person.Score=incr+person.Score
+	End_If
+	If param = "kills"
+		If incr+person.Uccisioni >= setMax("kills")
+			k = "Uccisioni"
+		End_If
+		person.Uccisioni=incr+person.Uccisioni
+	End_If
+	If param = "spells"
+		If incr+person.Incantesimi >= setMax("spells")
+			k = "Incantesimi"
+		End_If
+		person.Incantesimi=incr+person.Incantesimi
+	End_If
+	If param = "crafts"
+		If incr+person.Prodotti >= setMax("crafts")
+			k = "Prodotti"
+		End_If
+		person.Prodotti=incr+person.Prodotti
+	End_If
+	If param = "infections"
+		If incr+person.Infettati >= setMax("infections")
+			k = "Infettati"
+		End_If
+		person.Infettati=incr+person.Infettati
+	End_If
+
+	If k = null
+		Return
+	End_If
+	person.Esperienza = person.Esperienza + 1
+	Speak SYS,$WORLD,""+UserCardLink(person.name)+"! Avanzamento Esperienza: +1 per raggiungimento soglia <b>"+k+"</b>!!"
+End_Sub
+
+
+Sub purgeGuild(owner)
+	Dim s,w
+	For Each s In Split(guildsubscribers(owner),";")
+		w = getSetting(CookName(s) + "_when","")
+		If w = ""
+			Print "Elimino " + s + getSetting(CookName(s) + "_properties","")
+			Call GuildUnsubscribe2(owner,s)
+		End_If
+	Next
+End_Sub
+
+EVENT onDbDown
+	Speak SYS,$WORLD,"Persa connessione al database dei profili - Non si potrà salvare per un pò."
+	dbdown = true
+End_EVENT
+
+EVENT onDbUp
+	Speak SYS,$WORLD,"Connessione al database profili ripristinata - Si consiglia di uscire senza salvare, e poi rientrare."
+	dbdown = false
+	gamelocked = false
+End_EVENT
+
+' Gets info on a person (from profile DB)
+' Returns a message to be diplayed to the user
+Function getPeopleInfo(personname,extended)
+	Dim res = ""
+	Dim props = getPlayerProperties(personname)
+	If SetLen(props) > 0
+		res = "<B>Alias</B>: " + props("mainpg")
+		res = res + ", <B>Classe</B>: " + props("Classe")
+		res = res + " (" + props("gender") + ")"
+		res = res + ", <B>Livello</B>: " + props(cstLEVEL)
+		res = res + ", <B>Esperienza</B>: " + props(cstEXP)
+		res = res + ", <B>Forza</B>: " + props("Forza")
+		res = res + ", <B>Crediti</B>: " + props("Crediti")
+		res = res + ", <B>Ore online</B>: " + Round(props("ticker")/120,0)+" ("+tourntypes("t"+Int(props("tickertype")))+")"
+		Dim personkillstats = props("killstats")
+		Dim kills = 0
+		If personkillstats <> null
+			Dim owner
+			For Each owner In SetKeys(personkillstats)
+				kills = kills + Int(personkillstats(owner))
+			Next
+		End_If
+		res = res + ", <B>Vittorie</B>: " + kills
+		res = res + ", <B>Ultimo login</B>: " + getSetting(CookName(personname) + "_login","?")
+		res = res + ", <B>Ultimo salv.</B>: " + getSetting(CookName(personname) + "_when","?")
+		If extended
+			res=res + ", <B>Ultimo uso</B>: " + props("lastused")
+			res=res+", <b>Numero IP</b>:"+props("remoteAddr")
+		End_If
+	End_If
+	Return "Info su <I>" + personname + "</I>: " + res
+End_Function
+
+Function MarriedBox(person)
+	Dim tmp = ""
+	If person.married<>null
+		tmp = tmp + NewImage(main_imagedir + "goldring.gif",16,16).html("sposato/a")
+		tmp = tmp + " sposato/a con <B>" + UserCardLink(person.married) + "</B><br />"
+	End_If
+	Return tmp
+End_Function
+
+' Sorts the specified set by name
+Function SetSortedByName(aset)
+	Dim setnames = NewArray()
+	Dim i
+	Dim k
+	For i = 1 To SetLen(aset)
+		setnames(i) = aset(i).name
+	Next
+	Dim index = SetBuildIndex(setnames,"<")
+	Dim result = getItemsIn(null)
+	For i = 1 To SetLen(index)
+		k = Int(index(i))
+		SetAdd result,SetKey(aset,k),aset(k)
+	Next
+	Return result
+End_Function
+
+' Sends a command/control message to other worlds of the same cluster
+' cmd - command to be sent (string)
+' more - either NULL or more attributes to be sent
+Function BroadcastOtherWorlds(cmd,more)
+	Dim setWorlds = NewArray("Sottomondo,Sottomondo2,Sottomondo3")
+	If uw4up
+		setWorlds(4)="Sottomondo4"
+	End_If
+	' Prepare message
+	Dim attrlist = "type=msg,cmd="+cmd
+	If more <> null
+		attrlist = attrlist + "," + more
+	End_If
+	Dim w
+	For Each w in setWorlds
+		If w <> $WORLD.name
+			Dim new = NewItem(null,"msg",null,null,attrlist)
+			'Debug "Sending to " + w
+			MoveOutside new,w
+		End_If
+		If Exists(new)
+			Kill new
+		End_If
+	Next
+End_Function
+
+' Common handling of inter-area command messages
+' Returns true if message have been handled
+Function HandleCommandMessage_Common(msg)
+	' Handle control/command message
+	If msg.cmd = "guilds_update"
+		guildnames = msg.guildnames
+		guildlogos = msg.guildlogos
+		guildsubscribers = msg.guildsubscribers
+		guildmoney = msg.guildmoney
+		Return true
+	End_If
+	If msg.cmd = "catalog_update"
+		Call buildWcatalog()
+		Call shops_prepare(arrShopkeepers)
+		Return true
+	End_If
+	If msg.cmd = "kill_crown"
+		Dim crown = getContainedType($WORLD,"crown")
+		If crown <> null
+			Kill crown
+		End_If
+		Return true
+	End_If
+	If msg.cmd = "incr_score"
+		Return incrScore(msg.to,msg.incr)
+	End_If
+	If msg.cmd = "upd_prop"
+		Return SaveProperty(msg.to,msg.key,msg.val,false)
+	End_If
+	If msg.cmd = "reset"
+		Reset
+	End_If
+	If msg.cmd = "shout"
+		Speak SYS,$WORLD,msg.txt
+		Return true
+	End_If
+	Return false
+End_Function
+
+Function incrScore(name,incr)
+	Dim person = getPlayer(name)
+	If person <> null
+		Call advanceCheck(person,"score",Int(incr))
+		person.score_added=0 ' Avoids double increment
+		Speak SYS,person,"Incremento Score: " + incr
+		Return true
+	End_If
+	Return false
+End_Function
+
+Function CutFirst(array)
+	Dim newarr = NewArray()
+	Dim i
+	For i = 2 To SetLen(array)
+		newarr(i-1) = array(i)
+	Next
+	Return newarr
+End_Function
+
+' Updates a player's property
+' supported properties: Level/Experience
+' nick: player's nickname
+' property: property to be updated
+' value: value to be set
+' wide: true: save & send to other worlds if not found / false: just search current world and don't save
+Sub SaveProperty(nick,property,value,wide)
+	If wide
+		If profileExists(nick)
+			Dim nick2 = CookName(nick)
+			Dim value2 = SetToString(value)
+			tmp = getSetting(nick2 + "_properties","")
+			SaveSetting nick2 + "_properties",tmp+"," + property + "="+value2
+		End_If
+	End_If
+	'Search & update current world
+	Dim person = getPlayer(nick)
+	If person <> null
+		If property = cstLEVEL
+			person.Livello = value
+		End_If
+		If property = cstEXP
+			person.Esperienza = value
+		End_If
+		If property = "Score"
+			person.Score = value
+		End_If
+	Else
+		If wide
+			'Search & update other worlds
+			Call BroadcastOtherWorlds("upd_prop","key="+property+",val="+value+",to="+nick)
+		End_If
+	End_If
+End_Sub
+
+EVENT onMap
+	If $AGENT.getPanel() = "map"
+		SetPanel $AGENT,$AGENT.__prevpanel
+		$AGENT.__prevpanel = null
+	Else
+		$AGENT.__prevpanel = $AGENT.getPanel() ' Remember panel
+		SetPanel $AGENT,"map"
+	End_If
+END_EVENT
+
+EVENT onOpen
+	If $OWNER.imageOpen <> null And $OWNER.open
+		Dim im = NewImage($OWNER.imageOpen,1,1)
+		$OWNER.image("N").url = im.url
+	End_If
+	Dim linked = $OWNER.linked
+	If linked <> null
+		linked.open=$OWNER.open
+		If linked.imageOpen <> null And linked.open
+			Dim im = NewImage(linked.imageOpen,1,1)
+			linked.image("N").url = im.url
+		End_If
+	End_If
+END_EVENT
+
+EVENT onClose
+	If $OWNER.imageClosed <> null And $OWNER.open=0
+		Dim im = NewImage($OWNER.imageClosed,1,1)
+		$OWNER.image("N").url = im.url
+	End_If
+	Dim linked = $OWNER.linked
+	If linked <> null
+		linked.open=$OWNER.open
+		If linked.imageClosed <> null And linked.open=false
+			Dim im = NewImage(linked.imageClosed,1,1)
+			linked.image("N").url = im.url
+		End_If
+	End_If
+END_EVENT
+
+Sub getMoneyFrom(person,howmuch)
+	Dim money=0
+	Dim moneypack
+	Dim item
+	For Each item In getItemsIn(person)
+		If item.Monete >= howmuch
+			money=item.Monete
+			moneypack=item
+		End_If
+	Next
+
+	shopkeeper = person.container.shopkeeper
+	If money >= howmuch
+		' Transaction being successful
+		moneypack.Monete = moneypack.Monete - howmuch
+		moneypack.name = "" + moneypack.Monete + " monete"
+		If moneypack.Monete = 0
+		    Kill moneypack
+		End_If
+		Return true
+	Else
+		Return false
+	End_If
+End_Sub
+
+' Returns the advance box
+Function advanceBox(person)
+	Dim link = gameInfo("site")+"?page_id=12#advance"
+	Dim txt = "<fieldset><legend><font color=yellow>Obbiettivi [<a target=_blank href="+link+">?</a>]</font></legend>"
+	txt = txt+"<b>Prossimo avanz. Esperienza</b>:<br /><ul>"
+
+	Dim setMax = NewSet("score=0,kills=0,spells=0,crafts=0,infections=0")
+	Dim k
+
+	For Each k In SetKeys(setMax)
+		setMax(k) = getNextAdvance(person,k)
+		If Not( (k="spells" And person.type<>2 And person.type<>19) Or (k="crafts" And person.type<>4) Or (k="infections" And Not( InStr("-10-12-14-16-","-"+person.type+"-") >0 ) ) )
+		txt = txt+"<li>"+setMax(k)+" "+setDict(k)+"<br/>"
+		End_If
+	Next
+	txt = txt+"<li>ogni "+visitsperinc+" visite<br>alla mia <b>scheda pg</b>"
+	txt = txt + panelHtml("pgetvisits")
+	'txt = txt+"<form method=post action=multiplayer?cmd=getvisits><input type=hidden name=id value="+chr(34)+cookname(person.name)+chr(34)+"><input type=submit name=go value=credit /></form>"
+	txt = txt+"</ul></fieldset>"+Chr(13)
+	Return txt
+End_Function
+
+'Calculates and returns the next advance threshold
+'for the specified person
+'parameter: score/kills/spells/crafts/infections
+Function getNextAdvance(person,param)
+	If param = "score"
+		Dim s=Int(person.Livello^1.3)*7
+		Return (Int(person.Score/s)+1)*s
+	End_If
+	If param = "kills"
+		If person.type=1
+			Dim s=Int(person.Livello^1.3)*1
+		Else
+			Dim s=Int(person.Livello^1.3)*2
+		End_If
+		Return (Int(person.Uccisioni/s)+1)*s
+	End_If
+	If param = "spells"
+		Dim s=Int(person.Livello^1.3)*4
+		Return (Int(person.Incantesimi/s)+1)*s
+	End_If
+	If param = "crafts"
+		Dim s=Int(person.Livello^1.3)*3
+		Return (Int(person.Prodotti/s)+1)*s
+	End_If
+	If param = "infections"
+		Dim s=Int(person.Livello^1.3)*3
+		Return (Int(person.Infettati/s)+1)*s
+	End_If
+End_Function
+
+'Checks Experience for level advance
+Sub checkLevelAdvance(person)
+	If person.Esperienza >= 10
+		person.Esperienza = person.Esperienza-10
+		If person.Livello < 100
+			person.Livello = person.Livello+1
+			Speak SYS,$WORLD,"Avanzamento Livello: "+UserCardLink(person.name)+" passa a Livello: "+person.Livello+"!"
+			PlaySound person,"fanfare.wav"
+			Journal person.name&" avanza di livello",UserCard(person.name),person.name&" passa a Livello: "&person.Livello&"!","news*avanzamenti*utente:"&person.name
+		End_If
+	End_If
+End_Sub
+
+Function weaponsOf(person)
+	Dim arr = NewSet("0=Nessuna")
+	Dim arr2 = person.weapons
+	Dim x, good
+	For Each x In arr2
+		good = ((getCatalogItemInfo(x,"power") <> null) Or (getCatalogItemInfo(x,"protection") <> null))
+		If InCatalog(x) And good
+			Dim n= wcatalog_names(x)
+			Dim p= getCatalogItemInfo(x,"power")
+			arr(x)=n&" ("&p&")"
+		Else
+			SetRemove arr2,x
+		End_If
+	Next
+	Return arr
+End_Function
+
+Function spellsOf(person)
+	Return weaponsOf(person)
+End_Function
+
+Function protectionsOf(person,ptype)
+	Dim arr = NewSet("0=Nessuna")
+	If ptype = cstHELMET
+		Dim arr2 = person.helmets
+	End_If
+	If ptype = cstSHIELD
+		Dim arr2 = person.shields
+	End_If
+	If ptype = cstARMOUR
+		Dim arr2 = person.armours
+	End_If
+	Dim x, good
+	For Each x In arr2
+		good = ((getCatalogItemInfo(x,"power") <> null) Or (getCatalogItemInfo(x,"protection") <> null))
+		If InCatalog(x) And good
+			Dim n= wcatalog_names(x)
+			Dim p= getCatalogItemInfo(x,"protection")
+			arr(x)=n&" ("&p&")"
+		Else
+			SetRemove arr2,SetIndexOf(arr2,x)
+		End_If
+	Next
+	Return arr
+End_Function
+
+Function artsOf(person,atype)
+	Dim arr = NewSet("0=Nessuna")
+	Dim arr2 = person.arts
+	If SetLen(arr2) > 0
+		Dim x
+		Dim i=1
+		For Each x In arr2
+			If artTypes(x)=atype
+				arr(x)=artNames(x)
+				i = i+1
+			End_If
+		Next
+	End_If
+	Return arr
+End_Function
+
+' doChoose
+' multi-purpose event, catches command from
+' context-sensitive menus and triggers an action
+EVENT doChoose()
+	Dim cmd = input("selector_command")
+	If (cmd <> null)
+		Return set_robotcommand(cmd,input("object"),input("txtBox"))
+	End_If
+	Dim cmd = input("selector_weapon")
+	If (cmd <> null)
+		Return select_equipment(cmd,"weapon")
+	End_If
+	Dim cmd = input("selector_spell")
+	If (cmd <> null)
+		Return select_equipment(cmd,"weapon")
+	End_If
+	Dim cmd = input("selector_helmet")
+	If (cmd <> null)
+		Return select_equipment(cmd,"helmet")
+	End_If
+	Dim cmd = input("selector_armour")
+	If (cmd <> null)
+		Return select_equipment(cmd,"armour")
+	End_If
+	Dim cmd = input("selector_shield")
+	If (cmd <> null)
+		Return select_equipment(cmd,"shield")
+	End_If
+	'Dim cmd = input("selector_item")
+	'If (cmd <> null)
+	'	Return buy_item(cmd)
+	'End_If
+	Dim cmd = input("selector_artattack")
+	If (cmd <> null)
+		Return select_art(cmd,cstATTACK)
+	End_If
+	Dim cmd = input("selector_artdefense")
+	If (cmd <> null)
+		Return select_art(cmd,cstDEFENSE)
+	End_If
+	If ExistScript("doChoose_Local")
+		Return onChoose_Local()
+	End_If
+
+	Return False
+END_EVENT
+
+' doCommand
+' multi-purpose event, catches command from
+' context-sensitive menus and triggers an action
+EVENT doCommand()
+	Dim item = input("selector_item")
+	If (item <> null)
+		If input("shopop")<>"del"
+			$AGENT.__interested=item
+			Dim res = true
+			If input("shopop")="buy"
+				res = buy_item(item)
+			End_If
+			Return res
+		Else
+			If $AGENT.mastersuper
+				Return catalog_del_item(item)
+			End_If
+		End_If
+	End_If
+	Dim cmd = input("masterOp")
+	If (cmd <> null)
+		Return doSpecialOp(cmd,input)
+	End_If
+	If ExistScript("doCommand_Local")
+		Return doCommand_Local(input)
+	End_If
+
+	Return False
+END_EVENT
+
+Function select_equipment(cmd,ptype)
+	If cmd<>0
+		If ptype = "helmet"
+			$AGENT.helmet = cmd
+		End_If
+		If ptype = "shield"
+			$AGENT.shield = cmd
+		End_If
+		If ptype = "armour"
+			$AGENT.armour = cmd
+		End_If
+		If ptype = "weapon"
+			$AGENT.weapon = cmd
+		End_If
+		Print $AGENT,"Utilizzerò: <a target=_blank href=" + gameinfo("navigator") & "?cmd=viewitem&nocontrols=1&item=" & cmd & ">" & wcatalog_names(cmd) & "</a>"
+	End_If
+	Call doCheckup()
+	Return true
+End_Function
+
+Function select_art(art,atype)
+	If art <> 0
+		Print $AGENT,"Utilizzerò l'Arte del " + artNames(art) + " per " + atype
+		If atype = cstATTACK
+			$AGENT.artattack = art
+		Else
+			$AGENT.artdefense = art
+		End_If
+	End_If
+	Call doCheckup()
+	Return true
+End_Function
+
+' Checks if two players have the same IP or guild
+' same result if one of the two guilds is NULL
+Function SameIPorGuild(winner,loser)
+	If winner.remoteAddr <> null and winner.remoteAddr = loser.remoteAddr
+		Return true
+	End_If
+	If IsPlayer(loser) And loser.guild = null ' Newbies don't count
+		Return true
+	End_If
+	If IsPlayer(loser) And winner.guild = loser.guild ' Guild mates don't count
+		Return true
+	End_If
+	Return false
+End_Function
+
+' Prints out the affinities of the specified object
+' Input: object (should have a .affinities property)
+' or affinities array (4 numbers)
+Function htmlAffinities(object)
+	Dim tmp = ""
+	Dim affi = object.affinity
+	If affi = null And SetLen(object) = 4
+		affi = object
+	End_If
+	If affi<>null
+		tmp = "<b>Affinità</b><br/>"+Chr(13)
+		tmp=tmp+"<SPAN STYLE=" + Chr(34) + "float:right;padding:10;font-size:10px;" + Chr(34) + "><A HREF=" + Chr(34) + gameInfo("site")+"?page_id=12#elements" + Chr(34) + " TARGET=" + Chr(34) + "_blank" + Chr(34) + ">" + NewImage("panhelp.gif",16,16).html("Spiega",$AGENT) + "Spiega</A></SPAN>"
+		tmp=tmp+"<TABLE>"
+		Dim i
+		For i = 1 To 4
+			tmp = tmp + "<TR class=iconlabel><TD><IMG SRC="+NewImage(main_imagedir+"elem"+i+".gif",48,48).url+" WIDTH=16 HEIGHT=16 ALT="+ cstAffiNames(i) +" TITLE="+ cstAffiNames(i) +"></TD><TD>" + cstAffiNames(i) + "</TD><TD>" + affi(i) + "</TD></TR>"+Chr(13)
+		Next
+		tmp = tmp + "</TABLE>"
+	End_If
+	Return tmp
+End_Function
+
+Function getCatalog(shop)
+	Dim x = NewSet()
+	If shop.shopkeeper = null ' Not a shop - quick exit
+		Return x
+	End_If
+	Dim i,p
+	Dim s = shop.shopkeeper
+	For Each i In SetKeys(wcatalog)
+		If s.avail(i) >= 0 Or Not(limitedavails)
+			x(i)=wcatalog_names(i)
+			p=Int(getCatalogItemInfo(i,"protection")) + getCatalogItemInfo(i,"power")
+			If p>0
+				x(i)=x(i)&" ("&p&")"
+			End_If
+		End_If
+	Next
+	Return x
+End_Function
+
+' Loads (rebuilds) Weapon's catalog
+Function buildWCatalog()
+	wcatalog = NewSet()
+	wcatalog_names = NewSet()
+	wcatalog_desc = NewSet()
+	wcatalog_props = NewSet()
+	Dim nitems = getSetting("ctx_items",0)
+	Dim i
+	Dim itemstring
+	For i = 1 To nitems
+		itemstring = getSetting("ctx_item"+i)
+		If itemstring <> null
+			Dim arrData = Split(itemstring,"*")
+			wcatalog_names(arrData(1)) = arrData(2)
+			wcatalog(arrData(1)) = arrData(3)
+			Call buildWcatalogProps(arrData(1))
+			If SetLen(arrData) > 3
+				wcatalog_desc(arrData(1)) = arrData(4)
+			End_If
+		Else
+			Debug "ERROR - missing item "+i+" from catalog"
+		End_If
+	Next
+	Return nitems
+End_Function
+
+' Creates a property map for each catalog item
+' key format item_property
+Function buildWcatalogProps(item)
+	Dim bits = NewSet(wcatalog(item))
+	Dim p
+	For Each p In SetKeys(bits)
+		wcatalog_props(item&"_"&p)=bits(p)
+	Next
+End_Function
+
+' Gets the attributes of an Item in the items catalog
+' And returns the specified property
+' property cannot be name (use wcatalog_names(item))
+Function getCatalogItemInfo(item,property)
+	'Dim bits = NewSet(wcatalog(item))
+	'Return bits(property)
+	Return wcatalog_props(item&"_"&property)
+End_Function
+
+' Similar to getCatalogItemInfo but looks in inventory first
+Function getInfoOwnedOrCatalog(who,type,property)
+	If containsType(who,type,false)
+		wset = getObjectsType(who,type)
+		Return wset(1).getProperty(property)
+	End_If
+	If property <> "name"
+		Return getCatalogItemInfo(type,property)
+	End_If
+	Return wcatalog_names(type)
+End_Function
+
+Function view_item(item,shopkeeper,nocontrols)
+	Dim txt = ""
+	Dim Cr = "<br/>" & Chr(13)
+	Dim icon = "<img align=left src="+absolutizeUrl(getCatalogItemInfo(item,"icon"))+" width=32 height=32 alt="+wcatalog_names(item)+" />"
+	Dim imagefull = "<IMG ALIGN=RIGHT SRC="+absolutizeUrl(getCatalogItemInfo(item,"imageurl"))+" WIDTH="+getCatalogItemInfo(item,"imagew")+" HEIGHT="+getCatalogItemInfo(item,"imageh")+" ALT="+wcatalog_names(item)+" />"
+	txt = txt & icon + imagefull + "<a name=item ><h2>"+wcatalog_names(item)+"</h2></a>"+wcatalog_desc(item) & Cr
+	Dim lev = getCatalogItemInfo(item,"level")
+	Dim lock = ""
+	If lev > 0
+		If $AGENT.Livello < lev
+			lock = " (<img src=" & gameinfo("site")&"uwpics/panlock.gif>LOCKED)"
+		End_If
+		txt = txt & "<b>Livello richiesto</b>: "+lev&lock & Cr
+	End_If
+	If Not(nocontrols)
+		txt = txt & "<b>Prezzo</b>: "+getCatalogItemInfo(item,"value") & Cr
+		If limitedavails And Exists(shopkeeper)
+			If SetContainsKey(shopkeeper.avail,item)
+				Dim avail = shopkeeper.avail(item)
+				txt = txt & "<b>Disponibilità</b>: "+avail & Cr
+			End_If
+		End_If
+	End_If
+	Dim x = getCatalogItemInfo(item,"power")
+	If x <> null
+		txt = txt & "<b>Potenza</b>: "+x & Cr
+	End_If
+	Dim x = getCatalogItemInfo(item,"protection")
+	If x <> null
+		txt = txt & "<b>Protezione</b>: "+x & Cr
+	End_If
+	Dim designer = getCatalogItemInfo(item,"designer")
+	If designer <> null
+		txt = txt & "<b>Forgiato da</b>: "+ UserCardLink(designer) & Cr
+	End_If
+	txt = txt & "<!-- Codice articolo: "& item & " -->"
+	If nocontrols
+		Return txt
+	End_If
+	
+	txt = txt & "<input type=button onClick="+Chr(34)+"javascript:document.location.href='"+gameinfo("navigator")+"?view=scene&cmd=dothis&shopop=buy&selector_item="&item&"'"+Chr(34)+" value="+Chr(34)+"Compra questo!"+Chr(34)+">" & " "
+	' Navi
+	Dim keys = SetKeys(Wcatalog)
+	Dim pos = SetIndexOf(keys,item)
+	Dim k = findNextVisibleItem(keys,pos,-1)
+	If k<>null
+		txt = txt&"<input type=button onClick="&Chr(34)&"ajax('itemviewer','"&gameinfo("navigator")&"?cmd=viewitem&item="&k&"',null);return false;"&Chr(34)&" value="&Chr(34)&"&lt;&lt; Precedente"+Chr(34)+">"
+	End_If
+	Dim k = findNextVisibleItem(keys,pos,1)
+	If k<>null
+		txt = txt&"<input type=button onClick="&Chr(34)&"ajax('itemviewer','"&gameinfo("navigator")&"?cmd=viewitem&item="&k&"',null);return false;"&Chr(34)&" value="&Chr(34)&"Seguente &gt;&gt;"+Chr(34)+">"
+	End_If
+	txt=txt&"<br/>"&Cr
+	Return txt
+End_Function
+
+Function buy_item(item)
+	Dim shopkeeper
+	If $AGENT.container <> null
+		If $AGENT.container.shopkeeper <> null ' Not a shop - quick exit
+			shopkeeper = $AGENT.container.shopkeeper
+		End_If
+	End_If
+
+	If shopkeeper = null	'Not in a shop - quick exit
+		Return false
+	End_If
+
+	$AGENT.__interested=item
+
+	Dim value = getCatalogItemInfo(item,"value")
+	If getCatalogItemInfo(item,"level") > $AGENT.Livello
+		Display "Per acquistare questo oggetto è necessario almeno il Livello "+getCatalogItemInfo(item,"level")
+		Return false
+	End_If
+
+	If limitedavails
+		Dim avail = shopkeeper.avail(item)
+		If SetContainsKey(shopkeeper.avail,item) And avail < 1
+			Speak shopkeeper,$AGENT,"Non ho disponibilità di questo articolo, spero che presto qualcuno lo costruisca e me lo porti, lo pagherei bene!"
+			Return false
+		End_If
+	End_If
+
+	If getMoneyFrom($AGENT,value)
+		Speak shopkeeper,$AGENT,"Quindi vuoi: " + wcatalog_names(item)
+		Dim newobj = MakeItem(item,$AGENT)
+		Move newobj,$AGENT
+		If newobj.container <> $AGENT
+			Speak shopkeeper,$AGENT,"Ma non hai abbastanza spazio! Ti rendo subito i soldi."
+			Kill newobj
+			Call giveMoney($AGENT,value)
+			Return false
+		End_If
+
+		If limitedavails And SetContainsKey(shopkeeper.avail,item)
+			shopkeeper.avail(item) = shopkeeper.avail(item)-1
+		End_If
+	Else
+		Print "Non ho abbastanza soldi. Costa " + value + " monete d'oro."
+	End_If
+	Return true
+End_Function
+
+'Makes item out from the item catalog
+'for the specified player
+'input: type = unique ID of object type
+Function MakeItem(type,player)
+	Dim features = wcatalog(type)
+	If features = null
+		Speak SYS,player,"Impossibile creare oggetto " + type + " - rivolgersi a un master"
+		Debug "Problem on creating item: "+type+" features='" & features & "'"
+		Return null
+	End_If
+	Dim personal = false
+	If Right(type,9) = ".personal" Or MyExtract(features,"personal")
+		personal = true
+	End_If
+	Dim name = wcatalog_names(type)
+	Dim descr = wcatalog_desc(type)
+	Dim power = MyExtract(features,"power")
+	Dim protection = MyExtract(features,"protection")
+	Dim icon = MyExtract(features,"icon")
+	Dim sound = MyExtract(features,"sound")
+	Dim imageurl = MyExtract(features,"imageurl")
+	Dim imagew = MyExtract(features,"imagew")
+	Dim imageh = MyExtract(features,"imageh")
+	Dim zimageurl = MyExtract(features,"zimage")
+	Dim affi = MyExtract(features,"affi")
+	Dim level = MyExtract(features,"level")
+	Dim badagainst = MyExtract(features,"badagainst")
+	Dim bestagainst = MyExtract(features,"bestagainst")
+	Dim showmode = MyExtract(features,"showmode")
+	Dim attrlist = "type="+type+",icon="+icon+",pickable"
+	Dim uses = MyExtract(features,"uses")
+	Dim volume = MyExtract(features,"volume")
+	Dim capacity = MyExtract(features,"capacity")
+	Dim open = MyExtract(features,"open")
+	Dim openable = MyExtract(features,"openable")
+	If power <> null
+		attrlist = attrlist+",Potenza="+power
+	End_If
+	If protection <> null
+		attrlist = attrlist+",Protezione="+protection
+	End_If
+	If showmode = null
+		showmode = 1	'default: 1=ONSCREEN
+	End_If
+	attrlist = attrlist + ",showmode="+showmode
+	If sound <> null
+		attrlist=attrlist+",sound="+sound
+	End_If
+	If affi <> null
+		attrlist=attrlist+",affi="+affi
+	End_If
+	If level <> null
+		attrlist=attrlist+",Livello="+level
+	End_If
+	If badagainst <> null
+		attrlist = attrlist + ",badagainst="+badagainst
+	End_If
+	If bestagainst <> null
+		attrlist = attrlist + ",bestagainst="+bestagainst
+	End_If
+	If uses <> null
+		attrlist = attrlist + ",uses="+uses
+	End_If
+	If personal
+		attrlist = attrlist + ",vanishing=2"
+	Else
+		attrlist = attrlist + ",Valore=" + MyExtract(features,"value")
+	End_If
+	If volume <> null
+		attrlist = attrlist + ",volume=" + volume
+	End_If
+	If capacity <> null
+		attrlist = attrlist + ",capacity=" + capacity
+	End_If
+	If open <> null
+		attrlist = attrlist + ",open=" + open
+	End_If
+	If "" <> openable
+		attrlist = attrlist + ",openable=" + openable
+	End_If
+	Dim image
+	If imageurl <> null
+		image = NewImage(imageurl,imagew,imageh)
+	End_If
+	Dim x = NewItem(null,name,descr,image,attrlist)
+	If zimageurl <> null
+		x.zoomimage = NewImage(zimageurl,MyExtract(features,"zimagew"),MyExtract(features,"zimageh"))
+	End_If
+	Dim t = MainType(getObject(x))
+	If t="armour" Or t="helmet" Or t="shield"
+		x.volume=0
+	End_If
+	'Speak SYS,$WORLD,attrlist
+	If personal
+		AttachEvent x,"saveInfo","personalWeapon_saveInfo"
+	End_If
+	Return x
+End_Function
+
+' Saves Weapon's catalog to disk
+Function saveWCatalog()
+	Dim nitems = SetLen(wcatalog)
+	Dim keys = SetKeys(wcatalog)
+	SaveSetting "ctx_items",nitems
+	Dim i
+	Dim k
+	Dim itemstring
+	For i = 1 To nitems
+		k = keys(i)
+		itemstring = k + "*" + wcatalog_names(k) + "*" + wcatalog(k) + "*" + wcatalog_desc(k)
+		SaveSetting "ctx_item"+i,itemstring
+	Next
+	Call BroadcastOtherWorlds("catalog_update","")
+	Print "(Salvato catalogo: "&nitems&" oggetti)"
+	Return nitems
+End_Function
+
+Function UserCard(pg)
+	Dim pg1 = CookName(pg)
+	Return gameInfo("site")&"infobox.php?id="&pg1
+End_Function
+
+Function UserCardLink(pg)
+	Dim pg1 = CookName(pg)
+	Dim site = gameInfo("site")
+	Dim lang = "ita"
+	Return "<a href="+chr(34)+site+"infobox.php?id="+pg1+chr(34)+" target=_blank>"+pg+"</a>"
+End_Function
+
+EVENT doFindObj(obj)
+	'obj = input("obj")
+	'Print "input: " + input + "<br>"
+	'Print "obj: " + obj + "<br>"
+	'Print "Searching: " + obj + "<br>"
+	If Len(obj) < 3
+		Print "Cercare COSA? Specificare almeno 3 lettere."
+		Return
+	End_If
+	If tournament=2
+		Print "Non disponibile durante il torneo"
+		Return
+	End_If
+	Dim found = false
+	Dim c
+	For Each c In getItemsIn($WORLD)
+		If InStr(c.name,obj)
+			found=true
+			Print "<LI>" + c.name + " è qui: " + c.container.name
+		End_If
+	Next
+	For Each c In getCharactersIn($WORLD)
+		If InStr(c.name,obj)
+			found=true
+			Print "<LI>" + c.name + " è qui: " + c.container.name
+		End_If
+	Next
+	If Not(found)
+		Print "Non trovato: '" + obj + "'"
+	End_If
+End_EVENT
+
+'Tells whether a player is a beginner or not (duplicate character)
+Function IsBeginner(person)
+	If person.mainpg <> "" And person.mainpg <> person.name
+		Return False
+	End_If
+	Return True
+End_If
+
+Sub prepareJail(person,name)
+	If doJail(person,name,$AGENT)
+		Print "riuscita."
+	Else
+		Print "NON RIUSCITA!"
+	End_If
+	Dim mainpg = LookupProfileDB(name,"mainpg")
+	If mainpg <> name
+		If doJail(NULL,mainpg,$AGENT)
+			Print "Incarcerato pg principale: "+mainpg+" e tutti i pg collegati"
+		Else
+			Print "Incarcerazione pg principale: "+mainpg+" NON RIUSCITA"
+		End_If
+	End_If
+	Speak SYS,$AGENT,"Fatto. Azione loggata."
+End_Sub
+
+Function doJail(person,name,agent)
+	Dim result = false
+	Debug agent.name + " incarcera: " + person.name + "/" + name + " in data/ora: " + getTime("dd/MM/yyyy HH:mm")
+	If Not(Exists(person)) ' Try looking by name
+		person = getPlayer(name)
+	End_If
+	If Exists(person)
+		name = person.name
+		Move person,hellfire
+		result = true
+	End_If
+	If ProfileExists(name)
+		SaveSetting CookName(name) + "_location","hellfire"
+		Print agent,"Incarcerazione di "+name+" riuscita su profilo salvato"
+		result = true
+	Else
+		If result = true 'No profile saved -  Ban
+			Print agent,"Incarcerazione di "+name+" riuscita solo parzialmente - non ha profilo salvato - consigliato banning"
+			result = false
+		End_If
+	End_If
+	Return result
+End_Function
+
+Function isJailed(name)
+	If getSetting(CookName(name) + "_location") = "hellfire"
+		Return true
+	End_If
+	Return false
+End_Function
+
+Sub unJail(person,name)
+	Debug $AGENT.name + " ha LIBERATO " + person.name + "/" + name + " in data/ora: " + getTime("dd/MM/yyyy HH:mm")
+	If Not(Exists(person)) ' Try looking by name
+		person = getPlayer(name)
+	End_If
+	If Exists(person)
+		Print "Liberazione immediata per "+person.name
+		name = person.name
+		Move person,start
+	End_If
+	If ProfileExists(name)
+		SaveSetting CookName(name) + "_location","start"
+		Print "Liberato profilo di "+Chr(34)+name+Chr(34)
+	End_If
+	Dim mainpg = LookupProfileDB(name,"mainpg")
+	If mainpg <> "" And mainpg <> name
+		If ProfileExists(mainpg)
+			SaveSetting CookName(mainpg) + "_location","start"
+			Print "Sbloccato pg principale "+Chr(34)+mainpg+Chr(34)+" e pg collegati"
+		End_If
+	Else
+		Print "Pg principale di "+name+": "+Chr(34)+mainpg+Chr(34)
+	End_If
+	Speak SYS,$AGENT,"Fatto. Azione loggata."
+End_Sub
+
+Function ProfileExists(name)
+	If getSetting(CookName(name) + "_when","") <> ""
+		Return true
+	End_If
+	Return false
+End_Function
+
+Function getGuildCount(owner)
+	Return 1+SetLen(Split(guildsubscribers(owner),";"))
+End_If
+
+Function getTournamentMessage()
+	If tournament > 0
+		Return "C'è una <b>competizione</b> in corso: <b><a href="+Chr(34)+gameInfo("site")+Replace(tournpages("t"+tournament),"!","=")+Chr(34)+" target=_blank>"+tourntypes("t"+tournament)+"</a></b>. Partecipa, è gratis!"
+	End_If
+	Return ""
+End_Function
+
+Function doGetVisits(id)
+	' Gets the visits from uw site
+	id = cookname(id)
+	'Print "<html><body bgcolor=black text=white link=white vlink=white>"
+	Dim code = getSetting(id+"_pass","")
+	Dim url = gameInfo("site")+"infovisits.php?id="+id+"&code="+code
+	Dim txt = HttpFetch(url)
+	If InStr(txt,"<status>ok</status>")
+		' Fetching OK - now read visits number
+		Dim x = InStr(txt,"<visits>")+8
+		Dim y = InStr(txt,"</visits>")
+		' Read between <visits> tags
+		Dim visits = Int(Mid(txt,x,y-x))
+		If tournament > 0
+			Print "Visite: "+visits
+			Print "Gli avanzamenti sono temporaneamente sospesi per competizione in corso"
+			Return
+		End_If
+		Dim extinc = Int(visits/visitsperinc)
+		If extinc > 0
+			If $AGENT <> null
+				$AGENT.Esperienza = $AGENT.Esperienza+extinc
+				Print "<h1>Punti exp aggiunti: +"+extinc+" SALVA ADESSO!</h1>"
+				' "clear" parameter tells site to clear visits that have been just credited
+				Dim url = gameInfo("site")+"infovisits.php?id="+id+"&code="+code+"&clear="+extinc*visitsperinc
+				Dim txt = HttpFetch(url)
+				'Print url
+			End_If
+		Else
+			Dim link = "<a href="+gameInfo("site")+"?page_id=66"+" target=_blank>"
+			Print link+"Prossimo avanzamento fra "+(visitsperinc-visits)+" visite</a>"
+		End_If
+	Else
+		Print "Problemi nella lettura delle visite di: "+id+Chr(13)+" Prova più tardi!"
+		'Debug "Problem getting visits of: "+id+" url= "+url
+	End_If
+	'Print "</body></html>"
+End_Function
+
+' Determines whether an object is unique from its type
+Function IsUnique(object)
+	Return SetContainsKey(uniqueTypes,object.type)
+End_Function
+
+' Determines whether an object contains a unique object from its type
+Function ContainsUnique(object)
+	Dim t
+	For Each t In SetKeys(uniqueTypes)
+		If containsType(object,t,true)
+			Return true
+		End_If
+	Next
+	Return false
+End_Function
+
+Function htmlArts(person)
+	Dim txt=""
+	If person.artdefense <> null
+		txt = txt & "<b>Arte di difesa</b>: "+artNames(person.artdefense)+"<br/>"
+	End_If
+	If person.artattack <> null
+		txt = txt & "<b>Arte di attacco</b>: "+artNames(person.artattack)+"<br/>"
+	End_If
+	If txt<>""
+		Dim link = gameInfo("site")+"?page_id=12#arts"
+		Return "<fieldset><legend><font color=yellow><a target=_blank href="&link&">Arti apprese</a></font></legend>"+txt+"</fieldset>"
+	Else
+		Return ""
+	End_If
+End_Function
+
+Function htmlUsedEquip(person)
+	Dim txt,x,icon
+	Dim Q = Chr(34)
+
+	txt = "<fieldset><legend><font color=yellow>Equipaggiamento</font></legend>"
+		txt = txt & "<b>Arma</b>: "
+	x = person.weapon
+	If x <> null
+		icon = "<img align=right src="+absolutizeUrl(getCatalogItemInfo(x,"icon"))+" width=16 height=16 />"
+		txt = txt & "<a href='#' onClick="&Q&"parent.popupWin('" + gameinfo("navigator") & "?cmd=viewitem&nocontrols=1&item=" & x & "','width=400,height=300,resizable=1,status=0,scrollbars=1,directories=0,toolbars=0,menubar=0,left=50,top=150,location=0')"&Q&">" & wcatalog_names(x) & icon & "</a><br/>"
+	Else
+		txt = txt & "nessuna"
+	End_If
+	x = person.armour
+	If x <> null
+		icon = "<img align=right src="+absolutizeUrl(getCatalogItemInfo(x,"icon"))+" width=16 height=16 />"
+		txt = txt & "<b>Armatura</b>: "
+		txt = txt & "<a href='#' onClick="&Q&"parent.popupWin('" + gameinfo("navigator") & "?cmd=viewitem&nocontrols=1&item=" & x & "','width=400,height=300,resizable=1,status=0,scrollbars=1,directories=0,toolbars=0,menubar=0,left=50,top=150,location=0')"&Q&">" & wcatalog_names(x) & icon & "</a><br/>"
+	End_If
+	x = person.shield
+	If x <> null
+		icon = "<img align=right src="+absolutizeUrl(getCatalogItemInfo(x,"icon"))+" width=16 height=16 />"
+		txt = txt & "<b>Scudo</b>: "
+		txt = txt & "<a href='#' onClick="&Q&"parent.popupWin('" + gameinfo("navigator") & "?cmd=viewitem&nocontrols=1&item=" & x & "','width=400,height=300,resizable=1,status=0,scrollbars=1,directories=0,toolbars=0,menubar=0,left=50,top=150,location=0')"&Q&">" & wcatalog_names(x) & icon & "</a><br/>"
+	End_If
+	x = person.helmet
+	If x <> null
+		icon = "<img align=right src="+absolutizeUrl(getCatalogItemInfo(x,"icon"))+" width=16 height=16 />"
+		txt = txt & "<b>Elmo</b>: "
+		txt = txt & "<a href='#' onClick="&Q&"parent.popupWin('" + gameinfo("navigator") & "?cmd=viewitem&nocontrols=1&item=" & x & "','width=400,height=300,resizable=1,status=0,scrollbars=1,directories=0,toolbars=0,menubar=0,left=50,top=150,location=0')"&Q&">" & wcatalog_names(x) & icon & "</a><br/>"
+	End_If
+	Return txt+"</fieldset>"
+End_Function
+
+' Does person belongs to a pacific guild?
+Function GuildPacific(person)
+	Dim g = person.guild
+	If g=null
+		Return false
+	End_If
+	If guildtypes(g) = "p"
+		Return true
+	end_If
+	Return false
+End_If
+
+Function CanAttackAB(a,b)
+	Return Not(GuildPacific(b)) And Not(GuildPacific(a) And IsPlayer(b))
+End_Function
+
+Function Concordate(person)
+	If person.gender = "F"
+		Return "a"
+	Else
+		Return "o"
+	End_If
+End_Function
+
+' calcAffiResult
+' Calculates the result affinity of
+' a person (MUST NOT be null)
+' an object's type and the set name
+Function calcAffiResult(person,type,setname)
+	Dim myset = person.getProperty(setname)
+	'If SetLen(myset)<0
+	'	myset = NewArray()
+	'End_If
+	If SetIndexOf(myset,type) = 0
+		Dim affi = null
+	Else
+		Dim affi = getCatalogItemInfo(type,"affi")
+	End_If
+	Dim affinity = Split(affi,"/")
+	If SetLen(person.affinity) <> 4
+		person.affinity = NewArray()
+		person.affinity(1)=0
+		person.affinity(2)=0
+		person.affinity(3)=0
+		person.affinity(4)=0
+	End_If
+	Dim affiresult = Copy(person.affinity)
+	If SetLen(affinity) = 4
+		'print person,"+ affinity: "+affinity
+		Dim i,x
+		For i = 1 To 4
+			x = affiresult(i)+affinity(i)
+			If x > 4
+				x = 4
+			End_If
+			affiresult(i) = x
+		Next
+	'Else
+	'	print person,"- affi: "&affi&"=affinity: "&affinity
+	End_If
+	Return affiresult
+End_Function
+
+' calcAffiResult2
+' Calculates the result affinity of
+' a person (MUST NOT be null)
+' and an object of specified type (s)he could carry
+Function calcAffiResult2(person,type)
+	If SetLen(person.affinity) <> 4
+		Return NewArray("0,0,0,0")
+	End_If
+	Dim affiresult = Copy(person.affinity)
+	If type = null
+		'Print person,"NULL type or NULL person.affinity"
+		Return affiresult
+	End_If
+	Dim object = getContainedType(person,type)
+	If object = null
+		'Print person,"NO object of type: "+type
+		Return affiresult
+	End_If
+	'Print person,"NONNNULL: "+object
+	If SetLen(object.affinity) = 4
+		'print person,"- affinity: "+object.affinity
+		Dim i,x
+		For i = 1 To 4
+			x = affiresult(i)+object.affinity(i)
+			If x > 4
+				x = 4
+			End_If
+			affiresult(i) = x
+		Next
+	'Else
+		'print person,"- affinity: NULL"
+	End_If
+	Return affiresult
+End_Function
+
+'Returns true if the two are in war
+Function areInWar(guild1,guild2)
+Return SetContainsKey(guildwars,guild1+"*"+guild2) Or SetContainsKey(guildwars,guild2+"*"+guild1)
+End_Function
+
+Function GuildHasDelegate(owner,name)
+	Return InStr(guilddelegates(owner),name+";")
+End_Function
+
+Function GuildDelegateIcon(name,guild)
+	If GuildHasDelegate(guild,name)
+		Return " <img src=" + gameinfo("imagesfolder")+ "knight.gif width=16 height=16 title=Delegato />"
+	Else
+		Return ""
+	End_If
+End_If
+
+' Checks for person's invisibility
+' Possibly clears invisibility
+' Returns: invisibility left ticks
+Function CheckInvis(person)
+	Dim left = 0
+	If person.invisible
+		' Check ticks
+		Dim invi = Split(person.invisticks,"*")
+		If SetLen(invi) < 2
+			left = 0
+		Else
+			left = 4+invi(2)-Int(ticks)
+		End_If
+		If left <= 0 Or invi(1) <> $WORLD.instanceid
+			Call doInvis(person)
+			left = 0
+		End_If
+	Else
+		person.invisticks = ""
+	End_If
+	Return left
+End_Function
+
+Sub onKillRobot(loser,winner)
+	If ExistScript("onKillRobot_local")
+		Call onKillRobot_local(loser,winner)
+	Else
+		Dim tmp = winner.name + " ha " + RndSet(arrVerbs) + Concordate(SYS) +" " + loser.name
+		If SetLen(getPlayersIn($WORLD)) < 4
+			Speak SYS,$WORLD,tmp
+		End_If
+	End_If
+	PlaySound winner.container,loser.suffersound
+End_Sub
+
+Function IsMagician(person)
+	Return (person.type=2 Or person.type=19)
+End_Function
+
+EVENT saveInfo()
+	'Print $WORLD,"Saving... $OWNER: "+$OWNER+" $AGENT: "+$AGENT+" $TARGET:"+$TARGET
+	maintype = MainType($OWNER)
+	type = $OWNER.type
+	Dim txt
+	DropItems $OWNER	'Drop inner objects
+	If type = "money"
+ 		txt = ""+$AGENT.name+" saves money"
+ 		'Print $WORLD,txt
+ 		'Debug txt
+		Return $OWNER.Monete
+ 	End_If
+	If type = "bottle.potion"
+ 		txt = ""+$AGENT.name+" saves potion w/ uses "+$OWNER.uses
+ 		'Print $WORLD,txt
+ 		'Debug txt
+		Return $OWNER.uses
+ 	End_If
+ 	If IsUnique($OWNER)
+ 		txt = ""+$AGENT.name+" tries to save a unique object: "+$OWNER.name
+ 		'Print $WORLD,txt
+ 		'Debug txt
+ 		Return null
+ 	End_If
+ 	'If not unique then it should be in the catalog
+	If InCatalog(type)
+	 	Return "*" ' Special value means: it's in the catalog, no more info needed to restore
+	End_If
+    	'Everything else - don't know how to restore                                                                   '
+ 	Return null
+End_EVENT
+
+Sub restore(type,restoreinfo,player)
+	If restoreinfo = "" Or restoreinfo="null"	'Do not event attempt
+		Return false
+	End_If
+	If InCatalog(type)
+		Dim item = MakeItem(type,player)
+		If Exists(item)
+			Print player,"Ripristino: "+type
+			Move item,player
+			Return true
+		End_If
+	End_If
+	If type = "whip"
+		If SetLen(getObjectsType(player,"whip")) < 1
+			Dim exis = getObjectsType($WORLD,"whip")
+			If SetLen(exis) < 1
+				Call MakeWhip(player)
+				Return true
+			Else
+				Print player,"Una frusta diabolica si trova qui: " + exis(1).container.name
+				Return false
+			End_If
+		End_If
+		Return true
+	End_If
+	If type = "money"
+		restoreinfo = Int(restoreinfo)
+		If restoreinfo>0
+			Call giveMoney(player,restoreinfo)
+			Return true
+		Else
+			Return false
+		End_If
+	End_If
+	If type = "bottle.potion"
+		Dim item = MakeItem(type,player)
+		If item=null
+			Print player,"Non posso ripristinare: "+type
+			Return false
+		End_If
+		item.uses = Int(restoreinfo)
+		'Debug "Restored potion!"
+		Return true
+	End_If
+	Print player,"Non posso ripristinare: type="+type+" info:"+restoreinfo
+	Return false ' Not restored by default
+End_Sub
+
+' Initalizes all the shops
+' input: array with all shopkeepers IDs
+Sub shops_prepare(shopkeepers)
+	Dim s
+	For Each s In shopkeepers
+		Call initialize_catalog(s)
+	Next
+End_Sub
+
+' Initalizes a shop (availability of items)
+' input: shopkeeper
+Sub initialize_catalog(s)
+	s.avail = NewSet()
+	Dim i
+	For Each i In SetKeys(wcatalog)
+		Dim avail = getCatalogItemInfo(i,"avail")
+		If avail <> 0
+			s.avail(i) = avail
+		End_If
+	Next
+End_Sub
+
+Function commandsFromTo(from,to)
+	Dim setCmds = NewSet("_=(nulla)")
+	Dim empathic = false
+	If from.type=12 Or from.type=14	'Vampire
+		empathic = empathy(from,to)
+	End_If
+	If Not(areEnemies(to,from)) Or debugtype="cmds" Or empathic
+		If Not(to.nohands)
+			setCmds("findobj") = setRobotCmds("findobj")
+		End_If
+		setCmds("hunt") = setRobotCmds("hunt")
+		If to.progeny = from.name
+			setCmds("progeny") = setRobotCmds("progeny")
+		End_If
+		If from.type=1 Or debugtype="cmds"
+			setCmds("terminate") = setRobotCmds("terminate")
+			setCmds("wave") = setRobotCmds("wave")
+		End_If
+		If ContainsType(from,"crown",false) Or debugtype="cmds"
+			setCmds("escort") = setRobotCmds("escort")
+		End_If
+	End_If
+	Return setCmds
+End_Function
+
+Function set_robotcommand(cmd,object,text)
+	'Print "object:"+object+" $AGENT:"+$AGENT+" cmd:"+cmd
+	If Exists(object) And cmd<>"_"
+		If (object.command <> null)
+			Dim commander = getPlayer(object.commander)
+			If Exists(commander) And object.commander <> $AGENT.name
+				Speak object,$AGENT,"Sto eseguendo gli ordini di "+object.commander
+				Return false
+			End_If
+		End_If
+		If cmd = "terminate" And Len(text) < 3
+			Speak object,$AGENT,"Dammi un nome di almeno 3 lettere"
+			Return false
+		End_If
+		If cmd = "escort"
+			SetAdd $AGENT.__hooked,object.id,object
+		End_If
+		object.command = cmd
+		object.commandaux = text
+		$AGENT.__prevenemy = text
+		object.commander = $AGENT.name
+		Speak object,$AGENT,"Eseguo!","Sì padrone!","Va bene."
+	End_If
+End_Function
+
+Function htmlIcon(icon,alt)
+	Return "<img src="+Chr(34)+main_imagedir+icon+Chr(34)+" width=16 height=16 alt="+Chr(34)+alt+Chr(34)+" title="+Chr(34)+alt+Chr(34)+" />"
+End_Function
+
+Function robotCommandForm(robot,person)
+	Dim txt = "<form METHOD=POST ACTION='"+gameinfo("navigator")&"'><INPUT TYPE=HIDDEN NAME=view VALUE='scene'><INPUT TYPE=HIDDEN NAME=arg0 VALUE=''><INPUT TYPE=HIDDEN NAME=arg1 VALUE=''><INPUT TYPE=HIDDEN NAME=cmd VALUE=''>"
+	txt = txt & "<b>Missione</b>: <select name="+chr(34)+"selector_command"+chr(34)+" onChange="+chr(34)+"parent.toggle_vis('txtBox',(this.form.selector_command.options[this.form.selector_command.selectedIndex].value=='terminate'));"+chr(34)+">"
+	Dim k,sel
+	Dim setCmds = CommandsFromTo(person,robot)
+	If SetLen(setCmds)<=1
+		Return ""
+	End_If
+	For Each k In SetKeys(setCmds)
+		sel=""
+		If k=robot.command
+			sel=" selected=selected"
+		End_If
+		txt = txt + "<option value="+chr(34)+k+chr(34)&sel&">"+setCmds(k)+"</option>"+Chr(13)
+	Next
+	txt = txt+"</select>"
+	If SetContainsKey(setCmds,"terminate")
+		Dim value = robot.commandaux
+		If person.__prevenemy <> null
+			value=" value="+Chr(34)+person.__prevenemy+Chr(34)
+		End_if
+		txt=txt+"<input type=TEXT name=txtBox id=txtBox size=8 style='visibility:hidden' "+value+">"
+	End_If
+	txt = txt & "<input type=button name=choose value="&Chr(34)&"Esegui!"&Chr(34)&" onClick="&Chr(34)&"parent.command(this);"&Chr(34)&">"
+	txt = txt & "<input type=hidden name="+Chr(34)+cstOBJECT+Chr(34)+" value="+Chr(34)+$OWNER.id+Chr(34)+" />"
+	If robot.command <> null
+		txt = txt & "<br/><b>Ai comandi di</b>: "+UserCardLink(robot.commander)
+	End_If
+	txt = txt & "</form>"
+	Return txt
+End_Function
+
+'Absolutizes and image's url
+'If the url is already absolute, leaves it like it is,
+' otherwise adds the image dir at the beginning
+Function absolutizeUrl(url)
+	If Left(url,7) = "http://"
+		Return url
+	Else
+		If Left(url,8) = "https://"
+			Return url
+		Else
+			Return main_imagedir+url
+		End_If	
+	End_If
+End_Function
+
+Function relativizeUrl(url)
+	If Left(url,Len(main_imagedir)) = main_imagedir
+		Return Right(url,Len(url)-Len(main_imagedir))
+	End_if
+	Return url
+End_Function
+
+Function catalog_dropdown(shop,person)
+	Dim cname = "Catalogo"
+	Dim txt
+	Dim q = Chr(34) ' Quotes
+	If cat=null Or limitedavails=True
+		'Speak SYS,$WORLD,"Lettura catalogo..."
+		cat = getCatalog(shop)
+	End_If
+	txt = txt&"<span id=itemviewer></span>"
+	txt = txt&"<input type=button onClick="&Chr(34)&"ajax('itemviewer','"&gameinfo("navigator")&"?cmd=viewitem&item='+this.form.selector_item.options[form.selector_item.selectedIndex].value);return false;"&Chr(34)&" value=Vedi> "
+	txt = txt&"<select id=selector_item name=selector_item style="+q+"background-repeat: no-repeat;background-color: black;color:white;"+q+" onChange="+q+"parent.command(this.form.dothis);"+q+">"
+	txt = txt+"<optgroup label="+q+cname+q+">"
+	Dim item,lock,lev,icon
+	Dim lockedcount = 0
+	Dim s = shop.shopkeeper
+	For Each item In SetKeys(cat)
+		Dim showit = true And Not(getCatalogItemInfo(item,"hide"))
+		If limitedavails
+			showit = s.avail(item) > 0 Or s.avail(item) = null
+		End_If
+		If showit
+			lev = getCatalogItemInfo(item,"level")
+			If lev <> null And lev > person.Livello And (lockedcount < cstMaxLocked Or person.mastersuper)
+				lock = "(LOCKED) "
+				icon = gameinfo("site")+"uwpics/panlock.gif"
+				lockedcount=lockedcount+1
+			Else
+				lock = ""
+				icon = gameInfo("site")+"autoicon/"+getCatalogItemInfo(item,"icon")
+			End_If
+			Dim sel = ""
+			If person.__interested = item
+				sel = "selected"
+			End_If
+			txt = txt + "<option "+sel+" value="+item+" style="+q+"background-position: 0px 0px; background-repeat: no-repeat;background-image: url("+icon+");"+q+">"+lock+cat(item)+"</option>"+Chr(13)
+		End_If
+	Next
+	txt = txt+"</optgroup>"
+	txt = txt+"</select>"
+	Return txt
+End_Function
+
+
+' Calculates if there is empathy between person and name2
+' Empathy is calculated on names' basis
+' by using hash functions
+' empathy increases with inverse logarithmic function
+' Until reaches 50% chance.
+Function empathy(person,enemy)
+	Dim i
+	Dim h1=0
+	Dim name1=person.name
+	For i = 1 To Len(name1)
+		h1=h1+Asc(Mid(name1,i,1))
+	Next
+	Dim h2=0
+	Dim name2=enemy.id
+	For i = 1 To Len(name2)
+		h2=h2+Asc(Mid(name2,i,1))
+	Next
+	Dim max=Int((20-Log(person.Livello+1)*6)/2)
+	If max<2
+		max = 2
+	End_if
+	Return ((h1 Mod max) = (h2 Mod max))
+End_Function
+
+'Acquires an acquirable object
+'input: the object (MUST be acquirable!)
+'output: true on success
+Function acquireObject(person,item)
+	Dim res = false
+	If $WORLD.name <> "Sottomondo"
+		Print "Questa operazione si può eseguire solo nell'area centrale (castello)."
+		Return false
+	End_If
+	Dim maintype = MainType(item)
+	If SetLen(person.helmets) < 0
+		Debug "ERROR - this person does not have arrays: "&person.name&" id: "&person.id
+		Call FixArrays(person)
+	End_If
+	If maintype = cstHELMET
+		If SetIndexOf(person.helmets,item.type)=0
+			person.helmets(SetLen(person.helmets)+1) = item.type
+			res = true
+		End_If
+	End_If
+	If maintype = cstSHIELD
+		If SetIndexOf(person.shields,item.type)=0
+			person.shields(SetLen(person.shields)+1) = item.type
+			res = true
+		End_If
+	End_If
+	If maintype = cstARMOUR
+		If SetIndexOf(person.armours,item.type)=0
+			person.armours(SetLen(person.armours)+1) = item.type
+			res = true
+		End_If
+	End_If
+	If maintype = "weapon" Or maintype = "spell"
+		Dim canacquire = (maintype="spell" And (person.type=2 Or person.type=19)) Or (maintype="weapon" And Not(person.type=2 Or person.type=19))
+		If canacquire
+			If SetIndexOf(person.weapons,item.type)=0
+				person.weapons(SetLen(person.weapons)+1) = item.type
+				res = true
+			End_If
+		Else
+			Print "Non posso farlo."
+			Return false
+		End_If
+	End_If
+	If res = false
+		Print "Questo oggetto è già nel mio equipaggiamento permanente. Clicca ["+htmlIcon("paninfo.gif","Info")+"Info]"
+	End_If
+	If Not(InCatalog(item.type)) ' Not in catalog! - add it
+		Call CatalogStoreItem(item)
+		Call shops_prepare(arrShopkeepers)
+	End_If
+
+	Return res
+End_Function
+
+Sub CatalogStoreItem(item)
+	Dim nitems = SetLen(wcatalog)
+	Dim attributes
+	wcatalog_names(item.type) = item.name
+	'Build attributes list
+	attributes = attributes & "level=" & item.Livello & ","
+	attributes = attributes & "value=" & item.Valore & ","
+	attributes = attributes & "icon=" & relativizeUrl(item.icon) & ","
+	attributes = attributes & "imageurl=" & relativizeUrl(item.image("N").url) & ","
+	attributes = attributes & "imagew=" & item.image("N").width & ","
+	attributes = attributes & "imageh=" & item.image("N").height & ","
+	attributes = attributes & "power=" & item.Potenza & ","
+	attributes = attributes & "protection=" & item.Protezione & ","
+	attributes = attributes & "showmode=" & item.showmode & ","
+	attributes = attributes & "sound=" & item.sound & ","
+	attributes = attributes & "avail=1" & ","
+	Dim affi = item.affi
+	If SetLen(item.affinity) = 4
+		affi = AffiStringCat(item.affinity)
+	End_If
+	If affi <> null
+		attributes = attributes & "affi="&affi
+	End_If
+	wcatalog(item.type) = attributes
+	If item.description <> null
+		wcatalog_desc(item.type) = item.description
+	End_If
+	Call saveWCatalog()
+	Call buildWCatalog()
+End_Sub
+
+Function catalog_del_item(item)
+	SetRemove wcatalog,item
+	SetRemove wcatalog_names,item
+	SetRemove wcatalog_desc,item
+	Return saveWCatalog()
+	Call buildWCatalog()
+End_Function
+
+'Converts an affinity array into a string
+'input: affi: array(1...4)
+Function AffiString(affinity)
+	If SetLen(affinity) < 4
+		Return affinity
+	End_If
+	Dim i,x
+	For i = 1 To 4
+		x = x&affinity(i)
+	Next
+	Return x
+End_If
+
+'Converts an affinity array into a string for catalog use
+'input: affi: array(1...4)
+Function AffiStringCat(affinity)
+	If SetLen(affinity) < 4
+		Return affinity
+	End_If
+	Dim i,x
+	For i = 1 To 4
+		x = x&affinity(i)
+		If i < 4
+			x=x&"/"
+		End_If
+	Next
+	Return x
+End_If
+
+Sub FixArrays(person)
+	If SetLen(person.helmets)=-1
+		person.helmets = NewArray()
+	End_If
+	If SetLen(person.shields)=-1
+		person.shields = NewArray()
+	End_If
+	If SetLen(person.armours)=-1
+		person.armours = NewArray()
+	End_If
+	If SetLen(person.weapons)=-1
+		person.weapons = NewArray()
+	End_If
+End_Sub
+
+' Is this item acquirable?
+Function IsAcquirable(item)
+	If item = null
+		SharedError = "L'oggetto non esiste"
+		Return false
+	End_If
+	If item.getProperty(cstPROT)=null And item.getProperty(cstPOWER)=null
+		SharedError = null
+		Return false
+	End_If
+	Return true
+End_Function
+
+' Is Specified type in the catalog?
+Function InCatalog(type)
+	Return SetContainsKey(wcatalog,type)
+End_Function
+
+EVENT doViewItem(item,nocontrols)
+	Dim Q = Chr(34)
+	Print "<!DOCTYPE HTML PUBLIC "&Q&"-//W3C//DTD HTML 4.01 Transitional//EN"&Q&"   "&Q&"http://www.w3.org/TR/html4/loose.dtd"&Q&">"
+	Print "<html><head>"
+	Print "<link rel="&Q&"stylesheet"&Q&" href="&Q&gameinfo("site")&"infobox.css"&Q&" type="&Q&"text/css"&Q&" media="&Q&"all"&Q&" />"
+	Print "</head><body bgcolor=black text=white>"
+	If Not(InCatalog(item))
+		Print "<h1>Not Found</h1>"
+	End_If
+	Print "<div class=viewitem>"
+	Print view_item(item,null,nocontrols)
+	Print "</div>"
+	'Print Replace(view_item(item,null,nocontrols),Chr(13),"<br />"&Chr(13))
+	Print "</body></html>"
+End_EVENT
+
+EVENT doExpertSwitch()
+	Dim Q = Chr(34)
+	Print "<!DOCTYPE HTML PUBLIC "&Q&"-//W3C//DTD HTML 4.01 Transitional//EN"&Q&"   "&Q&"http://www.w3.org/TR/html4/loose.dtd"&Q&">"
+	Print "<html><head></head><body bgcolor=black text=white>"
+	If $AGENT.expert
+		$AGENT.expert=""
+		Print "Semplice"
+	Else
+		Print "Esperto"
+		$AGENT.expert=1
+	End_If
+	Print "</body></html>"
+End_EVENT
+
+EVENT doQuickActionSwitch()
+	Dim Q = Chr(34)
+	Print "<!DOCTYPE HTML PUBLIC "&Q&"-//W3C//DTD HTML 4.01 Transitional//EN"&Q&"   "&Q&"http://www.w3.org/TR/html4/loose.dtd"&Q&">"
+	Print "<html><head></head><body bgcolor=black text=white>"
+	If $AGENT.quickaction="look"
+		$AGENT.quickaction="attack"
+		Print "Attacca"
+	Else
+		If (($AGENT.quickaction="") Or ($AGENT.quickaction="attack")) And (($AGENT.type=12) Or ($AGENT.type=14) Or ($AGENT.type=16))
+			$AGENT.quickaction="bite"
+			Print "Mordi"
+		Else
+			Print "Guarda"
+			$AGENT.quickaction="look"
+		End_If
+	End_If
+	Print "</body></html>"
+End_EVENT
+
+Function SetToString(value)
+	If SetLen(value)<0
+		Return value
+	End_If
+	Dim ret = "!set!"
+	Dim v
+	Dim keys = SetKeys(value)
+	For Each k In keys
+		ret = ret&k&"="&value(k)
+		ret = ret&"*"
+	Next
+	ret = Left(ret,Len(ret)-1) ' Trim last *
+	Return ret
+End_Function
+
+Function LeadingZero(number,format)
+	Dim x = Len(number)
+	If Len(format) > x
+		Return Left(format,Len(format)-x) + number
+	End_If
+	Return number
+End_Function
+
+Function SanityCheck(item)
+	SharedError = ""
+
+	If Not(Exists(item))
+		SharedError = "L'oggetto non esiste"
+		Return false
+	End_If
+	Dim t = item.type
+	If InCatalog(t)
+		Return true
+	End_If
+	Dim x
+	For Each x In wcatalog_names
+		If item.name = x
+			SharedError = "Esiste già un oggetto con lo stesso nome"
+			Return false
+		End_If
+	Next
+	For Each x In wcatalog_desc
+		If item.description = x
+			SharedError = "Esiste già un oggetto con la stessa descrizione"
+			Return false
+		End_If
+	Next
+	Dim im = relativizeUrl(item.image("N").url)
+	For Each x In wcatalog
+		If im = MyExtract(x,"imageurl")
+			SharedError = "Esiste già un oggetto con la stessa immagine"
+			Return false
+		End_If
+	Next
+	Return true
+End_Function
+
+Function FixCatalog()
+	Dim t,x
+	Dim valids = NewArray("weapon,armour,shield,helmet")
+	For Each t In SetKeys(wcatalog)
+		x = wcatalog(t)
+		Dim arr = Split(t,".")
+		If SetLen(arr) >= 4
+			Dim y = arr(1)
+			If SetIndexOf(valids,y) > 0 And Len(arr(2)) = 2 And Len(arr(3)) = 2 And Len(arr(4)) = 4
+				If InStr(t,"affi=")=0
+					Print "Da sistemare: " & t & ":" & x
+					Dim affi = arr(4)
+					Dim newaffi = Left(affi,1)&"/"&Mid(affi,2,1)&"/"&Mid(affi,3,1)&"/"&Right(affi,1)
+					If Right(x,1) <> ","
+						x = x&","
+					End_If
+					wcatalog(t) = x&"affi="&newaffi
+					Print "<b>Sistemata</b>: "& wcatalog(t)
+				Else
+					Print "VA BENE!: " & t & ":" & x
+				End_If
+			Else
+				Print "Scartato: " & t & ":" & x
+			End_If
+		Else
+			Print "Decisamente Scartato: " & t & ":" & x
+		End_If
+	Next
+End_Function
+
+Function FormatTimestamp(ts)
+	Return Mid(ts,7,2) & "/" & Mid(ts,5,2) & "/" & Left(ts,4) & " " & Mid(ts,9,2)&":"&Mid(ts,11,2)
+End_Function
+
+' Displays a progress bar for showing damage
+Function barDamage(H,inc)
+	Dim b
+	b = "<table border=0 width=100 cellspacing=0 cellpadding=0><tr>"
+	'Invariant: H-inc+gap=10, and (H-inc+gap)/x=10/100 so x=(H-inc+gap)
+	Dim Horig=H
+	If H<0
+		inc=inc+H 'Avoid inc too large
+		H=0
+	End_If
+	Dim p1=Round(H*10,0)
+	Dim pi=Round(inc*10,0)
+	Dim p2=Round(100-p1-pi,0)
+	Dim bak="darkgrey"
+	If H > 5
+		Dim x1=H
+		Dim x2="&nbsp;"
+	Else
+		If H > 0.5
+			Dim x1="&nbsp;"
+			Dim x2=H
+		Else
+			Dim bak="red"
+			Dim x2=Horig
+		End_If
+	End_If
+	If p1>0
+		b = b & "<td bgcolor=green background="&main_imagedir&"bargreen.gif align=center width="&p1&"% class=fightgrn><font color=#fff>"&x1&"</font></td>"
+	End_If
+	b = b & "<td bgcolor=yellow background="&main_imagedir&"baryela.gif  class=fightyel>&nbsp;</td>"
+	If p2 >= 1
+		b = b & "<td width="&p2&"% align=center bgcolor="&bak&" class=fightred><font color=black>"&x2&"</font></td>"
+	End_If
+	b = b & "</tr></table>"
+	Return b
+End_Function
+
+Function myDamage(hits)
+	Dim orighits=hits
+	Dim b=""
+	Dim h=NewImage("heart.png",20,20).html()
+	hits=Round(1+hits,0)
+	If hits < 1
+		Return "<b>"&orighits&"</b>"
+	Else
+		For i=1 To hits
+			b=b&h
+		Next
+	End_If
+	Return "<b>"&orighits&"</b> <font color=red>"&b&"</font>"
+End_Function
+
+Function findNextVisibleItem(keys,pos,increment)
+	pos = pos + increment
+	If pos>=1 And Pos <= SetLen(keys)
+		Dim item = keys(pos)
+		If Not(getCatalogItemInfo(item,"hide"))
+			Return item
+		Else
+			Return findNextVisibleItem(keys,pos,increment)
+		End_If
+	End_If
+	Return null
+End_Function
+
+Sub checkCombo(person)
+	If Len(person.killcombo)>0
+		Dim kset=Split(person.killcombo,",")
+		If SetLen(kset)>1
+			killed=0
+			For Each ktype In kset
+				If (person.type<10) And (ktype>=10)
+					killed=killed+1
+				End_If
+				If (person.type>=10) And (ktype<10)
+					killed=killed+1
+				End_If
+			Next
+			If killed>1
+				Print person,"Combo "&killed&" uccisioni!"
+				Dim am=killed-1
+				Call GiveMoney(person,am)
+				Return
+			End_If
+		End_If
+	End_If
+End_Sub

@@ -1,0 +1,792 @@
+WORLD
+	NAME    	Sottomondo2
+	CLUSTER		Sottomondo
+	VERSION    	9.9.4
+	' See it_underworld.dxw for details
+	'AUTHOR    	Cris
+	SITE    	https://www.sottomondo.org/
+	' The following for local mode
+	IMAGESFOLDER_LOCAL    /dimx/uwpics/
+	' The following for network (light) mode
+	IMAGESFOLDER_PUBLIC    https://www.sottomondo.org/uwpics/
+	'alternates
+	'IMAGESFOLDER_PUBLIC    https://www.dimensionex.net/underworld/uwpics/
+	HELP    	https://www.sottomondo.org/guida/
+	SAVEGAME_PERSISTENCE	2
+	INTERPHONE	1
+	' The following only for network (light) mode
+	COUNTERHTML	<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><script type="text/javascript" language="JavaScript" SRC="https://codice.shinystat.com/cgi-bin/getcod.cgi?USER=sottomondo"></script><script src="https://www.google-analytics.com/urchin.js" type="text/javascript"></script><script type="text/javascript">_uacct = "UA-960085-1";_udn="none";_ulink=1;urchinTracker();</script>
+	MUTING		1
+
+GUI
+	SCENE SIZE	400x230
+	SCREEN SIZE	800x600
+	LOGOSRC    	uw2/logoarea2.jpg
+	MSGLISTSIZE	4
+	COMPASS   	true
+	SKINS    	bloody.txt
+	'PAGE		flash	flash.htm
+	MAP		map_uw2.gif
+	HOOKS		findobj=doFindObj,viewitem=doViewItem,expertswitch=doExpertSwitch,quickactsw=doQuickActionSwitch
+
+Include "it_uwpanels.dxl"
+
+PANEL pronald
+	BUTTON dothis, "Fai questo: ", "Comando", doCommand
+	DROPDOWN ronaldops, "getChoices(ronald)", 0
+	
+PANEL prookie
+	BUTTON dothis, "Fai questo: ", "Comando", doCommand
+	DROPDOWN rookieops, "getChoices(rookie)", 0
+
+END_GUI
+
+
+ROOMS
+
+ROOM entrance DEFAULT
+	NAME	Inizio
+	DESCRIPTION	Sto entrando nel Regno di Graiel.<p>Clicca sulla freccia in avanti.<p>(L'accesso diretto in quest'area non è consentito, verrai ora trasportato nell'area principale).
+	IMAGE	uw2/clouds.jpg
+	PANEL	initial
+
+ROOM outside
+	NAME	Outside
+
+ROOM start
+	NAME	la sponda rocciosa
+	DESCRIPTION	Sono su una antica mulattiera che probabilmente era stata costruita come via di fuga dal castello.
+	IMAGE	S	SHOWAREA	90,-1,-1	uw2/mroad.png
+	IMAGE	N	SHOWAREA	70,300,-1	uw2/canyon1.png
+	ATTRLIST mapx=82,mapy=188
+
+ROOM rockpath
+	NAME	il sentiero
+	DESCRIPTION	Il castello si erge a sud-ovest, un sentiero porta verso sud. Un altro più sottile, scavato tra le rocce, scende fino al castello.
+	IMAGE	S	uw2/rockpath.png
+	IMAGE	E	uw2/castleside.png
+	ATTRLIST mapx=82,mapy=140
+
+ROOM castlebridge
+	NAME	il ponte levatoio
+	DESCRIPTION	Sono sul ponte levatoio che porta al castello. Laggiù in fondo intravedo il cancello, chiuso.
+	IMAGE	N	SHOWAREA 80,255,-1	uw2/castlebridge.png
+	IMAGE	E	uw2/bridge.png
+	ATTRLIST mapx=33,mapy=122
+        PANEL	pgather
+
+ROOM path2
+	NAME	un prato
+	IMAGE	W	uw2/grassfield.png
+	ATTRLIST mapx=100,mapy=95
+
+ROOM grassf
+	NAME	un prato 2
+	IMAGE	W	uw2/mplaints.png
+	ATTRLIST mapx=135,mapy=95
+
+ROOM grassfm
+	NAME	un prato 3
+	IMAGE	N	uw2/grass2.png
+	ATTRLIST mapx=139,mapy=127
+
+ROOM bof3	
+	NAME alberi vicino al fiume
+	IMAGE	N	uw2/bof3.jpg
+	ATTRLIST mapx=140,mapy=147
+
+ROOM bof2
+	NAME	inizio della foresta
+	IMAGE	S	uw2/bof2.jpg
+	ATTRLIST mapx=102,mapy=75
+
+ROOM forest1
+	NAME	la foresta maledetta
+	IMAGE	S	uw2/ghostforest.jpg
+	ATTRLIST mapx=102,mapy=60
+
+ROOM lunarc
+	NAME	la foresta maledetta 2
+	IMAGE	S	uw2/lunarc.jpg
+	ATTRLIST mapx=118,mapy=59
+
+ROOM lunarb
+	NAME	la foresta maledetta 3
+	IMAGE	S	uw2/lunarb.jpg
+	ATTRLIST mapx=135,mapy=55
+
+ROOM hellfire
+	NAME	la cella
+	PANEL	initial
+
+ROOM foggyp
+	NAME	le pianure della nebbia
+	DESCRIPTION	Nella distanza scorgo il fiume che scorre lento in direzione del Castello.
+	IMAGE	W	uw2/foggyplains.png
+	ATTRLIST mapx=162,mapy=95
+	
+ROOM canyonplains
+	NAME	pressi delle rocce
+	IMAGE	S	uw2/canyon_plains.png
+	ATTRLIST mapx=157,mapy=50
+
+ROOM lunar4
+	NAME	alberi vicino alle rocce
+	IMAGE	E	uw2/lunar4.jpg
+	ATTRLIST mapx=139,mapy=40
+
+ROOM riverplains
+	NAME	la pianura vicino al fiume
+	IMAGE	N	uw2/plains.png
+	ATTRLIST mapx=161,mapy=127
+
+ROOM rockborder
+	NAME	il bordo delle rocce
+	IMAGE	S	uw2/rockborder.jpg
+	ATTRLIST mapx=149,mapy=18
+
+ROOM lunarg
+	NAME	la gola del diavolo
+	DESCRIPTION @panelhtml("pbuyshop")+"<br />Da Kovalsky si può comprare con fiducia."
+	IMAGE	S	uw2/lunarg.png
+	ATTRLIST mapx=135,mapy=13,shop=1,shopkeeper=kovalsky
+	PANEL	pshop
+
+ROOM forestborder
+	NAME	il bordo della foresta
+	IMAGE	S	uw2/forestborder.jpg
+	ATTRLIST mapx=132,mapy=73
+
+ROOM bof4
+	NAME	la zona arida
+	IMAGE	S	SHOWAREA 60,-1,-1	uw2/bof4.jpg
+	ATTRLIST mapx=115,mapy=7
+
+END_ROOMS
+
+LINKS
+
+LINK toA1	entrance-outside	N
+LINK w1		start-rockpath		S
+LINK w2		rockpath-path2		S
+LINK w2a	rockpath-castlebridge	D
+LINK w3		path2-grassf		W
+LINK w4		path2-bof2		S
+LINK w5		bof2-forest1		S
+LINK w6		grassf-foggyp		W
+LINK w6a	grassf-grassfm		N
+LINK w7		foggyp-canyonplains	S
+LINK w8		foggyp-riverplains	N
+LINK w9		grassfm-bof3	N
+LINK w10	canyonplains-lunar4	E
+LINK w11	grassfm-riverplains	W
+LINK w12	canyonplains-rockborder	S
+LINK w13	bof2-forestborder	W
+MLINK w14	forestborder-canyonplains	W
+LINK w16	grassf-forestborder	S
+LINK w17	rockborder-lunarg	E
+LINK w18	lunarg-bof4	E
+LINK w19	forest1-lunarc	W
+LINK w20	lunarc-lunarb	W
+LINK w21	lunarb-forestborder	N
+LINK w22	lunarb-lunar4	S
+END_LINKS
+
+
+CHARACTERS 
+ATTRLIST Salute=10,Forza=1,Esperienza=0,type=0,Livello=1,gender=M
+' Types from 10 to up are monsters
+' from 1 to 9 are humans
+' 0 means unattackable character
+
+CHARACTER rookie
+	NAME		Rookie
+	DESCRIPTION	Rookie è un tuttofare
+	POSITION	grassf
+	IMAGE 		37x95	uw2/rookie.gif
+	ATTRLIST	type=0
+	'ACCEPTS		money
+	SHOW 		ONSCREEN
+
+CHARACTER ronald
+	NAME		Ronald il druido
+	DESCRIPTION	E' un vecchio saggio
+	POSITION	bof2
+	IMAGE 		62x95	uw2/anziano.gif
+	ATTRLIST	type=0
+	ACCEPTS		money
+	SHOW 		ONSCREEN
+
+CHARACTER kovalsky
+	NAME		Kovalsky
+	DESCRIPTION	E' un mercante nomade
+	POSITION	lunarg
+	IMAGE 		37x97	uw2/kovalsky.gif
+	ATTRLIST	type=0
+	ACCEPTS		money
+	SHOW 		ONSCREEN
+	
+END_CHARACTERS
+
+
+ITEMS
+
+ITEM	lionsword
+	NAME 		spada dei leoni
+	POSITION	start
+	DESCRIPTION	Una antica spada circondata da un aura magica
+	ATTRLIST	type=weapon.swordlion,pickable,Potenza=4,Valore=40,sound=swordlong.wav,Livello=4
+	ICON		uw2/lionswordico.gif
+	IMAGE		32x54 uw2/lionswordsmall.gif
+ 	SHOW		ONSCREEN
+
+'ITEM	bluepill
+'	NAME 		pillola blu
+'	POSITION	lunarg
+'	DESCRIPTION	La pillola blu ti fornisce 5 minuti di invulnerabilità
+'	ATTRLIST	type=pill.blue,pickable,Valore=20,seller=kovalsky
+'	ICON		magicpill.gif
+'	IMAGE		50x52 magicpill.gif
+' 	SHOW		ICON
+ 	
+ITEM	garlic
+	NAME 		aglio
+	TYPE		garlic
+	POSITION	lunarg
+	DESCRIPTION	uno spicchio d'aglio. Puzza un pò.
+	ATTRLIST	type=garlic,pickable,Valore=20,seller=kovalsky
+	ICON		garlic.gif
+	IMAGE		70x70 garlic.gif
+	SHOW ICON
+	
+ITEM	eyespell
+	NAME 		Incantesimo dell'Occhio
+	POSITION	lunarg
+	DESCRIPTION	Genera un'attacco psichico che può causare al nemico una distorsione visiva
+	ATTRLIST	type=spell.eye,pickable,Valore=30,seller=kovalsky
+	ICON		spelleye.gif
+	IMAGE		48x48 spelleye.gif
+ 	SHOW		ICON
+
+END_ITEMS
+
+
+SETS
+
+SET setAll	start,rockpath,path2,grassf,bof2,bof3,forest1,foggyp,canyonplains,riverplains,lunar4,rockborder,forestborder,lunarg,bof4,lunarb,lunarc
+'covered places - needed for stepAway procedure (vampires movement)
+SET setCovered	forest1,lunarc,lunarb
+
+END_SETS
+
+
+
+SCRIPTS
+
+Include "it_commons.dxl"
+
+EVENT onStart
+	Call common_onStart()
+	Call config()
+	rookie.todo = NewSet()
+	rookie.requests = NewSet()
+	rookie.choices = NewSet("s1=Costruire una CAPANNA,s2=Costruire una CASA,s3=Costruire un FORTINO,x_1rep=Riparare QG della tua gilda")
+	rookie.costs = NewSet("s1=500,s2=1000,s3=2000,x_1rep=100")
+	rookie.houseimages = NewSet("s1=uw2/hut.gif|246|160,s2=uw2/house.gif|189|170,s3=uw2/fort.gif|237|170")
+	rookie.house_places = NewSet("path2,grassf,grassfm,bof3,bof2,forest1,foggyp,canyonplains,lunar4,riverplains,rockborder,forestborder,bof4,lunarb")
+	ronald.todo = NewSet()
+	ronald.choices = NewSet("s1=curare una infezione,s2=cambiare il vostro aspetto,s3=ripristinare la vostra arma personale,s4=scrivere un messaggio")
+	ronald.costs = NewSet("s1=200,s2=500,s3=10,s4=10")
+	arrShopkeepers = NewArray("kovalsky")
+	Call LoadContext() ' Reads game saved status from disk
+	If debugtype Or mode=2
+		passg = NewItem(start,"un passaggio","Una uscita all'esterno",NewImage("uw2/crack2.gif",46,64),"type=passg,pickable=0,showmode=1,showx=0,showy=150,hideable,showFor=uw2/mroad.png")
+		AttachEvent passg,"onLook","transfer1"
+	End_If
+	If tournament=2
+		Dim month = Int(getTime("MM"))
+		Dim knife = NewItem(hellfire,"pugnale insaguinato","E' un pugnale insaguinato, quello con cui è stata uccisa la principessa!!",NewImage("uw2/knife2.gif",64,64),"type=weapon.knife,pickable,Potenza=1,Valore=0,sound=sword1.wav,icon=uw2/knife.gif,showmode=2")
+		If month >= 5 ' Game phase
+			Move knife,RndSet(setAll)
+		End_If
+	End_If
+END_EVENT
+
+'
+' Game configuration parameters
+'
+Sub config()
+	debugtype=0 		'1=debug mode ON
+	monstersPopupSet=setAll	'Set of rooms where monsters will pop up
+	escapeSet=setAll	'Set of rooms where monsters can escape
+End_Sub
+
+Sub onNew_local()
+	If debugtype
+		Call giveMoney($AGENT,2000)
+	End_If
+	$AGENT.lastreporter = ""
+End_Sub
+
+Sub onNewDay_local()
+	Dim people = getPlayersIn(foggyp)
+	Dim w
+	If SetLen(people) > 0
+		w = MakeWeapon("xe",RndSet(people))
+		Speak SYS,w.container.container,"Un incantesimo dell'Occhio è stato donato a: " + w.container.name + "!"
+	End_If	
+	' Auto-restore headquarters...
+	' Update headquarters' capacity...
+End_Sub
+
+Sub LoadContext_Local()
+	buildingtypes = getSetting("ctx_buildingtypes","!set!")
+	buildingplaces = getSetting("ctx_buildingplaces","!set!")
+	buildingguilds = getSetting("ctx_buildingguilds","!set!")
+	Dim buildingname
+	For Each buildingname In SetKeys(buildingtypes)
+		'Debug "Rebuilding " + buildingname
+		Call buildBuilding(buildingtypes(buildingname),buildingplaces(buildingname),buildingname,buildingguilds(buildingname))
+	Next
+	mode = getSetting("ctx_mode",mode)
+End_Sub
+
+EVENT onExit
+	If $TARGET=toA1
+		' User is exiting to Main Area
+		MoveOutside $AGENT,"Sottomondo"
+		Return False
+	End_If
+END_EVENT
+
+EVENT entrance.onReceive
+	If $TARGET.type <> 0
+		'Player has restored from saved game, he saved inside a building
+		Move $TARGET,start
+	End_If
+	If $TARGET.fromarea <> ""
+	' Teleport comers from other areas to correct places
+		If Not(Exists(passg))
+			passg = NewItem(start,"un passaggio","Una uscita all'esterno",NewImage("uw2/crack2.gif",46,64),"type=passg,pickable=0,showmode=1,showx=0,showy=150,hideable,showFor=uw2/mroad.png")
+			AttachEvent passg,"onLook","transfer1"
+		End_If
+		$TARGET.fromarea = ""
+		Move $TARGET,start
+		$TARGET.facing = "S"
+	End_If
+	If debugtype=1
+		' Debug mode - accept direct access
+		Move $TARGET,start
+	End_If
+End_EVENT
+
+EVENT entrance.onReceiveItem
+	If $TARGET.type <> "msg"
+		'Unknown object, make it visible
+		Move $TARGET,start
+		Return
+	End_If
+	Call HandleCommandMessage_Common($TARGET)
+	Kill $TARGET
+End_EVENT
+
+' Transfer function to move people to Area 1
+Function transfer1
+	$AGENT.fromarea = $WORLD.name
+	MoveOutside $AGENT,"Sottomondo"
+	Return False
+End_Function
+
+'Local explosives management
+'input: cont=bomb container
+Sub bombExplode_local(cont)
+	Dim houses = getObjectsType(cont,"house")
+	If SetLen(houses) > 0 And tournament <> 2
+		Dim h = houses(1)
+		Dim buildingname = h.name
+		Dim txt = buildingname + " è stato attaccato!"
+		Journal "Il "&txt,gameInfo("site"),txt&"\nSi trova nella zona chiamata: <strong>"&cont.name&"\n"&"</strong> ed è "&Replace(rookie.choices(buildingtypes(buildingname)),"Costruire ",""),"news*disastri*gilda:"&guildnames(buildingguilds(buildingname))
+		Call BroadcastOtherWorlds("shout","txt="+txt)
+		h.Resist = h.Resist-1
+		If h.Resist < 1
+			DropItems h
+			Kill h
+			Dim logos = getObjectsType(cont,"logo")
+			If SetLen(logos) > 0
+				Kill logos(1)
+			End_If
+			SetRemove buildingtypes, buildingname
+			SetRemove buildingplaces, buildingname
+			SetRemove buildingguilds, buildingname
+			saveSetting "ctx_buildingtypes",buildingtypes
+			saveSetting "ctx_buildingplaces",buildingplaces
+			saveSetting "ctx_buildingguilds",buildingguilds
+		End_If
+	End_If
+End_Sub
+
+Sub popMonster_Local(new)
+	Dim dummy
+End_Sub
+
+EVENT rookie.onLook
+	Print PanelHtml("prookie")
+	Speak "Io posso costruire un edificio!","Basta chiedere, e faccio tutto io!"
+	$AGENT.__clearFocus=true
+	$OWNER.__clearInfo=true
+End_EVENT
+
+EVENT ronald.onLook
+	Print PanelHtml("pronald")
+	Speak "Ho imparato ad ascoltare le parole degli alberi... Mi hanno insegnato i loro segreti.","Ditemi cosa volete che io faccia per voi."
+	$AGENT.__clearFocus=true
+	$OWNER.__clearInfo=true
+End_EVENT
+
+Function getChoices(person)
+	Dim i
+	Dim choices = NewSet()
+	For Each k In SetKeys(person.choices)
+		choices(k) = person.choices(k) + " (" + person.costs(k) + " monete)"
+	Next
+	Return choices
+End_Function
+
+Sub rookie_doCommand(cmd)
+	Dim what = rookie.choices(cmd)
+	Dim cost = Int(rookie.costs(cmd))
+
+	If getMoneyFrom($AGENT,cost)
+		Speak rookie,$AGENT,"Quindi vorreste: " + what + ". Costa " + cost + " monete."
+
+		If Left(cmd,2) = "x_"
+			Dim guild = guildSubscribed($AGENT)
+			If guild = null
+				Speak rookie,$AGENT,"Ma voi non appartenete ad alcuna gilda! Non capisco quale QG dovrei riparare..."
+				Call giveMoney($AGENT,cost)
+				Return false
+			End_If
+			Dim buildingname = "Quartier generale della " + guildnames(guild)
+			Dim c
+			Dim found=null
+			For Each c In getObjectsType($WORLD,"house")
+				If c.name=buildingname
+					found=c
+				End_If
+			Next
+			If found <> null
+				Move rookie,found.container
+				found.Resist = getGuildCount(guild)*10
+				Speak rookie,$AGENT,"Riparato!"
+			Else
+				Speak rookie,$AGENT,"Non l'ho trovato. Forse è stato distrutto..."
+				Call giveMoney($AGENT,cost)
+				Return false
+			End_If
+		Else
+			Dim guild = guildSubscribed($AGENT)
+			If guild = null
+				Speak rookie,$AGENT,"Ho avuto il permesso di costruire, ma solo per chi è iscritto a una gilda!"
+				Call giveMoney($AGENT,cost)
+				Return false
+			End_If
+
+			Dim builder = $AGENT
+			Dim buildingname = "Casa di " + builder.name
+			'If tournament 
+				guild = guildSubscribed($AGENT)
+				buildingname = "Quartier generale della " + guildnames(guild)
+			'End_If
+			If buildingtypes(buildingname) <> null
+				Speak rookie,$AGENT,"C'è già " + buildingname + " in " + buildingplaces(buildingname).name + " e non posso costruirne un altro."
+				Call giveMoney($AGENT,cost)
+				Return false
+			End_If
+
+			rookie.requests($AGENT.name) = cmd
+			'Print $AGENT,"Richieste: " + rookie.requests + " Da fare: " + rookie.todo
+
+			Dim new = NewItem($AGENT,"bandierina","Una bandierina",null,"volume=0,pickable,vanishing,icon=uw2/flag.gif,housetype=" + cmd)
+			AttachEvent new,"whenDropped","flag_whenDropped"
+			Speak rookie,$AGENT,"Bene, ora andate e posate la bandierina che vi ho dato nel luogo che preferite."
+		End_If
+	Else
+		Print "Non ho abbastanza soldi. Costa " + cost + " monete d'oro."
+	End_If		
+	Return true
+End_Sub
+
+EVENT doCommand_Local(input)
+	Dim cmd = input("ronaldops")
+	If (cmd <> null)
+		Call ronald_doCommand(cmd)
+	Else
+		cmd = input("rookieops")
+		Call rookie_doCommand(cmd)
+	End_If
+END_EVENT
+
+EVENT ronald.onHear()
+	If ronald.todo($AGENT.name) = "avatar"
+		If Left($TARGET,26) = "https://www.sottomondo.org"
+			ronald.todo($AGENT.name) = "set"
+			If $AGENT.type = 12
+				$AGENT.oldimage = NewImage($TARGET,64,100)
+			Else
+				$AGENT.image = NewImage($TARGET,64,100)
+			End_If
+			Speak ronald, $AGENT, "Fatto!"
+		Else
+			Speak ronald, $AGENT, "L'URL deve iniziare con https://www.sottomondo.org)"
+		End_If
+		Return true
+	End_If
+	If ronald.todo($AGENT.name) = "msg"
+		If $TARGET <> ""
+			ronald.todo($AGENT.name) = ""
+			Dim new = NewItem($AGENT.container,"un messaggio","...",NewImage("pergamena.gif",100,100),"icon=scrollspecial.gif,showmode=2,pickable,volume=0")
+			new.description = $TARGET
+			Move new,$AGENT
+			Speak ronald, $AGENT, "Fatto!"
+		End_If
+		Return true
+	End_If
+End_EVENT
+
+Sub ronald_doCommand(cmd)
+	Dim what = ronald.choices(cmd)
+	Dim cost = ronald.costs(cmd)
+	If cmd="s1" And $AGENT.type = 16
+		Speak ronald,$AGENT,"Vi dispiacerebbe tornare in forma umana, prima?"
+		Return false
+	End_If
+	If cmd = "s3"
+		If $AGENT.pw = null
+			Speak "Voi non avete alcuna arma personale, per ora."
+			Return false
+		End_If
+		If weaponsfactory($AGENT.pw) = null
+			Speak "Non è più possibile ripristinare armi personali di tipo: " + $AGENT.pw
+			Return false
+		End_If
+	End_If
+
+	If getMoneyFrom($AGENT,cost)
+		Speak ronald,$AGENT,"Quindi vorreste " + what + ". Costa " + cost + " monete."
+	Else
+		Speak ronald,$AGENT,"Questo servizio costa "+cost+" monete!","Dì un pò, ma ce li hai i soldi?"
+		Return false
+	End_If	
+	Dim req=cmd
+	If req = "s1"
+		If $AGENT.type = 10 Or $AGENT.type = 12 Or $AGENT.type = 14
+			If $AGENT.prevtype > 0
+				$AGENT.type = $AGENT.prevtype
+				$AGENT.prevtype = ""
+				If Not($AGENT.type = 10)
+					Call restoreAvatar($AGENT)
+				End_If
+				Call restoreClass($AGENT)
+				Speak ronald,$AGENT,"Fatto!"
+				Return true
+			Else
+				Speak "L'infezione è andata troppo oltre. Dovevi venire prima."
+			End_If
+		Else
+			Speak "Non mi sembra davvero che tu abbia una infezione. Forse è un problema più radicale, heh heh."
+		End_If
+		Call giveMoney($AGENT,cost)
+	End_If
+	If req = "s2"
+		Speak ronald,$AGENT,"Bene, dimmi l'URL dell'immagine che hai scelto. Controlla bene se non vuoi sprecare i vostri soldi!"
+		SetAdd ronald.todo,$AGENT.name,"avatar"
+		Return true
+	End_If
+	If req = "s3"
+		If SetLen(getObjectsType($AGENT,"weapon.personal")) > 0
+			Speak ronald,$AGENT,"Ce l'avete già, non c'è nulla da ripristinare"
+		Else
+			Call MakeWeapon($AGENT.pw,$AGENT)
+			Speak ronald,$AGENT,"Fatto!"
+			Return true
+		End_If
+		Call giveMoney($AGENT,cost)
+	End_If
+	If req = "s4"
+		Speak "Bene, ditemi che cosa devo scrivere!"
+		SetAdd ronald.todo,$AGENT.name,"msg"
+		Return true
+	End_If
+	Return false
+End_Sub
+
+Function restoreClass(person)
+	If Not(IsPlayer(person))
+		Speak SYS,$AGENT,"Non si può eseguire sui personaggi robot"
+		Return False
+	End_If
+	If person.type=1 And person.gender = "M"
+		person.Classe = "Guerriero"
+		Return true
+	End_If
+	If person.type=1 And person.gender = "F"
+		person.Classe = "Guerriera"
+		Return true
+	End_If
+	If person.type=2 And person.gender = "M"
+		person.Classe = "Chierico"
+		Return true
+	End_If
+	If person.type=2 And person.gender = "F"
+		person.Classe = "Incantatrice"
+		Return true
+	End_If
+	If person.type=4 And person.gender = "M"
+		person.Classe = "Artigiano"
+		Return true
+	End_If
+	Speak $AGENT,"Ancora non disponibile per questo tipo di personaggio."
+	Return False
+End_Function
+
+EVENT flag_whenDropped
+	Dim builder = $AGENT
+	Dim buildingname = "Casa di " + builder.name
+	Dim guild = buildingname
+	Dim where = $TARGET
+	If rookie = null ' Flag dropped in wrong area
+		Print "Rookie non mi segue fino qui."
+		Return false
+	End_If
+	If containsType(where,"house",false)
+		Move rookie,where
+		Speak rookie,$AGENT,"Qui è meglio di no: c'è già un edificio. Cercate altrove."
+		Return false
+	End_If
+	If Not(SetContainsKey(rookie.house_places,where.id))
+		Move rookie,where
+		Speak rookie,$AGENT,"Qui non è un luogo adatto. Cercate altrove."
+		Return false
+	End_If
+	'If QG... 
+		guild = guildSubscribed($AGENT)
+		buildingname = "Quartier generale della " + guildnames(guild)
+	'End_If
+	Dim req = rookie.requests($OWNER.housetype)
+	Move rookie, where
+	new = buildBuilding($OWNER.housetype,where,buildingname,guild)
+	buildingtypes(buildingname) = $OWNER.housetype
+	buildingplaces(buildingname) = where.id
+	buildingguilds(buildingname) = guild
+	saveSetting "ctx_buildingtypes",buildingtypes
+	saveSetting "ctx_buildingplaces",buildingplaces
+	saveSetting "ctx_buildingguilds",buildingguilds
+	Speak "Ecco signore! Ritornate fra qualche minuto, giusto il tempo di sistemare gli interni..."
+	Journal "Nuovo Quartier Generale!",guildwebs(guild),"Qualcuno ha fatto costruire un nuovo Quartier Generale per la gilda "&guildnames(guild)&".\nSi trova nella zona chiamata: <strong>"&where.name&"</strong>\n ed è "&Replace(rookie.choices(buildingtypes(buildingname)),"Costruire ",""),"news*gilda:"&guildnames(guild)
+End_EVENT
+
+Function buildBuilding(housetype,where,buildingname,guild)
+	Dim imagecomps = Split(rookie.houseimages(housetype),"|")
+	Dim imagefile = imagecomps(1)
+	Dim imagewidth = imagecomps(2)
+	Dim imageheight = imagecomps(3)
+	Dim showx = (400-imagewidth) / 2
+	If where = null
+		Debug "Luogo inesistente in buildBuilding: "+ where
+		Return null
+	End_If
+	If guild <> null
+		Dim logo = guildlogos(guild)
+		If logo <> null
+			Call NewItem(where,"logo " + guildnames(guild),"E' il logo di " + guildnames(buildingguilds(buildingname)),NewImage(logo,32,32),"type=logo,showmode=1,hideable=0,showy=200,showx="+(showx+imagewidth/2))
+		End_If
+	End_If
+	Dim new = NewItem(where,buildingname,buildingname,NewImage(imagefile,imagewidth,imageheight),"capacity=100,showmode=1,showy=50,showx="+showx+",type=house,dark=1,hideable=0,showPolicyPeople=1")
+	new.innerimage = NewImage("uw2/inner.gif",400,230)
+	If SetContainsKey(guildnames,guild) ' Guild still exists
+		new.guild = guild
+		new.Resist = getGuildCount(guild)*10
+		new.Capacit = 1+getGuildCount(guild)
+		new.capacity = 10*new.Capacit
+	Else
+		new.guild = null
+		new.Resist = 50
+		new.Capacit = 5
+		new.capacity = 25
+	End_If
+	If logo <> null
+		new.icon = logo
+	End_If
+	AttachEvent new,"onReceive","building_onReceive"
+	SetPanel where,"penterexit"
+	SetPanel new,"penterexit"
+	If tournament=2 And guild = assassinguild
+		Dim new1 = NewItem(new,"un biglietto","",NewImage("pergamena.gif",100,100),"icon=scroll.gif,pickable,volume=0,showmode=2")
+		new1.description = "Il biglietto dice:<P><i>Mi dispiace doverti lasciare questa lettera, so di avervi messo nei guai. Lei diceva che ci sarebbe stata fedele, ma non potevamo fidarci di lei, e io lo sapevo. Ci avrebbe traditi, io la conoscevo troppo bene.<P>Farò in modo che la mia colpa non ricada sugli altri, dì loro che non potuto fare altrimenti.<P>Ti prometto che da dove sto per andare, non sentirai più parlare di me.<P>Addio.</I>"
+	End_If
+	Return new
+End_Function
+
+EVENT building_onReceive
+	Dim person = $TARGET
+	Dim private
+	If person <> null
+		If Left($OWNER.name,7) = "Casa di" 'Private house
+			private = true
+			If LCase(person.name) <> LCase(Right($OWNER.name,Len(person.name))) And Not(person.master)
+				Print "Non è casa mia..."
+				Move person,$OWNER.container
+				Return false
+			End_If
+		Else
+			If LCase(person.guild) <> LCase($OWNER.guild) And Not(person.master) And $OWNER.guild <> null
+				Print "Non appartengo alla <B>" + guildnames($OWNER.guild) + "</B>... e questo è il loro Quartier Generale."
+				Move person,$OWNER.container
+				Return false
+			Else
+				If containsUnique(person)
+					Print "Non posso entrare perchè porto con me un oggetto unico."
+					Move person,$OWNER.container
+					Return false
+				End_If
+			End_If
+		End_If
+	End_If
+	If Not(private Or $OWNER.guild=null) 
+		If $OWNER.laststats <> getTime("dd")
+			Dim new = NewItem(person,"situazione "+ guildnames($OWNER.guild),"...",NewImage("pergamena.gif",100,100),"icon=scroll.gif,showmode=2,vanishing,pickable,volume=0")
+			new.description = getGuildKillStats($OWNER.guild,true)
+			AttachEvent new,"whenPicked","stats_whenPicked"
+			$OWNER.laststats = getTime("dd")
+			$OWNER.lastreporter = person.name
+		Else
+			If $OWNER.lastreporter
+				Print "Le ultime statistiche sono state consegnate a: " + $OWNER.lastreporter
+			End_If
+		End_If
+	End_If
+END_EVENT
+
+
+EVENT stats_whenPicked
+	$OWNER.container.lastreporter = $AGENT.name
+End_EVENT
+
+EVENT kovalsky.onLook
+	Speak "Salve, sono Kovalsky. Serve qualcosa?", "Ho delle merci rare, ho viaggiato molto per portarle qui","Mi fermo solo per pochi giorni, approfittane."
+	$AGENT.__clearFocus=true
+	$OWNER.__clearInfo=true
+END_EVENT
+
+EVENT lunarg.onLooseItem
+        ' Management of sold items
+        If $TARGET.seller <> ""
+            Display "E' in vendita."
+	    Speak $TARGET.seller, $AGENT, "Costa " + $TARGET.Valore + " monete...", "Ti serve " + $TARGET.name + " eh? Ti faccio un buon prezzo.", "Ti tratto bene: "+ $TARGET.Valore + " monete, che ne dici?"
+            Return false
+        End_If
+END_EVENT
+
+END_SCRIPTS
+
+END_WORLD

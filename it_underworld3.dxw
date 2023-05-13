@@ -1,0 +1,205 @@
+WORLD
+	NAME    	Sottomondo3
+	CLUSTER		Sottomondo
+	VERSION    	9.9.4
+	' See it_underworld.dxw for details
+	'AUTHOR    	Cris
+	SITE    	https://www.sottomondo.org/
+	' The following for local mode
+	IMAGESFOLDER_LOCAL    /dimx/uwpics/
+	' The following for network (light) mode
+	IMAGESFOLDER_PUBLIC    https://www.sottomondo.org/uwpics/
+	'alternates
+	'IMAGESFOLDER_PUBLIC    https://www.dimensionex.net/underworld/uwpics/
+	HELP    	https://www.sottomondo.org/?page_id=12
+	SAVEGAME_PERSISTENCE	2
+	INTERPHONE	1
+	' The following only for network (light) mode
+	COUNTERHTML	<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><script type="text/javascript" SRC="https://codice.shinystat.com/cgi-bin/getcod.cgi?USER=sottomondo"></script><script src="https://www.google-analytics.com/urchin.js" type="text/javascript"></script><script type="text/javascript">_uacct = "UA-960085-1";_udn="none";_ulink=1;urchinTracker();</script>
+	MUTING		1
+
+GUI
+	SCENE SIZE	400x230
+	SCREEN SIZE	800x600
+	LOGOSRC    	uw3/logoarea3.jpg
+	MSGLISTSIZE	4
+	COMPASS   	true
+	SKINS    	bloody.txt
+	'PAGE		flash	flash.htm
+	MAP		map_uw3.gif
+	HOOKS		findobj=doFindObj,viewitem=doViewItem,expertswitch=doExpertSwitch,quickactsw=doQuickActionSwitch
+
+Include "it_uwpanels.dxl"
+
+END_GUI
+
+
+ROOMS
+
+ROOM entrance DEFAULT
+	NAME	Inizio
+	DESCRIPTION	Sto entrando nel Regno di Graiel.<p>Clicca sulla freccia in avanti.<p>(L'accesso diretto in quest'area non Ã¨ consentito, verrai ora trasportato nell'area principale).
+	IMAGE	uw3/clouds.jpg
+	PANEL	initial
+
+ROOM outside
+	NAME	Outside
+
+ROOM hellfire
+	NAME	la cella
+	PANEL	initial
+
+ROOM start
+	NAME nelle catacombe 1
+	DESCRIPTION	Queste sono le catacombe. Un tempo, luogo di riparo per i perseguitati.
+	IMAGE	N	SHOWAREA 105,335,-1	uw3/catecomb1.jpg
+	ATTRLIST	mapx=133,mapy=76
+
+ROOM catecomb2
+	NAME nelle catacombe 2
+	IMAGE	N	uw3/catecomb2.jpg
+	ATTRLIST	mapx=98,mapy=77
+
+ROOM catecomb3
+	NAME nelle catacombe 3
+	IMAGE	N	uw3/catecomb3.jpg
+	ATTRLIST	mapx=66,mapy=77
+
+ROOM catecomb4
+	NAME nelle catacombe 4
+	DESCRIPTION	Questo canale sotterraneo è alimentato probabilmente dalle acque del fiume vicino.
+	IMAGE	N	SHOWAREA 250,-1,-1	uw3/catecomb4.jpg
+	ATTRLIST	mapx=22,mapy=77
+
+ROOM catecomb5
+	NAME nelle catacombe 5
+	IMAGE	N	uw3/catecomb5.jpg
+	ATTRLIST	mapx=165,mapy=77
+
+ROOM catecomb6
+	NAME nelle catacombe 6
+	IMAGE	N	uw3/catecomb6.jpg
+	ATTRLIST	mapx=131,mapy=49
+
+ROOM catecomb7
+	NAME nelle catacombe 7
+	IMAGE	N	uw3/catecomb7.jpg
+	ATTRLIST	mapx=130,mapy=16
+
+END_ROOMS
+
+LINKS
+
+LINK toA1	entrance-outside	N
+LINK toCastle	start-start	S
+LINK c2 start-catecomb2	W
+LINK c3 catecomb2-catecomb3	W
+LINK c4 catecomb3-catecomb4	W
+LINK c5 start-catecomb5	E
+LINK c6 start-catecomb6	N
+LINK c7 catecomb6-catecomb7	N
+
+END_LINKS
+
+
+CHARACTERS
+ATTRLIST Salute=10,Forza=1,Esperienza=0,type=0,Livello=1,gender=M
+' Types from 10 to up are monsters
+' from 1 to 9 are humans
+' 0 means unattackable character
+
+END_CHARACTERS
+
+
+ITEMS
+
+END_ITEMS
+
+
+SETS
+
+SET setAll	start,catecomb2,catecomb3,catecomb4,catecomb5,catecomb6,catecomb7
+'covered places - needed for stepAway procedure (vampires movement)
+SET setCovered	entrance,start,catecomb2,catecomb3,catecomb4,catecomb5,catecomb6,catecomb7
+
+END_SETS
+
+
+
+SCRIPTS
+
+Include "it_commons.dxl"
+
+EVENT onStart
+	Call common_onStart()
+	Call config()
+	Call LoadContext() ' Reads game saved status from disk
+END_EVENT
+
+'
+' Game configuration parameters
+'
+Sub config()
+	debugtype=0 		'1=debug mode ON
+	monstersPopupSet=setAll	'Set of rooms where monsters will pop up
+	escapeSet=setAll	'Set of rooms where monsters can escape
+	defshop=null		'Default shop
+End_Sub
+
+Sub onNew_local()
+End_Sub
+
+Sub LoadContext_Local()
+	mode = getSetting("ctx_mode",mode)
+End_Sub
+
+EVENT entrance.onLoose
+	If $TARGET=toA1
+		' User is exiting to Main Area
+		MoveOutside $AGENT,"Sottomondo"
+		Return False
+	End_If
+END_EVENT
+
+EVENT start.onLoose
+	If $TARGET=toCastle
+		$AGENT.fromarea = $WORLD.name
+		MoveOutside $AGENT,"Sottomondo"
+		Return False
+	End_If
+END_EVENT
+
+EVENT entrance.onReceive
+	If $TARGET.type <> 0
+		'Player has restored from saved game, he saved inside a building
+		Move $TARGET,start
+	End_If
+	If $TARGET.fromarea <> ""
+	' Teleport comers from other areas to correct places
+		$TARGET.fromarea = ""
+		Move $TARGET,start
+	End_If
+	If debugtype=1
+		' Debug mode - accept direct access
+		Move $TARGET,start
+	End_If
+End_EVENT
+
+EVENT entrance.onReceiveItem
+	If $TARGET.type <> "msg"
+		'Unknown object, make it visible
+		Move $TARGET,start
+		Return
+	End_If
+	Call HandleCommandMessage_Common($TARGET)
+	Kill $TARGET
+End_EVENT
+
+Sub popMonster_Local(new)
+	Dim dummy
+End_Sub
+
+
+END_SCRIPTS
+
+END_WORLD
