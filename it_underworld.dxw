@@ -1,8 +1,8 @@
 WORLD
 	NAME    	Sottomondo
 	CLUSTER		Sottomondo
-	VERSION    	9.9.4
-	' Testato su DimensioneX 7.0.4
+	VERSION    	9.9.5
+	' Testato su DimensioneX 7.1.0
 	'AUTHOR    	Cristiano Leoni, LFicarra, Krisaore
 	'
 	SITE    	https://www.sottomondo.org/
@@ -25,7 +25,7 @@ GUI
 	LOGOSRC    	https://www.sottomondo.org/images/splash.jpg
 	MSGLISTSIZE	4
 	COMPASS   	true
-	SKINS    	bloody.txt
+	SKINS    	bloody.dxs
 	'PAGE		flash	flash.htm
 	MAP		map_uw1.gif
 	HOOKS		findobj=doFindObj,viewitem=doViewItem,expertswitch=doExpertSwitch,quickactsw=doQuickActionSwitch
@@ -3106,6 +3106,12 @@ Sub onNewDay_Local()
 	merlin.asked = NewSet()
 	Call MakeGuildIndex()
 	Call saveContext()
+	monstersPopupSet=setCastle
+End_Sub
+
+' At each new game night...
+Sub onNewNight_Local()
+	monstersPopupSet=setAll
 End_Sub
 
 ' Builds guildindex for sorting, by removing non-existent

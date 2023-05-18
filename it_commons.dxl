@@ -348,6 +348,10 @@ End_If
 End_EVENT
 
 EVENT onLook
+	If $TARGET="explicit"
+		Call onLookWrapped
+		Return
+	End_If
 	If IsPlayer($AGENT) And IsCharacter($OWNER) And areEnemies($OWNER,$AGENT)
 		If $AGENT.quickaction="look"
 			Call onLookWrapped
@@ -3239,6 +3243,7 @@ Sub nightDayCycle
 		Else
 			Speak SYS,$WORLD,"Un giorno finisce...inizia la notte!","Il sole è tramontato!","Attenzione ai vampiri!"
 			$WORLD.bgcolor = "#000055"
+			Call onNewNight()
 		End_If
 		PlaySound $WORLD,"churchbell.wav"
 		itsday = nowday
@@ -3405,6 +3410,14 @@ Sub onNewDay()
 		p.toxine = null
 	Next
 	If ExistScript("onNewDay_Local")
+		Call onNewDay_Local()
+	End_If
+End_Sub
+
+' onNewNight
+' Things to do at each new night
+Sub onNewNight()
+	If ExistScript("onNewNight_Local")
 		Call onNewDay_Local()
 	End_If
 End_Sub
