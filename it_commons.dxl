@@ -5245,7 +5245,7 @@ Function doGetVisits(id)
 				'Print url
 			End_If
 		Else
-			Dim link = "<a href="+gameInfo("site")+"?page_id=66"+" target=_blank>"
+			Dim link = "<a href="+gameInfo("site")+"/guida/#community"+" target=_blank>"
 			Print link+"Prossimo avanzamento fra "+(visitsperinc-visits)+" visite</a>"
 		End_If
 	Else
@@ -5719,7 +5719,7 @@ Function catalog_dropdown(shop,person)
 			If person.__interested = item
 				sel = "selected"
 			End_If
-			txt = txt + "<option "+sel+" value="+item+" style="+q+"background-position: 0px 0px; background-repeat: no-repeat;background-image: url("+icon+");"+q+">"+lock+cat(item)+"</option>"+Chr(13)
+			txt = txt + "<option "+sel+" value="+item+" style="+q+"background-position: 0px 0px; background-repeat: no-repeat;background: transparent url("+icon+") no-repeat 0 0;"+q+">"+lock+cat(item)+"</option>"+Chr(13)
 		End_If
 	Next
 	txt = txt+"</optgroup>"
