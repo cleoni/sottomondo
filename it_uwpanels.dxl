@@ -196,8 +196,9 @@ PANEL default
 		ICON	pansavexit.gif
 	BUTTON logout
 		ICON	panlogout.gif
-	LABEL "<br/><br/><a TITLE='Classifica giocatori - Sei tra i migliori? Scoprilo!' TARGET=_blank HREF='https://www.sottomondo.org/classifiche/' style='text-decoration:none;font-size:0.8em'><IMG ALT=Classifiche SRC=https://www.dimensionex.net/underworld/uwpics/crown.gif WIDTH=16 HEIGHT=16 BORDER=0> Classifiche</A>"
-	LABEL " <a TITLE='Ricevi notifiche quando giocatori si collegano' TARGET=_blank HREF='https://t.me/SottomondoMMORPG' style='text-decoration:none;font-size:0.8em'><IMG ALIGN=MIDDLE src='https://www.dimensionex.net/underworld/uwpics/icotelegram.png' WIDTH=16 HEIGHT=16 BORDER=0> Telegram</a>"
+	LABEL "<br/><br/><a TITLE='Classifica giocatori - Sei tra i migliori? Scoprilo!' TARGET=_blank HREF='https://www.sottomondo.org/classifiche/' style='text-decoration:none;font-size:0.8em'><IMG ALT=Classifiche SRC=https://www.sottomondo.org/uwpics/crown.gif WIDTH=16 HEIGHT=16 BORDER=0> Classifiche</A>"
+	LABEL " <a TITLE='Ricevi notifiche quando giocatori si collegano' TARGET=_blank HREF='https://t.me/SottomondoMMORPG' style='text-decoration:none;font-size:0.8em'><IMG ALIGN=MIDDLE src='https://www.sottomondo.org/uwpics/icotelegram.png' WIDTH=16 HEIGHT=16 BORDER=0> Telegram</a>"
+	LABEL " <a TITLE='Eventi di gioco' TARGET=_blank HREF='https://www.sottomondo.org/eventi/' style='text-decoration:none;font-size:0.8em'><IMG ALIGN=MIDDLE src='https://www.sottomondo.org/uwpics/paninfo.gif' WIDTH=16 HEIGHT=16 BORDER=0> Eventi</a>"
 
 PANEL penterexit VERSION OF default
 	CR
