@@ -3915,7 +3915,6 @@ Sub doCheckup()
 	End_If
 
 	Print $AGENT,"<b>Tipo Vista</b>:  <span id='expertmode'>"&v&"</span> <a href='#' onClick="&Chr(34)&"ajax('expertmode','"+gameinfo("navigator")+"?cmd=expertswitch',null);return false;"&Chr(34)&">Cambia</a>"
-
 	Dim v="Attacca"
 	If $AGENT.quickaction="look"
 		v="Guarda"
@@ -4561,7 +4560,7 @@ Sub checkLevelAdvance(person)
 			person.Livello = person.Livello+1
 			Speak SYS,$WORLD,"Avanzamento Livello: "+UserCardLink(person.name)+" passa a Livello: "+person.Livello+"!"
 			PlaySound person,"fanfare.wav"
-			Journal person.name&" avanza di livello",UserCard(person.name),person.name&" passa a Livello: "&person.Livello&"!","news*avanzamenti*utente:"&person.name
+			Journal UserCardLink(person.name)&" avanza di livello",UserCard(person.name),person.name&" passa a Livello: "&person.Livello&"!","news*avanzamenti*utente:"&person.name
 		End_If
 	End_If
 End_Sub
@@ -4855,8 +4854,8 @@ Function view_item(item,shopkeeper,nocontrols)
 	Dim txt = ""
 	Dim Cr = "<br/>" & Chr(13)
 	Dim icon = "<img align=left src="+absolutizeUrl(getCatalogItemInfo(item,"icon"))+" width=32 height=32 alt="+wcatalog_names(item)+" />"
-	Dim imagefull = "<IMG ALIGN=RIGHT SRC="+absolutizeUrl(getCatalogItemInfo(item,"imageurl"))+" WIDTH="+getCatalogItemInfo(item,"imagew")+" HEIGHT="+getCatalogItemInfo(item,"imageh")+" ALT="+wcatalog_names(item)+" />"
-	txt = txt & icon + imagefull + "<a name=item ><h2>"+wcatalog_names(item)+"</h2></a>"+wcatalog_desc(item) & Cr
+	Dim imagefull = "<img style="&q&"float:right;"&q&" SRC="+absolutizeUrl(getCatalogItemInfo(item,"imageurl"))+" WIDTH="+getCatalogItemInfo(item,"imagew")+" HEIGHT="+getCatalogItemInfo(item,"imageh")+" ALT="+wcatalog_names(item)+" />"
+	txt = txt & imagefull + "<h2 style="&q&"margin:0;"&q&">"+wcatalog_names(item)+"</h2>"+wcatalog_desc(item) & Cr
 	Dim lev = getCatalogItemInfo(item,"level")
 	Dim lock = ""
 	If lev > 0
@@ -4892,17 +4891,6 @@ Function view_item(item,shopkeeper,nocontrols)
 	End_If
 	
 	txt = txt & "<input type=button onClick="+Chr(34)+"javascript:document.location.href='"+gameinfo("navigator")+"?view=scene&cmd=dothis&shopop=buy&selector_item="&item&"'"+Chr(34)+" value="+Chr(34)+"Compra questo!"+Chr(34)+">" & " "
-	' Navi
-	Dim keys = SetKeys(Wcatalog)
-	Dim pos = SetIndexOf(keys,item)
-	Dim k = findNextVisibleItem(keys,pos,-1)
-	If k<>null
-		txt = txt&"<input type=button onClick="&Chr(34)&"ajax('itemviewer','"&gameinfo("navigator")&"?cmd=viewitem&item="&k&"',null);return false;"&Chr(34)&" value="&Chr(34)&"&lt;&lt; Precedente"+Chr(34)+">"
-	End_If
-	Dim k = findNextVisibleItem(keys,pos,1)
-	If k<>null
-		txt = txt&"<input type=button onClick="&Chr(34)&"ajax('itemviewer','"&gameinfo("navigator")&"?cmd=viewitem&item="&k&"',null);return false;"&Chr(34)&" value="&Chr(34)&"Seguente &gt;&gt;"+Chr(34)+">"
-	End_If
 	txt=txt&"<br/>"&Cr
 	Return txt
 End_Function
@@ -5693,13 +5681,16 @@ Function catalog_dropdown(shop,person)
 		'Speak SYS,$WORLD,"Lettura catalogo..."
 		cat = getCatalog(shop)
 	End_If
-	txt = txt&"<span id=itemviewer></span>"
-	txt = txt&"<input type=button onClick="&Chr(34)&"ajax('itemviewer','"&gameinfo("navigator")&"?cmd=viewitem&item='+this.form.selector_item.options[form.selector_item.selectedIndex].value);return false;"&Chr(34)&" value=Vedi> "
-	txt = txt&"<select id=selector_item name=selector_item style="+q+"background-repeat: no-repeat;background-color: black;color:white;"+q+" onChange="+q+"parent.command(this.form.dothis);"+q+">"
-	txt = txt+"<optgroup label="+q+cname+q+">"
 	Dim item,lock,lev,icon
 	Dim lockedcount = 0
 	Dim s = shop.shopkeeper
+
+	txt = txt&"<style>"&Chr(13)
+	txt = txt&".shopitem {width:100%;}"&Chr(13)
+	txt = txt&".shopitem img {vertical-align:middle;height:16px;margin:2px 5px 0 0;}"&Chr(13)
+	txt = txt&".shopitem:hover{background-color:#ffa;color:#000;}"&Chr(13)
+	txt = txt&"</style>"&Chr(13)
+	txt = txt&"<div style="&q&"box-sizing:border-box;background:#444;width:50%;height:145px;overflow:scroll;float:left;"&q&">"
 	For Each item In SetKeys(cat)
 		Dim showit = true And Not(getCatalogItemInfo(item,"hide"))
 		If limitedavails
@@ -5719,11 +5710,15 @@ Function catalog_dropdown(shop,person)
 			If person.__interested = item
 				sel = "selected"
 			End_If
-			txt = txt + "<option "+sel+" value="+item+" style="+q+"background-position: 0px 0px; background-repeat: no-repeat;background: transparent url("+icon+") no-repeat 0 0;"+q+">"+lock+cat(item)+"</option>"+Chr(13)
+			txt = txt + "<div class=shopitem id="&q&item&q&" onClick="&q&"ajax('itemviewer','"&gameinfo("navigator")&"?cmd=viewitem&item='+this.id);return false;"&q&">"
+			txt = txt + "<img src="+q+icon+q+">"+lock+cat(item)+"</div>"+Chr(13)
 		End_If
-	Next
-	txt = txt+"</optgroup>"
-	txt = txt+"</select>"
+	Next	
+	txt = txt&"</div>"+Chr(13)
+	txt = txt&"<div style="&q&"width:49%;height:145px;overflow:visible;float:right;"&q&">"
+	txt = txt&"<span id=itemviewer></span>"
+	txt = txt&"</div>"+Chr(13)
+	txt = txt&"<div style='clear:both'></div>"+Chr(13)
 	Return txt
 End_Function
 
@@ -5912,7 +5907,7 @@ EVENT doViewItem(item,nocontrols)
 	Dim Q = Chr(34)
 	Print "<!DOCTYPE HTML PUBLIC "&Q&"-//W3C//DTD HTML 4.01 Transitional//EN"&Q&"   "&Q&"http://www.w3.org/TR/html4/loose.dtd"&Q&">"
 	Print "<html><head>"
-	Print "<link rel="&Q&"stylesheet"&Q&" href="&Q&gameinfo("site")&"infobox.css"&Q&" type="&Q&"text/css"&Q&" media="&Q&"all"&Q&" />"
+	'Print "<link rel="&Q&"stylesheet"&Q&" href="&Q&gameinfo("site")&"infobox.css"&Q&" type="&Q&"text/css"&Q&" media="&Q&"all"&Q&" />"
 	Print "</head><body bgcolor=black text=white>"
 	If Not(InCatalog(item))
 		Print "<h1>Not Found</h1>"

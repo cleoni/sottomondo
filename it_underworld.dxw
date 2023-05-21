@@ -1,8 +1,8 @@
 WORLD
 	NAME    	Sottomondo
 	CLUSTER		Sottomondo
-	VERSION    	9.9.5
-	' Testato su DimensioneX 7.1.0
+	VERSION    	9.9.6
+	' Testato su DimensioneX 7.1.2
 	'AUTHOR    	Cristiano Leoni, LFicarra, Krisaore
 	'
 	SITE    	https://www.sottomondo.org/
@@ -237,7 +237,7 @@ ROOM J
 
 ROOM armory
 	NAME	l'armeria
-	DESCRIPTION @panelhtml("pbuyshop")+"<br />Questa è l'armeria del castello. Qui si acquistano e vendono articoli di ogni tipo."
+	DESCRIPTION @panelhtml("pbuyshop")+"<br /><div style='width:50%'>Questa è l'armeria del castello. Qui si acquistano e vendono articoli di ogni tipo.</div>"
 	PANEL	pshop
 	IMAGE E 	SHOWAREA	60,-1,-1	44.jpg
 	ATTRLIST	shop=1,shopkeeper=auron,mapx=130,mapy=121
@@ -2343,7 +2343,7 @@ Sub onKillRobot_local(loser,winner)
 	If mode=1
 		Dim x = calcMonstersLeft()
 		If x > 0
-			tmp = tmp + "Rimangono " + x + " mostri."
+			tmp = tmp + " Rimangono " + x + " mostri."
 		End_If
 	End_If
 	If mode=2
@@ -4462,7 +4462,7 @@ Function privacy()
 
 	If True '$AGENT.privacyok <> null
 		txt = "<b>OK</b> - Hai letto e accettato il Regolamento e l'Informativa per la privacy."&cr&cr
-		txt = txt&"<div style="&Chr(34)&"border:1px solid #ff0;margin-right:50px;margin-left:50px;padding:10px;"&Chr(34)&"><img src="&gameinfo("site")&"/images/dontfret.png align=right>Devi sapere che <b>questo gioco ha particolarità uniche e nascoste, dà moltissime possibilità di divertirsi e di fare nuovi amicizie</b>: ma ci vuole un pò di tempo prima di scoprirle e apprezzarlo veramente!"&cr&cr
+		txt = txt&"<div style="&Chr(34)&"border:1px solid #ff0;padding:10px;"&Chr(34)&"><img src="&gameinfo("site")&"images/dontfret.png align=right>Devi sapere che <b>questo gioco ha particolarità uniche e nascoste, dà moltissime possibilità di divertirsi e di fare nuovi amicizie</b>: ma ci vuole un pò di tempo prima di scoprirle e apprezzarlo veramente!"&cr&cr
 		txt = txt&"Ti preghiamo <b>di seguire gli indizi</b> che ti verranno dati entrando nel castello: sono dritte essenziali per goderti di più questo gioco!</div>"&cr&cr
 		txt = txt&"Ora clicca l'icona <b>freccia avanti</b> per iniziare la tua avventura."&cr&cr
 	Else
