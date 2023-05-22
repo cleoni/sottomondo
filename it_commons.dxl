@@ -4560,7 +4560,7 @@ Sub checkLevelAdvance(person)
 			person.Livello = person.Livello+1
 			Speak SYS,$WORLD,"Avanzamento Livello: "+UserCardLink(person.name)+" passa a Livello: "+person.Livello+"!"
 			PlaySound person,"fanfare.wav"
-			Journal UserCardLink(person.name)&" avanza di livello",UserCard(person.name),person.name&" passa a Livello: "&person.Livello&"!","news*avanzamenti*utente:"&person.name
+			Journal person.name&" avanza di livello",UserCard(person.name),UserCardLink(person.name)&" passa a Livello: "&person.Livello&"!","news*avanzamenti*utente:"&person.name
 		End_If
 	End_If
 End_Sub

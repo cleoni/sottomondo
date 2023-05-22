@@ -1,7 +1,7 @@
 WORLD
 	NAME    	Sottomondo
 	CLUSTER		Sottomondo
-	VERSION    	9.9.6
+	VERSION    	9.9.7
 	' Testato su DimensioneX 7.1.2
 	'AUTHOR    	Cristiano Leoni, LFicarra, Krisaore
 	'
@@ -1699,7 +1699,7 @@ Sub diePrincess()
 		name = name + killer.name
 	End_If
 	Goal "I mostri vincono: " + name + " ha ucciso la principessa."
-	Call doMusic("livetotell.mid",6)
+	Call doMusic("livetotell.mp3",6)
 	If Not(crowncreated)
 		Call NewKing(killer,false)
 	End_If
@@ -2321,7 +2321,7 @@ Sub LoadContext_Local()
 	garumir.accounts = getSetting("ctx_accounts","!set!")
 	Call MakeGuildIndex()
 	' Load playlist from database
-	Dim tracks = NewArray(getSetting("ctx_trackfiles","sndbackground08.mid|5.5,alchemist.mid|5.5"))
+	Dim tracks = NewArray(getSetting("ctx_trackfiles","sndbackground08.mp3|5.5,alchemist.mp3|5.5"))
 	jukebox.trackfiles = NewArray()
 	jukebox.tracklen = NewArray()
 	Dim i
@@ -3580,7 +3580,7 @@ Function start_marriage(person)
 	End_If
 	priest.marry1 = $AGENT
 	priest.step=1
-	Call doMusic("wedding.mid",7)
+	Call doMusic("wedding.mp3",7)
 	Call priest_celebrate()
 End_Function
 
@@ -3694,7 +3694,7 @@ EVENT whenPicked_Local()
 					priest.step=0
 					priest.marry1.married = priest.marry2.name
 					priest.marry2.married = priest.marry1.name
-					Call doMusic("wedding-procession.mid",2)
+					Call doMusic("wedding-procession.mp3",2)
 					chapel.effect = NewImage("flyingdoves.gif",400,200)
 					Dim link=gameinfo("site")&"?page_id=40"
 					Dim text = "Il Regno di Graiel è in festa: "&UserCardLink(priest.marry1.name)&" e "&UserCardLink(priest.marry2.name)&" hanno coronato il loro sogno d'amore!"&Chr(13)&"Il testimone "&UserCardLink(priest.witness.name)&" con il parroco e i popolani tutti ne danno il felice annuncio! Evviva!!"

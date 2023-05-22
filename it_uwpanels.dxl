@@ -158,7 +158,7 @@ PANEL default
 	CMD click
 	BUTTON attack, "Attacca", "Attacca ... ", onAttack, O
 		ICON	panattack.gif
-	BUTTON info,"Info","Profilo attuale",doCheckup
+	BUTTON info,"Info","Profilo",doCheckup
 	BUTTON use
 		ICON	panuse.gif
 	CR
