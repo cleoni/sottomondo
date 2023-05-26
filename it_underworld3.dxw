@@ -1,7 +1,7 @@
 WORLD
 	NAME    	Sottomondo3
 	CLUSTER		Sottomondo
-	VERSION    	9.9.4
+	VERSION    	9.9.7
 	' See it_underworld.dxw for details
 	'AUTHOR    	Cris
 	SITE    	https://www.sottomondo.org/
@@ -11,11 +11,11 @@ WORLD
 	IMAGESFOLDER_PUBLIC    https://www.sottomondo.org/uwpics/
 	'alternates
 	'IMAGESFOLDER_PUBLIC    https://www.dimensionex.net/underworld/uwpics/
-	HELP    	https://www.sottomondo.org/?page_id=12
+	HELP    	https://www.sottomondo.org/guida/
 	SAVEGAME_PERSISTENCE	2
 	INTERPHONE	1
 	' The following only for network (light) mode
-	COUNTERHTML	<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><script type="text/javascript" SRC="https://codice.shinystat.com/cgi-bin/getcod.cgi?USER=sottomondo"></script><script src="https://www.google-analytics.com/urchin.js" type="text/javascript"></script><script type="text/javascript">_uacct = "UA-960085-1";_udn="none";_ulink=1;urchinTracker();</script>
+	COUNTERHTML	</div><div><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><script async src="https://www.googletagmanager.com/gtag/js?id=G-8PHSJ9N11D"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-8PHSJ9N11D')</script>
 	MUTING		1
 
 GUI
@@ -24,7 +24,7 @@ GUI
 	LOGOSRC    	uw3/logoarea3.jpg
 	MSGLISTSIZE	4
 	COMPASS   	true
-	SKINS    	bloody.txt
+	SKINS    	bloody.dxs
 	'PAGE		flash	flash.htm
 	MAP		map_uw3.gif
 	HOOKS		findobj=doFindObj,viewitem=doViewItem,expertswitch=doExpertSwitch,quickactsw=doQuickActionSwitch

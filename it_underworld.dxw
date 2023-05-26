@@ -16,7 +16,7 @@ WORLD
 	SAVEGAME_PERSISTENCE	2
 	INTERPHONE	1
 	' The following only for network (light) mode
-	COUNTERHTML	</div><div><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><script src="https://www.google-analytics.com/urchin.js" type="text/javascript"></script><script type="text/javascript">_uacct = "UA-960085-1";_udn="none";_ulink=1;urchinTracker();</script>
+	COUNTERHTML	</div><div><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><script async src="https://www.googletagmanager.com/gtag/js?id=G-8PHSJ9N11D"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-8PHSJ9N11D')</script>
 	MUTING		1
 
 GUI
@@ -237,7 +237,7 @@ ROOM J
 
 ROOM armory
 	NAME	l'armeria
-	DESCRIPTION @panelhtml("pbuyshop")+"<br /><div style='width:50%'>Questa è l'armeria del castello. Qui si acquistano e vendono articoli di ogni tipo.</div>"
+	DESCRIPTION @panelhtml("pbuyshop")+"<br />Questa è l'armeria del castello. Qui si acquistano e vendono articoli di ogni tipo."
 	PANEL	pshop
 	IMAGE E 	SHOWAREA	60,-1,-1	44.jpg
 	ATTRLIST	shop=1,shopkeeper=auron,mapx=130,mapy=121
@@ -943,7 +943,7 @@ ITEM	potion3
 ITEM	scroll
 	NAME 		pergamena
 	POSITION	R2
-	DESCRIPTION	Srotolandola si legge: Ucciderò tutte le bestie che incontrerò e salverò la Principessa.<br>Spero di riuscire nel mio intento.<br>Se tu stai leggendo queste mie parole, probabilmente io ho fallito.<br>Possa Dio assisterti straniero, cosicché tu riesca dove io ho fallito!"<br>Firmato: J.D.
+	DESCRIPTION	Srotolandola si legge: "Ucciderò tutte le bestie che incontrerò e salverò la Principessa.<br>Spero di riuscire nel mio intento.<br>Se tu stai leggendo queste mie parole, probabilmente io ho fallito.<br>Possa Dio assisterti straniero, cosicché tu riesca dove io ho fallito!"<br>Firmato: J.D.
 	ICON		scroll.gif
 	IMAGE		100x100 pergamena.gif
 	SHOW		ICON
