@@ -365,6 +365,7 @@ EVENT onLook
 		End_If
 		Return False
 	End_If
+	Call onLookWrapped
 End_EVENT
 
 
