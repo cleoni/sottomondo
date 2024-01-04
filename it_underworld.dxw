@@ -1,8 +1,8 @@
 WORLD
 	NAME    	Sottomondo
 	CLUSTER		Sottomondo
-	VERSION    	9.9.7
-	' Testato su DimensioneX 7.1.2
+	VERSION    	9.9.8
+	' Testato su DimensioneX 7.1.5
 	'AUTHOR    	Cristiano Leoni, LFicarra, Krisaore
 	'
 	SITE    	https://www.sottomondo.org/
@@ -2320,17 +2320,7 @@ Sub LoadContext_Local()
 	End_If
 	garumir.accounts = getSetting("ctx_accounts","!set!")
 	Call MakeGuildIndex()
-	' Load playlist from database
-	Dim tracks = NewArray(getSetting("ctx_trackfiles","sndbackground08.mp3|5.5,alchemist.mp3|5.5"))
-	jukebox.trackfiles = NewArray()
-	jukebox.tracklen = NewArray()
-	Dim i
-	For i = 1 To SetLen(tracks)
-		Dim parts = Split(tracks(i),"|")
-		jukebox.trackfiles(i) = parts(1)
-		jukebox.tracklen(i) = parts(2)
-	Next
-	jukebox.tracklist = NewArray(getSetting("ctx_tracklist","Track 1,Track 2"))
+	Call LoadJukebox()
 	
 	'Journal "Riavvio",gameInfo("site"),"Il gioco è stato riavviato."+Chr(13)+"Potete collegarvi nuovamente.","news"
 End_Sub
@@ -4503,6 +4493,29 @@ If $TARGET = p0a
 	End_If
 End_If
 End_EVENT
+
+SUB LoadJukebox()
+	' Load tracks from externl csv file (title),(file),(duration)
+	Dim txtTracks = HttpFetch(gameinfo("site")+"downloads/jukebox.txt")
+	jukebox.trackfiles = NewArray()
+	jukebox.tracklen = NewArray()
+	jukebox.tracklist = NewArray()
+	If InStr(txtTracks,"exception")>0 'Offline
+		Return
+	End_If
+	Dim lines = Split(txtTracks,Chr(10))
+	Print SetLen(lines) & " linee"
+	Dim i=1
+	For Each line In lines
+		Dim arr = Split(line,",")
+		Dim idx = Format(i,"%04d")
+		jukebox.tracklist(idx)=arr(1)
+		jukebox.trackfiles(idx)=arr(2)
+		jukebox.tracklen(idx)=arr(3)
+		i=i+1
+	Next
+	'Print "tracks" & jukebox.tracklist
+End_SUB
 
 END_SCRIPTS
 
