@@ -1,7 +1,7 @@
 WORLD
 	NAME    	Sottomondo2
 	CLUSTER		Sottomondo
-	VERSION    	9.9.8
+	VERSION    	10.0.0
 	' See it_underworld.dxw for details
 	'AUTHOR    	Cris
 	SITE    	https://www.sottomondo.org/
@@ -766,59 +766,6 @@ EVENT lunarg.onLooseItem
             Return false
         End_If
 END_EVENT
-
-Function MakeWeapon(tid,player)
-	Dim features = weaponsfactory(tid)
-	If features = null
-		Speak SYS,player,"Impossibile creare arma " + tid + " adesso - rivolgersi a Ronald"
-		Return null
-	End_If
-	Dim type = MyExtract(features,"type")
-	Dim personal = false
-	If Right(type,9) = ".personal" Or MyExtract(features,"personal")
-		personal = true
-	End_If
-	Dim name = MyExtract(features,"name")
-	Dim descr = MyExtract(features,"descr")
-	Dim power = MyExtract(features,"power")	
-	Dim icon = MyExtract(features,"icon")
-	Dim sound = MyExtract(features,"sound")
-	Dim imageurl = MyExtract(features,"imageurl")
-	Dim imagew = MyExtract(features,"imagew")
-	Dim imageh = MyExtract(features,"imageh")
-	Dim attrlist = "type="+type+",tid="+tid+",Potenza="+power+",sound="+sound+",icon="+icon+",pickable"
-	Dim badagainst = MyExtract(features,"badagainst")
-	Dim bestagainst = MyExtract(features,"bestagainst")
-	Dim showmode = MyExtract(features,"showmode")
-	Dim designer = MyExtract(features,"designer")
-	If showmode = null
-		showmode = 1
-	End_If
-	attrlist = attrlist + ",showmode="+showmode
-	If badagainst <> null
-		attrlist = attrlist + ",badagainst="+badagainst
-	End_If
-	If bestagainst <> null
-		attrlist = attrlist + ",bestagainst="+bestagainst
-	End_If
-	If designer <> null
-		attrlist = attrlist + ",designer="+designer
-	End_If
-	If personal
-		attrlist = attrlist + ",vanishing=2"
-	Else
-		attrlist = attrlist + ",Valore=" + MyExtract(features,"value")
-	End_If
-	Dim x = NewItem(player,name,descr,NewImage(imageurl,imagew,imageh),attrlist) 
-	If personal
-		AttachEvent x,"saveInfo","personalWeapon_saveInfo"
-	End_If
-	Return x
-End_Function
-
-Function personalWeapon_saveInfo()
-	Return $OWNER.tid
-End_Function
 
 END_SCRIPTS
 

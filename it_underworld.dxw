@@ -1,7 +1,7 @@
 WORLD
 	NAME    	Sottomondo
 	CLUSTER		Sottomondo
-	VERSION    	9.9.8
+	VERSION    	10.0.0
 	' Testato su DimensioneX 7.1.5
 	'AUTHOR    	Cristiano Leoni, LFicarra, Krisaore
 	'
@@ -589,7 +589,7 @@ CHARACTER deathelem
 	DESCRIPTION	Non mi lascia proseguire.
 	POSITION	cave3
 	IMAGE 		104x95	deathelemental1.png
-	ATTRLIST	type=15,Forza=7,steady,nohands,affi=0/4/0/0,artdefense=counterattack
+	ATTRLIST	type=15,Forza=7,steady,nohands,artdefense=counterattack
 	SHOW		ONSCREEN -1,-1 FOR b6.png
 
 CHARACTER deathpede
@@ -597,14 +597,14 @@ CHARACTER deathpede
 	DESCRIPTION	E' una specie di bruco mostruoso.
 	POSITION	cave6
 	IMAGE 		84x80	dethpede.png
-	ATTRLIST	type=11,Forza=7,nohands,affi=0/4/0/0,artdefense=survival
+	ATTRLIST	type=11,Forza=7,nohands,artdefense=survival
 
 CHARACTER giantworm
 	NAME		verme gigante
 	DESCRIPTION	E' veramente orribile!
 	POSITION	rndSet(setCastle)
 	IMAGE 		100x125	horror091.gif
-	ATTRLIST	type=11,vuln_mob,Forza=6,accepts=*,affi=0/4/0/0,artdefense=survival
+	ATTRLIST	type=11,vuln_mob,Forza=6,accepts=*,artdefense=survival
 
 CHARACTER template
 	NAME		Te stesso
@@ -759,7 +759,7 @@ ITEM	firespell
 	NAME	incantesimo del Fuoco
 	POSITION	rndSet(setAll)
 	DESCRIPTION	Una piccola pietra con uno strano simbolo impresso sopra.<BR>Un'iscrizione incisa nella roccia dice: Quando questo incantesimo è usato da un mago, può provocare danno ai propri nemici.
-	ATTRLIST	type=spell.attack.02.02.0004.fire,pickable,Potenza=2,Valore=20,sound=roarlong2.wav,Livello=2,affi=0/0/0/4
+	ATTRLIST	type=spell.attack.02.02.0004.fire,pickable,Potenza=2,Valore=20,sound=roarlong2.wav,Livello=2
 	ICON		spellfire.gif
 	IMAGE		48x48 spellfire.gif
 	SHOW		ICON 30,110 FOR 44.jpg
@@ -768,7 +768,7 @@ ITEM	windspell
 	NAME	incantesimo del Vento
 	POSITION	rndSet(setAll)
 	DESCRIPTION	Una piccola pietra con uno strano simbolo impresso sopra.<BR>Un'iscrizione incisa nella roccia dice: Quando questo incantesimo è usato da un mago, può provocare danno ai propri nemici.
-	ATTRLIST	type=spell.attack.01.01.0040.wind,pickable,Potenza=1,Valore=15,sound=wind.wav,Livello=1,affi=0/0/4/0
+	ATTRLIST	type=spell.attack.01.01.0040.wind,pickable,Potenza=1,Valore=15,sound=wind.wav,Livello=1
 	ICON		spellwind.gif
 	IMAGE		48x48 spellwind.gif
 	SHOW		ICON
@@ -1718,17 +1718,6 @@ Function popDevilman()
 End_Function
 
 Sub Living_local(person)
-	If IsPlayer(person) ' Affinity check
-		If person.affinity = null
-			If Not(person.container.introductory)
-				Call chooseAffinity(person,person.container)
-			End_If
-		Else
-			If SetLen(person.affinity)=4 And (person.affinity(1)+person.affinity(2)+person.affinity(3)+person.affinity(4))>4
-				Call chooseAffinity(person,person.container)
-			End_If
-		End_If
-	End_If
 	If person.Livello = 1
 		If IsPlayer(person) And SetContainsKey(setAll,person.container.id)
 			Call Hints(person)
@@ -3388,11 +3377,6 @@ Function doUse_Local(person,item)
 			Display "Che me ne faccio di questa roba, mica so leggere. Rotfl!"
 		End_If
 	End_If
-	If item.type = "gem.affinity"
-		Kill item
-		Call chooseAffinity(person,person.container)
-		Return true
-	End_If
 	Return false
 End_Function
 
@@ -3467,9 +3451,6 @@ EVENT doCommand_Local(input)
 	cmd = input("drinkselector")
 	If (cmd <> null)
 		Return doBuyDrink(input)
-	End_If
-	If input("affi") = 1
-		Return finishAffinity()
 	End_If
 	If input("privacyform")
 		cmd = input("accept")
@@ -4010,7 +3991,6 @@ Function onUseWith_Local
 					Move new,$AGENT.container
 				End_If
 				If new <> null
-					new.affinity = $AGENT.affinity
 					new.material = "iron"
 					new.designer = $AGENT.name
 					success=true
@@ -4032,7 +4012,6 @@ Function onUseWith_Local
 				new.Valore = $TARGET.Valore
 				new.icon = $TARGET.icon
 				new.showmode = $TARGET.showmode
-				new.affinity = $TARGET.affinity
 				new.material = $TARGET.material
 				new.designer = $TARGET.designer '$AGENT.name
 				success=true
@@ -4059,69 +4038,6 @@ Function onUseWith_Local
 	End_If
 	Return success
 END_Function
-
-Sub chooseAffinity(person,nextroom)
-	Dim tmp_room_id = person.id + "*affinity"
-	NewRoom tmp_room_id
-	Dim tmp_room = getObject(tmp_room_id)
-	If tmp_room <> NULL
-		tmp_room.name = "Scelta affinità"
-		tmp_room.image("N") = NewImage("castlemid.png",pre2.image("N").width,pre2.image("N").height)
-		tmp_room.introductory = true
-		tmp_room.dark = true
-		SetPanel tmp_room,"paffinity"
-		If person.affinity=null
-			'Call SetAffinity(person,"0/0/0/0")
-		End_If
-		Call doAffinity(person,0,0,0,0)
-		person.__nextroom = nextroom
-		person.Salute=10
-		DropItems person
-		Move person,tmp_room
-		AttachEvent tmp_room,"onLoose","affinityRoom_onLoose"
-	End_If
-End_Sub
-
-Sub doAffinity(person,e1,e2,e3,e4)
-	Dim tot = 0+person.affinity(1)+person.affinity(2)+person.affinity(3)+person.affinity(4)
-	Dim left = 4-tot
-	If (left < 1) And ((e1+e2+e3+e4)>0)
-		Print "<DIV STYLE="+Chr(34)+"{border-style:solid;border-width:1;border-color:orange;width:50%;float:right;padding:10px;}"+Chr(34)+">Non ci sono più punti da assegnare. Puoi però togliere punti da un elemento e spostarli su un altro.</DIV>"
-	Else
-		If (e1>0 And person.affinity(1)<4) Or (e1<0 And person.affinity(1)>=-e1)
-			person.affinity(1)=Int(person.affinity(1)+e1)
-		End_If
-		If (e2>0 And person.affinity(2)<4) Or (e2<0 And person.affinity(2)>=-e2)
-			person.affinity(2)=Int(person.affinity(2)+e2)
-		End_If
-		If (e3>0 And person.affinity(3)<4) Or (e3<0 And person.affinity(3)>=-e3)
-			person.affinity(3)=Int(person.affinity(3)+e3)
-		End_If
-		If (e4>0 And person.affinity(4)<4) Or (e4<0 And person.affinity(4)>=-e4)
-			person.affinity(4)=Int(person.affinity(4)+e4)
-		End_If
-	End_If
-	Print htmlAffinities(person)
-	Dim tot = 0+person.affinity(1)+person.affinity(2)+person.affinity(3)+person.affinity(4)
-	Dim left = 4-tot
-	Print "<b>Punti affinità disponibili</b>: "+ left
-End_Sub
-
-Sub finishAffinity()
-	Dim tot = 0+$AGENT.affinity(1)+$AGENT.affinity(2)+$AGENT.affinity(3)+$AGENT.affinity(4)
-	If tot <> 4
-		Print "Distribuire esattamente 4 punti-affinità!"
-		Print htmlAffinities($AGENT)
-		Return
-	End_If
-	person = $AGENT
-	If person.__nextroom = "Start"
-		person.__startnow = true
-	End_If
-	Move person,person.__nextroom
-'	Dim tmp_room_id = person.id + "*affinity"
-'	Kill tmp_room_id
-End_Sub
 
 EVENT Start.onReceive
 	If Not($AGENT.__startnow) ' Normal operation
@@ -4210,15 +4126,6 @@ EVENT Start.onReceive
 	End_If
 	Speak $WORLD,"C'è un nuovo visitatore nel regno: <b>"&$AGENT.name&"</b>! Diamo"&y&" il benvenuto e aiutiamo"&x&" a muoversi in questo nuovo mondo!"
 End_EVENT
-
-EVENT helpAffi
-	Print "Serve <A TARGET=_blank HREF="+gameInfo("site")+"?page_id=12#elements>aiuto riguardo agli elementi</A>?"
-	Print htmlAffinities($AGENT)
-END_EVENT
-
-EVENT affinityRoom_onLoose
-	Kill $OWNER
-END_EVENT
 
 ' Enqueues a guild war
 Function war_enqueue(guild1,guild2,duration)

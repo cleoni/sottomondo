@@ -1,4 +1,4 @@
-'----COMMON GUI for version 9.9+
+'----COMMON GUI for version 10+
 
 PANEL initial
 	BUTTON logout
@@ -273,33 +273,6 @@ PANEL pchoose_artdefense
 PANEL pbuyshop
 	'BUTTON dothis, "Vedi: ", "Comando", doCommand
 	LABEL "@catalog_dropdown($OWNER,$AGENT)"
-
-PANEL paffinity
-	BUTTON waterplus, "+", "Comando", "doAffinity($AGENT,1,0,0,0)"
-	BUTTON water, "Acqua", "Acqua", helpAffi
-		IMAGE	32x32 	elem1.gif
-	LABEL	" Acqua"
-	BUTTON waterminus, "-", "Comando", "doAffinity($AGENT,-1,0,0,0)"
-	LABEL	"<BR />"
-	BUTTON earthplus, "+", "Comando", "doAffinity($AGENT,0,1,0,0)"
-	BUTTON earth, "Terra", "Terra", helpAffi
-		IMAGE	32x32 	elem2.gif
-	LABEL	" Terra"
-	BUTTON earthminus, "-", "Comando", "doAffinity($AGENT,0,-1,0,0)"
-	LABEL	"<BR />"
-	BUTTON windplus, "+", "Comando", "doAffinity($AGENT,0,0,1,0)"
-	BUTTON wind, "Aria", "Aria", helpAffi
-		IMAGE	32x32 	elem3.gif
-	LABEL	" Aria"
-	BUTTON windminus, "-", "Comando", "doAffinity($AGENT,0,0,-1,0)"
-	LABEL	"<BR />"
-	BUTTON fireplus, "+", "Comando", "doAffinity($AGENT,0,0,0,1)"
-	BUTTON fire, "Fuoco", "Fuoco", helpAffi
-		IMAGE	32x32 	elem4.gif
-	LABEL	" Fuoco"
-	BUTTON fireminus, "-", "Comando", "doAffinity($AGENT,0,0,0,-1)"
-	LABEL	"<BR /><BR /><INPUT TYPE=hidden NAME=affi VALUE=1>"
-	BUTTON dothis,"Fatto","Comando", doCommand
 
 PANEL pgetvisits
 	BUTTON download, "Controlla visite", "Contr visite", "doGetVisits($AGENT.name)"

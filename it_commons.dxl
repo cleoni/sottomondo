@@ -9,7 +9,7 @@
 '
 ' General Purpose Routines
 '
-' Version 22.3
+' Version 23.0
 '
 
 EVENT Living
@@ -2062,7 +2062,7 @@ Sub common_onStart()
 	setSndBeastYell=Split("roar1.wav/roar2.wav/gnarl1.wav/roarlong2.wav","/")
 	setSndHumanYell=NewArray("death.wav,yell.wav,ahh.wav")
 	setRobotCmds=NewSet("findobj=Trovare oggetti,hunt=Uccidere i nemici,progeny=Fare altri adepti,terminate=Uccidere ...,escort=Fare da scorta,wave=Ordinare a tutti di uccidere nemici")
-	masterOps = NewSet("_0=(Comando),exp=Dai punti Esperienza a ...,eqp=Equipaggia arma*persona *,money=Accredita denaro a ...,kill=Elimina (persona),jail=Incarcera (scegli o scrivi),unjail=Scarcera (scegli o scrivi),ban=Banna (persona),move=Sposta (persona) in (stanza),moveo=Sposta (oggetto) in (stanza),rstavatar=Ripristina avatar a (persona),vip=Vedi IP di (giocatore),vipb=Vedi/cambia lista IP bannati*,restart=Riavvia gioco,restart1=Riavvia gioco da fase 1,purge=Purge*,resetpwd=Resetta password di...,info=Info su giocatore...,catsave=Catalogo-Salva*,catload=Catalogo-Carica,catadd=Catalogo-Aggiungi oggetto+,catview=Catalogo-Vedi oggetto,tournament=Imposta modo torneo...*,makemaster=Rendi master...*,reloadjuke=Ricarica Jukebox,reloadmobs=Ricarica MOBs,popmobs=Popup MOBs")
+	masterOps = NewSet("_0=(Comando),exp=Dai punti Esperienza a ...,eqp=Equipaggia arma*persona *,money=Accredita denaro a ...,kill=Elimina (persona),jail=Incarcera (scegli o scrivi),unjail=Scarcera (scegli o scrivi),ban=Banna (persona),move=Sposta (persona) in (stanza),moveo=Sposta (oggetto) in (stanza),rstavatar=Ripristina avatar a (persona),vip=Vedi IP di (giocatore),vipb=Vedi/cambia lista IP bannati*,restart=Riavvia gioco,restart1=Riavvia gioco da fase 1,purge=Purge*,resetpwd=Resetta password di...,info=Info su giocatore...,catload=Catalogo-Carica,catview=Catalogo-Vedi oggetto,tournament=Imposta modo torneo...*,makemaster=Rendi master...*,reloadjuke=Ricarica Jukebox,reloadmobs=Ricarica MOBs,popmobs=Popup MOBs")
 	cloneableTypes = NewSet("bomb,weapon,spell,helmet,armour,shield,bottle,stone,pill,garlic,trap")
 	uniqueTypes = NewSet("crown,key1,key2,key3,key4,key5,cross,book1,book2")
 	itsday = "?" ' For day/night cycle
@@ -2578,26 +2578,8 @@ EVENT doSpecialOp(cmd,input)
 			Print "Stato <b>master</b> di "+txt+": <b>"+LookupProfileDB(nick,"master")+"</b>"
 		End_If
 	End_If
-	If cmd = "catsave" And $AGENT.mastersuper
-		Call saveWCatalog()
-	End_If
 	If cmd = "catload"
 		Print "" + buildWCatalog() + " oggetti caricati."
-	End_If
-	If cmd = "catadd" And $AGENT.itemmaster
-		If txt <> ""
-			Dim nitems = SetLen(wcatalog)
-			Dim arrData = Split(txt,"*")
-			wcatalog_names(arrData(1)) = arrData(2)
-			wcatalog(arrData(1)) = arrData(3)
-			If SetLen(arrData) > 3
-				wcatalog_desc(arrData(1)) = arrData(4)
-			End_If
-			Print "Il nuovo oggetto è ora in catalogo, tipo: "+arrData(1)
-		Else
-			Speak SYS,$AGENT,"Scrivi la stringa che definisce il nuovo oggetto, poi riprova"
-			Return
-		End_If
 	End_If
 	If cmd = "catview"
 		If txt <> ""
@@ -2606,6 +2588,16 @@ EVENT doSpecialOp(cmd,input)
 			Print txt+"*"+wcatalog_names(txt)+"*"+wcatalog(txt)+"*"+x
 		Else
 			Speak SYS,$AGENT,"Scrivi il tipo dell'oggetto, poi riprova"
+			Dim nitems = SetLen(wcatalog)
+			Dim i
+			'Print "<table width='100%' border='1' cellspacing='0' cellpadding='5'>"
+			Print "<pre>"
+			For Each i In SetKeys(wcatalog)
+				'Print "<tr><td>" & i & "</td><td>" & wcatalog_names(i)  & "</td><td>" & wcatalog_desc(i) & "</td><td>" & wcatalog(i) & "</td></tr>"
+				Print i & "|" & wcatalog_names(i)  & "|" & Replace(wcatalog_desc(i),"<BR>","\n") & "|" & wcatalog(i)
+			Next 
+			'Print "</table>"
+			Print "</pre>"
 			Return
 		End_If
 	End_If
@@ -2842,7 +2834,6 @@ Function cloneItem(item)
 		new.sound = item.sound
 		new.volume = item.volume
 		new.Valore = item.Valore
-		new.affi = item.affi
 		new.designer = item.designer
 		If item.Livello
 			new.Livello = item.Livello
@@ -3206,11 +3197,9 @@ Sub subFight(attacker,victim,weapon,arts_allowed)
 	'******************
 	Dim weapname = "a mani nude"
 	Dim wpower=0
-	Dim weapaffi=null
 	If weapon <> ""
 		weapname = "con " + getInfoOwnedOrCatalog(attacker,weapon,"name")
 		wpower = getInfoOwnedOrCatalog(attacker,weapon,"power")
-		weapaffi = getInfoOwnedOrCatalog(attacker,weapon,"affi")
 		'If weapon.bestagainst = victim.type
 		'	wpower = wpower * 1.3
 		'	weapname = weapname + ", <b>efficacia +30%</b>"
@@ -4422,28 +4411,6 @@ Function SameIPorGuild(winner,loser)
 	Return false
 End_Function
 
-' Prints out the affinities of the specified object
-' Input: object (should have a .affinities property)
-' or affinities array (4 numbers)
-Function htmlAffinities(object)
-	Dim tmp = ""
-	Dim affi = object.affinity
-	If affi = null And SetLen(object) = 4
-		affi = object
-	End_If
-	If affi<>null
-		tmp = "<b>Affinità</b><br/>"+Chr(13)
-		tmp=tmp+"<SPAN STYLE=" + Chr(34) + "float:right;padding:10;font-size:10px;" + Chr(34) + "><A HREF=" + Chr(34) + gameInfo("site")+"?page_id=12#elements" + Chr(34) + " TARGET=" + Chr(34) + "_blank" + Chr(34) + ">" + NewImage("panhelp.gif",16,16).html("Spiega",$AGENT) + "Spiega</A></SPAN>"
-		tmp=tmp+"<TABLE>"
-		Dim i
-		For i = 1 To 4
-			tmp = tmp + "<TR class=iconlabel><TD><IMG SRC="+NewImage(main_imagedir+"elem"+i+".gif",48,48).url+" WIDTH=16 HEIGHT=16 ALT="+ cstAffiNames(i) +" TITLE="+ cstAffiNames(i) +"></TD><TD>" + cstAffiNames(i) + "</TD><TD>" + affi(i) + "</TD></TR>"+Chr(13)
-		Next
-		tmp = tmp + "</TABLE>"
-	End_If
-	Return tmp
-End_Function
-
 Function getCatalog(shop)
 	Dim x = NewSet()
 	If shop.shopkeeper = null ' Not a shop - quick exit
@@ -4481,28 +4448,29 @@ End_Function
 
 ' Loads (rebuilds) Weapon's catalog
 Function buildWCatalog()
+	' Loads from catalog externl txt file
+	mobs = NewArray()
+	Dim txt = HttpFetch(gameinfo("site")+"downloads/it_weapons.txt")
+	If InStr(txt,"exception")>0 'Offline
+		Return
+	End_If
 	wcatalog = NewSet()
 	wcatalog_names = NewSet()
 	wcatalog_desc = NewSet()
-	wcatalog_props = NewSet()
-	Dim nitems = getSetting("ctx_items",0)
-	Dim i
-	Dim itemstring
-	For i = 1 To nitems
-		itemstring = getSetting("ctx_item"+i)
-		If itemstring <> null
-			Dim arrData = Split(itemstring,"*")
-			wcatalog_names(arrData(1)) = arrData(2)
-			wcatalog(arrData(1)) = arrData(3)
-			Call buildWcatalogProps(arrData(1))
-			If SetLen(arrData) > 3
-				wcatalog_desc(arrData(1)) = arrData(4)
-			End_If
-		Else
-			Debug "ERROR - missing item "+i+" from catalog"
-		End_If
+	wcatalog_props = NewSet()	
+	Dim lines = Split(txt,Chr(10))
+	Dim i=1
+	For Each line In lines
+		Dim arr = Split(line,"|")
+		Dim id = arr(1)
+		wcatalog(id)=arr(4)
+		wcatalog_names(id)=arr(2)
+		wcatalog_desc(id)=Replace(arr(3),"\n","<br/>")
+		Call buildWcatalogProps(id)
+		i=i+1
 	Next
-	Return nitems
+	'Print "Caricati " & SetLen(wcatalog) & " articoli."
+	Return i-1
 End_Function
 
 ' Creates a property map for each catalog item
@@ -4653,7 +4621,6 @@ Function MakeItem(type,player)
 	Dim imagew = MyExtract(features,"imagew")
 	Dim imageh = MyExtract(features,"imageh")
 	Dim zimageurl = MyExtract(features,"zimage")
-	Dim affi = MyExtract(features,"affi")
 	Dim level = MyExtract(features,"level")
 	Dim badagainst = MyExtract(features,"badagainst")
 	Dim bestagainst = MyExtract(features,"bestagainst")
@@ -4676,9 +4643,6 @@ Function MakeItem(type,player)
 	attrlist = attrlist + ",showmode="+showmode
 	If sound <> null
 		attrlist=attrlist+",sound="+sound
-	End_If
-	If affi <> null
-		attrlist=attrlist+",affi="+affi
 	End_If
 	If level <> null
 		attrlist=attrlist+",Livello="+level
@@ -4726,24 +4690,6 @@ Function MakeItem(type,player)
 		AttachEvent x,"saveInfo","personalWeapon_saveInfo"
 	End_If
 	Return x
-End_Function
-
-' Saves Weapon's catalog to disk
-Function saveWCatalog()
-	Dim nitems = SetLen(wcatalog)
-	Dim keys = SetKeys(wcatalog)
-	SaveSetting "ctx_items",nitems
-	Dim i
-	Dim k
-	Dim itemstring
-	For i = 1 To nitems
-		k = keys(i)
-		itemstring = k + "*" + wcatalog_names(k) + "*" + wcatalog(k) + "*" + wcatalog_desc(k)
-		SaveSetting "ctx_item"+i,itemstring
-	Next
-	Call BroadcastOtherWorlds("catalog_update","")
-	Print "(Salvato catalogo: "&nitems&" oggetti)"
-	Return nitems
 End_Function
 
 Function UserCard(pg)
@@ -5017,80 +4963,6 @@ Function Concordate(person)
 	Else
 		Return "o"
 	End_If
-End_Function
-
-' calcAffiResult
-' Calculates the result affinity of
-' a person (MUST NOT be null)
-' an object's type and the set name
-Function calcAffiResult(person,type,setname)
-	Dim myset = person.getProperty(setname)
-	'If SetLen(myset)<0
-	'	myset = NewArray()
-	'End_If
-	If SetIndexOf(myset,type) = 0
-		Dim affi = null
-	Else
-		Dim affi = getCatalogItemInfo(type,"affi")
-	End_If
-	Dim affinity = Split(affi,"/")
-	If SetLen(person.affinity) <> 4
-		person.affinity = NewArray()
-		person.affinity(1)=0
-		person.affinity(2)=0
-		person.affinity(3)=0
-		person.affinity(4)=0
-	End_If
-	Dim affiresult = Copy(person.affinity)
-	If SetLen(affinity) = 4
-		'print person,"+ affinity: "+affinity
-		Dim i,x
-		For i = 1 To 4
-			x = affiresult(i)+affinity(i)
-			If x > 4
-				x = 4
-			End_If
-			affiresult(i) = x
-		Next
-	'Else
-	'	print person,"- affi: "&affi&"=affinity: "&affinity
-	End_If
-	Return affiresult
-End_Function
-
-' calcAffiResult2
-' Calculates the result affinity of
-' a person (MUST NOT be null)
-' and an object of specified type (s)he could carry
-Function calcAffiResult2(person,type)
-	If SetLen(person.affinity) <> 4
-		Return NewArray("0,0,0,0")
-	End_If
-	Dim affiresult = Copy(person.affinity)
-	If type = null
-		'Print person,"NULL type or NULL person.affinity"
-		Return affiresult
-	End_If
-	Dim object = getContainedType(person,type)
-	If object = null
-		'Print person,"NO object of type: "+type
-		Return affiresult
-	End_If
-	'Print person,"NONNNULL: "+object
-	If SetLen(object.affinity) = 4
-		'print person,"- affinity: "+object.affinity
-		Dim i,x
-		For i = 1 To 4
-			x = affiresult(i)+object.affinity(i)
-			If x > 4
-				x = 4
-			End_If
-			affiresult(i) = x
-		Next
-	'Else
-		'print person,"- affinity: NULL"
-	End_If
-	Return affiresult
 End_Function
 
 'Returns true if the two are in war
@@ -5504,13 +5376,6 @@ Sub CatalogStoreItem(item)
 	attributes = attributes & "showmode=" & item.showmode & ","
 	attributes = attributes & "sound=" & item.sound & ","
 	attributes = attributes & "avail=1" & ","
-	Dim affi = item.affi
-	If SetLen(item.affinity) = 4
-		affi = AffiStringCat(item.affinity)
-	End_If
-	If affi <> null
-		attributes = attributes & "affi="&affi
-	End_If
 	wcatalog(item.type) = attributes
 	If item.description <> null
 		wcatalog_desc(item.type) = item.description
@@ -5526,35 +5391,6 @@ Function catalog_del_item(item)
 	Return saveWCatalog()
 	Call buildWCatalog()
 End_Function
-
-'Converts an affinity array into a string
-'input: affi: array(1...4)
-Function AffiString(affinity)
-	If SetLen(affinity) < 4
-		Return affinity
-	End_If
-	Dim i,x
-	For i = 1 To 4
-		x = x&affinity(i)
-	Next
-	Return x
-End_If
-
-'Converts an affinity array into a string for catalog use
-'input: affi: array(1...4)
-Function AffiStringCat(affinity)
-	If SetLen(affinity) < 4
-		Return affinity
-	End_If
-	Dim i,x
-	For i = 1 To 4
-		x = x&affinity(i)
-		If i < 4
-			x=x&"/"
-		End_If
-	Next
-	Return x
-End_If
 
 Sub FixArrays(person)
 	If SetLen(person.helmets)=-1
@@ -5833,7 +5669,7 @@ Function popMonster(power,setRooms)
 	
 	Dim popped=RndSet(set_matching)
 	
-	'Print "popped=" & popped
+	'Debug "popped=" & popped
 	
 	Dim mname=popped(3)
 	Dim attrs=Replace(popped(5),"*",power) 'Same strength as requested power
