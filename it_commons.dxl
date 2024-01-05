@@ -9,7 +9,7 @@
 '
 ' General Purpose Routines
 '
-' Version 22.2
+' Version 22.3
 '
 
 EVENT Living
@@ -1223,349 +1223,6 @@ Sub calcAvgPower()
 End_Sub
 
 
-' popMonster
-'
-' Input: power= Desired Overall power of the monster
-'	 setRooms=Popup place: set of rooms to choose from
-'	 setCovered=Covered Places must be defined for vampires to pop up
-' Returns: reference the popped up monster
-' Side f/x: pops up the monster
-Function popMonster(power,setRooms)
-	Dim mname,image,attrs
-	Dim x
-	If power <= 2
-		x = RndInt(3)
-		If x = 1
-			mname = "uno sludge"
-			image = NewImage("asludge.gif",40,40)
-			attrs = "type=11,nohands=1,Forza=1.5,suffersound=pig.wav,affi=2/0/0/0"
-		End_If
-		If x = 2
-			mname = "un conch"
-			image = NewImage("conch.gif",48,49)
-			attrs = "type=11,nohands=1,Forza=1.5,affi=2/2/0/0"
-		End_If
-		If x=3
-			mname = "un serpente"
-			image = NewImage("snake2.gif",40,40)
-			attrs = "type=11,nohands=1,Forza=2,suffersound=pig.wav,affi=0/2/0/0,artdefense=counterattack"
-		End_If
-	End_If
-	If power > 2 And power <= 2.5
-		x = RndInt(2)
-		If x = 1
-			mname = "uno sludge"
-			image = NewImage("asludge.gif",40,40)
-			attrs = "type=11,nohands=1,Forza=2.2,suffersound=pig.wav,affi=4/0/0/0"
-		End_If
-		If x = 2
-			mname = "una sanguisuga"
-			image = NewImage("bloodskr.gif",50,29)
-			attrs = "type=11,nohands=1,Forza=2.5,suffersound=pig.wav,affi=4/0/0/0"
-		End_If
-	End_If
-	If power > 2.5 And power <= 3.5
-		x = RndInt(3)
-		If x = 1
-			mname = "un biruburu"
-			image = NewImage("biruburu.gif",70,54)
-			attrs = "type=11,nohands=1,Forza=2.6,suffersound=pig.wav,affi=0/4/0/0"
-		End_If
-		If x = 2
-			mname = "un chorking"
-			image = NewImage("chorking.gif",80,73)
-			attrs = "type=11,nohands=1,Forza=2.8,suffersound=pig.wav"
-		End_If
-		If x = 3
-			mname = "una sanguisuga"
-			image = NewImage("bloodskr.gif",50,29)
-			attrs = "type=11,nohands=1,Forza=3,suffersound=pig.wav"
-		End_If
-	End_If
-	If power > 3.5 And power <= 4
-		mname = "un giovane lupo mannaro"
-		image = NewImage("werewolf.gif",80,90)
-		attrs = "type=16,Forza=4,suffersound=wolfhit.wav"
-	End_If
-	If power > 4 And power <= 4.5
-		mname = "un verme mutante"
-		image = NewImage("horror091.gif",90,115)
-		attrs = "type=11,Forza=4.2,affi=0/4/0/0"
-	End_If
-	If power > 4.5 And power <= 5
-		mname = "un lupo mannaro"
-		image = NewImage("werewolf.gif",90,100)
-		attrs = "type=16,Forza=5,suffersound=wolfhit.wav"
-	End_If
-	If power > 5 And power <= 5.5
-		mname = "un verme gigante"
-		image = NewImage("horror091.gif",100,125)
-		attrs = "type=11,Forza=5.2,vuln_mob=1,affi=0/4/0/0"
-	End_If
-	If power > 5.5 And power <= 6
-		If RndInt(2) = 1
-			mname = "un vampiro"
-			image = NewImage("vampire.gif",95,100)
-			attrs = "type=14,Forza=5.7,yell=roar2.wav,artdefense=counterattack"
-		Else
-			mname = "un fantasma"
-			image = NewImage("2003ghost.gif",80,100)
-			attrs = "type=11,Forza=5.7,yell=roar2.wav"
-		End_If
-	End_If
-	If power > 6 And power <= 6.5
-		If RndInt(2) = 1
-			mname = "un Mostro Serpente"
-			image = NewImage("horror104.gif",115,150)
-			attrs = "type=11,Forza=6.2"
-		Else
-			mname = "un Beholder"
-			image = NewImage("beholder.gif",80,100)
-			attrs = "type=11,nohands,Forza=6.5,vuln_mob"
-		End_If
-	End_If
-	If power > 6.5 And power <= 7
-		x = RndInt(2)
-		If x = 1
-			mname = "una mummia"
-			image = NewImage("mummy.gif",92,100)
-			attrs = "type=11,Forza=6.7,affi=0/4/0/0"
-		End_If
-		If x = 2
-			mname = "un troll"
-			image = NewImage("troll.png",74,110)
-			attrs = "type=11,Forza=7,vuln_mob"
-		End_If
-	End_If
-	If power > 7 And power <= 8
-		x = RndInt(5)
-		If x = 1
-			mname = "un Bruco della Morte"
-			image = NewImage("dethpede.png",84,80)
-			attrs = "type=11,nohands,Forza=7.2"
-		End_If
-		If x = 2
-			mname = "un golem"
-			image = NewImage("sgolem.png",110,98)
-			attrs = "type=11,Forza=8,affi=0/4/0/0"
-		End_If
-		If x = 3
-			mname = "un Orco"
-			image = NewImage("horror076.gif",140,133)
-			attrs = "type=11,Forza=8,yell=roarlong2.wav,affi=0/4/0/0"
-		End_If
-		If x = 4
-			mname = "uno Scheletro"
-			image = NewImage("skeleton.gif",120,120)
-			attrs = "type=11,Forza=7.5,yell=roar2.wav,vuln_mob"
-		End_If
-		If x = 5
-			mname = "un Ciclope"
-			image = NewImage("cyclops.gif",120,120)
-			attrs = "type=11,Forza=7.6,yell=roar2.wav,affi=0/4/0/0"
-		End_If
-	End_If
-	If power > 8 And power <= 8.5
-		x = RndInt(2)
-		If x = 1
-			mname = "un vampiro anziano"
-			image = NewImage("vampire.gif",95,100)
-			attrs = "type=14,Forza=8.3,yell=roar2.wav,vuln_mob,artdefense=counterattack"
-		End_If
-		If x = 2
-			mname = "un'Entità Oscura"
-			image = NewImage("horror047.gif",121,144)
-			attrs = "type=11,Forza=8.5,artdefense=counterattack"
-		End_If
-	End_If
-	If power > 8.5 And power <= 9.5
-		x = RndInt(3)
-		If x = 1
-			mname = "un demone"
-			image = NewImage("daemon.png",121,117)
-			attrs = "type=11,Forza=9,artdefense=counterattack"
-		End_If
-		If x = 2
-			mname = "un demone volante"
-			image = NewImage("tn_an22.gif",152,105)
-			attrs = "type=11,Forza=8.7,vuln_mob,affi=0/0/4/0"
-		End_If
-		If x = 3
-			mname = "un folletto volante"
-			image = NewImage("flyinggoblin.gif",95,113)
-			attrs = "type=11,Forza=9.2,affi=0/0/4/0"
-		End_If
-	End_If
-	If power > 9.5 And power <= 10.5
-		x = RndInt(3)
-		If x = 1
-			mname = "un demone guardiano"
-			image = NewImage("daemonguard.gif",121,100)
-			attrs = "type=11,Forza=10"
-		End_If
-		If x = 2
-			mname = "un uomo-lucertola"
-			image = NewImage("lizardman.gif",84,110)
-			attrs = "type=11,Forza=9.7,affi=0/4/0/0"
-		End_If
-		If x = 3
-		        mname = "un serpente velenoso"
-		        image = NewImage("snake2.gif",84,110)
-		        attrs ="type=11,Forza=10.5,affi=0/4/0/0,artdefense=counterattack"
-		End_If
-	End_If
-	If power > 10.5 And power <= 11.5
-		x = RndInt(4)
-		If x = 1
-			mname = "un mostro ectoplasmico"
-			image = NewImage("monst52.gif",78,100)
-			attrs = "type=11,Forza=11"
-		End_If
-		If x = 2
-		        mname = "uno scheletro combattente"
-		        image = NewImage("skeleton2.gif",78,100)
-		        attrs = "type=11,Forza=10.6"
-		End_If
-		If x = 3
-			mname = "un demone ciclope"
-			image = NewImage("demoncyclops.gif",144,120)
-			attrs = "type=11,Forza=11,artdefense=counterattack"
-		End_If
-		If x = 4
-			mname = "un Demone"
-			image = NewImage("deamona.gif",88,105)
-			attrs = "type=11,Forza=11.3,vuln_mob"
-		End_If
-	End_If
-	If power > 11.5 And power <= 12
-		x = RndInt(3)
-		If x = 1
-			mname = "un Demone multibraccia"
-			image = NewImage("multiarm.gif",76,120)
-			attrs = "type=11,Forza=11,vuln_mob"
-		End_If
-		If x = 2
-			mname = "un Dragone gigante"
-			image = NewImage("gdragon.gif",125,117)
-			attrs = "type=11.8,Forza=11"
-		End_If
-		If x = 3
-			mname = "un Dragone volante"
-			image = NewImage("fdragon.gif",64,100)
-			attrs = "type=11,Forza=11.5,affi=0/0/4/0"
-		End_If
-	End_If
-	If power > 12 And power < 15
-		x = RndInt(2)
-		If x = 1
-			mname = "un cavaliere oscuro"
-			image = NewImage("darkknight.gif",95,102)
-			attrs = "type=11,Forza=12.5,affi=4/0/0/0"
-		End_If
-		If x = 2
-			mname = "un profeta della Morte"
-			image = NewImage("deathevanfront.gif",110,82)
-			attrs = "type=11,Forza=14,affi=0/0/4/0,artdefense=counterattack"
-		End_If
-		'If x = 3
-		'        mname = "un drago"
-		'        image = NewImage("drago.gif",95,102)
-		'        attrs = "type=11,Forza=13"
-		'End_If
-	End_If
-	If power = 15
-		mname = "l'Uomo-Diavolo"
-		image = NewImage("horror046.gif",140,175)
-		attrs = "type=17,Forza=15,keeper=1,vuln_mob,affi=0/0/0/4"
-	End_If
-	If power > 15
-		x = RndInt(8)
-		If x = 1
-			mname = "l'Uomo-Diavolo Sterminatore"
-			image = NewImage("horror046.gif",145,180)
-			attrs = "type=11,Forza=" + Round(power,0) + ",keeper=1,vuln_mob,terminator,affi=0/0/0/4,artdefense=counterattack"
-		End_If
-		If x = 2
-			mname = "un diavolo rosso"
-			image = NewImage("reddevil.gif",150,150)
-			attrs = "type=11,Forza=" + Round(power,0) + ",keeper=1,affi=0/0/0/4"
-		End_If
-		If x = 3
-			mname = "un gargoyle"
-			image = NewImage("gargoyle.gif",167,115)
-			attrs = "type=11,affi=0/0/4/0,Forza=" + Round(power,0)
-		End_If
-		If x = 4
-			mname = "una morte nera"
-			image = NewImage("deathreaper.gif",144,120)
-			attrs = "type=11,affi=0/0/4/0,Forza=" + Round(power,0)
-		End_If
-		If x = 5
-			mname = "un gigabat"
-			image = NewImage("gigabat.gif",120,100)
-			attrs = "type=11,Forza=" + Round(power,0) + ",terminator,affi=0/0/4/0"
-		End_If
-		If x = 6
-			mname = "una sterminatrice"
-			image = NewImage("monst11.gif",130,100)
-			attrs = "type=11,Forza=" + Round(power,0) + ",terminator"
-		End_If
-		If x = 7
-			mname = "un demone pipistrello"
-			image = NewImage("batdevil.gif",64,100)
-			attrs = "type=11,Forza=" + Round(power,0) + ",terminator,affi=0/0/4/0"
-		End_If
-		If x = 8
-			mname = "un gargoyle sterminatore"
-			image = NewImage("monst28.gif",100,100)
-			attrs = "type=11,Forza=" + Round(power,0) + ",terminator,affi=0/0/4/0,artdefense=counterattack"
-		End_If
-	End_If
-
-	Dim new
-	Dim setWhere = setRooms
-	If InStr(attrs,"type=14")
-		setWhere = setCovered
-	End_If
-	new = NewCharacter(RndSet(setWhere),mname,"",image,attrs+",dyncreated,accepts=*")
-
-	'Check - it happened we got a null character
-	If new.type = null
-		Debug "Problem in popMonster. New.type = null. Power was: " + power + " setRooms=" + setRooms + " x= " + x
-		$WORLD.debuginfo = "" + $WORLD.debuginfo + ",problem in popMonster"
-		return null
-	End_If
-	If new.type = 0
-		Debug "Problem in popMonster. New has type=0. Power was: " + power
-		$WORLD.debuginfo = "" + $WORLD.debuginfo + ",problem in popMonster"
-		Kill new
-		return null
-	End_If
-
-	new.Livello = levMax
-	Display $WORLD,"" + mname + " è apparso, ha Forza: " +  (new.Forza)
-	' Fix description now
-	new.description = ""
-	If new.suffersound=""
-		new.suffersound="pig.wav"
-	End_If
-	new.__hooked = NewSet()
-
-	new.arts = SetKeys(artNames) 'Knowledge of all arts
-	If new.artdefense = null ' Survival Art by default
-		new.artdefense = "survival"
-	End_If
-
-	Call FixArrays(new)
-
-	If ExistScript("popMonster_Local")
-		Call popMonster_Local(new)
-	End_If
-
-	Return new
-End_Function
-
-
 ' popHuman
 '
 ' Input: power= Desired Overall power
@@ -2405,7 +2062,7 @@ Sub common_onStart()
 	setSndBeastYell=Split("roar1.wav/roar2.wav/gnarl1.wav/roarlong2.wav","/")
 	setSndHumanYell=NewArray("death.wav,yell.wav,ahh.wav")
 	setRobotCmds=NewSet("findobj=Trovare oggetti,hunt=Uccidere i nemici,progeny=Fare altri adepti,terminate=Uccidere ...,escort=Fare da scorta,wave=Ordinare a tutti di uccidere nemici")
-	masterOps = NewSet("_0=(Comando),exp=Dai punti Esperienza a ...,eqp=Equipaggia arma*persona *,money=Accredita denaro a ...,kill=Elimina (persona),jail=Incarcera (scegli o scrivi),unjail=Scarcera (scegli o scrivi),ban=Banna (persona),move=Sposta (persona) in (stanza),moveo=Sposta (oggetto) in (stanza),rstavatar=Ripristina avatar a (persona),vip=Vedi IP di (giocatore),vipb=Vedi/cambia lista IP bannati*,restart=Riavvia gioco,restart1=Riavvia gioco da fase 1,purge=Purge*,fix=Ripara Catalogo*,resetpwd=Resetta password di...,info=Info su giocatore...,catsave=Catalogo-Salva*,catload=Catalogo-Carica,catadd=Catalogo-Aggiungi oggetto+,catview=Catalogo-Vedi oggetto,tournament=Imposta modo torneo...*,makemaster=Rendi master...*")
+	masterOps = NewSet("_0=(Comando),exp=Dai punti Esperienza a ...,eqp=Equipaggia arma*persona *,money=Accredita denaro a ...,kill=Elimina (persona),jail=Incarcera (scegli o scrivi),unjail=Scarcera (scegli o scrivi),ban=Banna (persona),move=Sposta (persona) in (stanza),moveo=Sposta (oggetto) in (stanza),rstavatar=Ripristina avatar a (persona),vip=Vedi IP di (giocatore),vipb=Vedi/cambia lista IP bannati*,restart=Riavvia gioco,restart1=Riavvia gioco da fase 1,purge=Purge*,resetpwd=Resetta password di...,info=Info su giocatore...,catsave=Catalogo-Salva*,catload=Catalogo-Carica,catadd=Catalogo-Aggiungi oggetto+,catview=Catalogo-Vedi oggetto,tournament=Imposta modo torneo...*,makemaster=Rendi master...*,reloadjuke=Ricarica Jukebox,reloadmobs=Ricarica MOBs,popmobs=Popup MOBs")
 	cloneableTypes = NewSet("bomb,weapon,spell,helmet,armour,shield,bottle,stone,pill,garlic,trap")
 	uniqueTypes = NewSet("crown,key1,key2,key3,key4,key5,cross,book1,book2")
 	itsday = "?" ' For day/night cycle
@@ -2493,8 +2150,10 @@ Sub LoadContext()
 		assassinguild = getSetting("ctx_assassin","")
 	End_If
 
+	Call buildWfactory()
 	Call buildWCatalog()
 	Call shops_prepare(arrShopkeepers)
+	Call LoadMobs()
 
 	If ExistScript("LoadContext_Local")
 		Call LoadContext_Local()
@@ -2852,9 +2511,19 @@ EVENT doSpecialOp(cmd,input)
 			Return
 		End_If
 	End_If
-	If cmd = "fix" And $AGENT.mastersuper
-		Call FixCatalog()
+	If cmd = "reloadjuke"
+		If $WORLD.name="Sottomondo"
+			Call LoadJukebox()
+		Else
+			Print "Solo nell'area principale"
+		End_If
 	End_If
+	If cmd = "reloadmobs"
+		Call LoadMobs()
+	End_If
+	If cmd = "popmobs"
+		Call popMonster(Int(txt),monstersPopupSet)
+	End_If	
 	If cmd = "money"
 		If txt <> ""
 			Dim data = Split(txt,"*")
@@ -4794,6 +4463,22 @@ Function getCatalog(shop)
 	Return x
 End_Function
 
+'Builds Weapons Factory
+Function buildWfactory()
+	weaponsfactory = NewSet()
+	weaponsfactory("s1") = "type=weapon.personal,name=spada personale,descr=La spada del torneo n.5,imageurl=swordv.jpg,imagew=200,imageh=134,power=4,sound=swordlong.wav,icon=icoswordv.gif"
+	weaponsfactory("sa1") = "type=weapon.personal,name=spada dell'Apocalisse GV,descr=Spada dell'Apocalisse GV - Efficace sui guerrieri ma meno sui vampiri,imageurl=sworda.jpg,imagew=113,imageh=170,power=4,sound=sworda.wav,icon=icosworda.gif,bestagainst=1,badagainst=14"
+	weaponsfactory("sa2") = "type=weapon.personal,name=spada dell'Apocalisse AV,descr=Spada dell'Apocalisse AV - Efficace sugli artigiani ma meno sui vampiri,imageurl=sworda.jpg,imagew=113,imageh=170,power=4,sound=sworda.wav,icon=icosworda.gif,bestagainst=4,badagainst=14"
+	weaponsfactory("sp4") = "type=weapon.personal,name=spada personale,descr=Spada Personale,imageurl=swordv.jpg,imagew=200,imageh=134,power=4,sound=swordlong.wav,icon=icoswordv.gif"
+	weaponsfactory("ss4mgv") = "type=weapon.personal,name=spada della vendetta,descr=Spada della Vendetta - Efficace sui mostri ma meno sui guerrieri,imageurl=sworda.jpg,imagew=200,imageh=134,power=4,sound=swordlong.wav,icon=icosworda.gif,bestagainst=11,badagainst=1"
+	weaponsfactory("ss4mg7") = "type=weapon.personal,name=spada dei 7 angeli,descr=Spada dei 7 Angeli - Efficace sui mostri ma meno sui guerrieri,imageurl=sworda.jpg,imagew=200,imageh=134,power=4,sound=swordlong.wav,icon=icosworda.gif,bestagainst=11,badagainst=1"
+	weaponsfactory("ss5ae") = "type=weapon.personal,name=spada speciale AE,descr=Spada Personale Speciale AE - Efficace sugli artigiani ma meno sulle Entità Oscure,imageurl=sworda.jpg,imagew=200,imageh=134,power=5,sound=swordlong.wav,icon=icosworda.gif,bestagainst=4,badagainst=19"
+	weaponsfactory("ss5av") = "type=weapon.personal,name=spada speciale AP,descr=Spada Personale Speciale AP - Efficace sugli artigiani ma meno sui popolani,imageurl=sworda.jpg,imagew=200,imageh=134,power=5,sound=swordlong.wav,icon=icosworda.gif,bestagainst=4,badagainst=7"
+	weaponsfactory("xe") = "type=spell.eye,name=Incantesimo dell'Occhio,descr=Genera un'attacco psichico che può causare al nemico una distorsione visiva,imageurl=spelleye.gif,imagew=48,imageh=48,value=30,icon=spelleye.gif,sound=music.wav,showmode=2"
+	weaponsfactory("xfp") = "type=spell.attack.fire,name=Incantesimo del Fuoco,descr=Quando questo incantesimo è usato da un mago su dei nemici può infliggere loro dei danni,imageurl=spellfire.gif,imagew=48,imageh=48,icon=spellfire.gif,sound=roarlong2.wav,power=2,personal=1"
+	weaponsfactory("xb") = "type=spell.blood,name=Blood Spell,descr=This spell can drain enemies blood.,imageurl=bloodspell.png,imagew=48,imageh=48,icon=bloodspell.png,sound=roarlong2.wav,personal=1"
+End_Function
+
 ' Loads (rebuilds) Weapon's catalog
 Function buildWCatalog()
 	wcatalog = NewSet()
@@ -5656,10 +5341,10 @@ End_Function
 'If the url is already absolute, leaves it like it is,
 ' otherwise adds the image dir at the beginning
 Function absolutizeUrl(url)
-	If Left(url,7) = "http://"
+	If Left(url,8) = "https://"
 		Return url
 	Else
-		If Left(url,8) = "https://"
+		If Left(url,7) = "http://"
 			Return url
 		Else
 			Return main_imagedir+url
@@ -6010,36 +5695,6 @@ Function SanityCheck(item)
 	Return true
 End_Function
 
-Function FixCatalog()
-	Dim t,x
-	Dim valids = NewArray("weapon,armour,shield,helmet")
-	For Each t In SetKeys(wcatalog)
-		x = wcatalog(t)
-		Dim arr = Split(t,".")
-		If SetLen(arr) >= 4
-			Dim y = arr(1)
-			If SetIndexOf(valids,y) > 0 And Len(arr(2)) = 2 And Len(arr(3)) = 2 And Len(arr(4)) = 4
-				If InStr(t,"affi=")=0
-					Print "Da sistemare: " & t & ":" & x
-					Dim affi = arr(4)
-					Dim newaffi = Left(affi,1)&"/"&Mid(affi,2,1)&"/"&Mid(affi,3,1)&"/"&Right(affi,1)
-					If Right(x,1) <> ","
-						x = x&","
-					End_If
-					wcatalog(t) = x&"affi="&newaffi
-					Print "<b>Sistemata</b>: "& wcatalog(t)
-				Else
-					Print "VA BENE!: " & t & ":" & x
-				End_If
-			Else
-				Print "Scartato: " & t & ":" & x
-			End_If
-		Else
-			Print "Decisamente Scartato: " & t & ":" & x
-		End_If
-	Next
-End_Function
-
 Function FormatTimestamp(ts)
 	Return Mid(ts,7,2) & "/" & Mid(ts,5,2) & "/" & Left(ts,4) & " " & Mid(ts,9,2)&":"&Mid(ts,11,2)
 End_Function
@@ -6131,3 +5786,153 @@ Sub checkCombo(person)
 		End_If
 	End_If
 End_Sub
+
+SUB LoadMobs()
+	' Load mobs from externl csv file
+	mobs = NewArray()
+	Dim txtTracks = HttpFetch(gameinfo("site")+"downloads/it_mobs.txt")
+	If InStr(txtTracks,"exception")>0 'Offline
+		Return
+	End_If
+	Dim lines = Split(txtTracks,Chr(10))
+	Dim i=1
+	For Each line In lines
+		Dim arr = Split(line,"|")
+		arr(1)=Round(arr(1),1)
+		arr(2)=Round(arr(2),1)
+		mobs(i) = arr
+		i=i+1
+	Next
+	'Print "Caricati " & SetLen(mobs) & " mostri." & mobs
+End_SUB
+
+
+' popMonster
+'
+' Input: power= Desired Overall power of the monster
+'	 setRooms=Popup place: set of rooms to choose from
+'	 setCovered=Covered Places must be defined for vampires to pop up
+' Returns: reference the popped up monster
+' Side f/x: pops up the monster
+Function popMonster(power,setRooms)
+	power=Round(power,1)
+	'Print "Power="&power&" rooms="&setRooms
+	Dim i
+	Dim rng
+	Dim set_matching = NewSet()
+	For Each mob In mobs
+		If SetLen(mob)>4
+			dim x=sqr(1)
+			If mob(1)<=power And mob(2)>power
+				SetAdd set_matching,mob(3),mob
+			End_If
+		End_If
+	Next
+	'Print "Finished. Matching power "&power&"="&SetLen(set_matching)&" mostri"
+	
+	
+	Dim popped=RndSet(set_matching)
+	
+	'Print "popped=" & popped
+	
+	Dim mname=popped(3)
+	Dim attrs=Replace(popped(5),"*",power) 'Same strength as requested power
+	Dim imgparts=NewArray(popped(4))
+	Dim image=NewImage(imgparts(1),imgparts(2),imgparts(3))
+	
+	Dim new
+	Dim setWhere = setRooms
+	If InStr(attrs,"type=14")
+		setWhere = setCovered
+	End_If
+	Dim pos = RndSet(setWhere)
+	new = NewCharacter(pos,mname,"",image,attrs+",dyncreated,accepts=*")
+
+	'Check - it happened we got a null character
+	If new.type = null
+		Debug "Problem in popMonster. New.type = null. Power was: " + power + " setRooms=" + setRooms + " x= " + x
+		$WORLD.debuginfo = "" + $WORLD.debuginfo + ",problem in popMonster"
+		return null
+	End_If
+	If new.type = 0
+		Debug "Problem in popMonster. New has type=0. Power was: " + power
+		$WORLD.debuginfo = "" + $WORLD.debuginfo + ",problem in popMonster"
+		Kill new
+		return null
+	End_If
+
+	new.Livello = levMax
+	Display $WORLD,mname & " è apparso in " & pos.name
+	' Fix description now
+	new.description = ""
+	If new.suffersound=""
+		new.suffersound="pig.wav"
+	End_If
+	new.__hooked = NewSet()
+
+	new.arts = SetKeys(artNames) 'Knowledge of all arts
+	If new.artdefense = null ' Survival Art by default
+		new.artdefense = "survival"
+	End_If
+
+	Call FixArrays(new)
+
+	If ExistScript("popMonster_Local")
+		Call popMonster_Local(new)
+	End_If
+
+	Return new	
+End_Function
+
+Function MakeWeapon(tid,player)
+	Dim features = weaponsfactory(tid)
+	If features = null
+		Speak SYS,player,"Impossibile creare arma " + tid + " adesso - rivolgersi a Ronald"
+		Return null
+	End_If
+	Dim type = MyExtract(features,"type")
+	Dim personal = false
+	If Right(type,9) = ".personal" Or MyExtract(features,"personal")
+		personal = true
+	End_If
+	Dim name = MyExtract(features,"name")
+	Dim descr = MyExtract(features,"descr")
+	Dim power = MyExtract(features,"power")	
+	Dim icon = MyExtract(features,"icon")
+	Dim sound = MyExtract(features,"sound")
+	Dim imageurl = MyExtract(features,"imageurl")
+	Dim imagew = MyExtract(features,"imagew")
+	Dim imageh = MyExtract(features,"imageh")
+	Dim attrlist = "type="+type+",tid="+tid+",Potenza="+power+",sound="+sound+",icon="+icon+",pickable"
+	Dim badagainst = MyExtract(features,"badagainst")
+	Dim bestagainst = MyExtract(features,"bestagainst")
+	Dim showmode = MyExtract(features,"showmode")
+	Dim designer = MyExtract(features,"designer")
+	If showmode = null
+		showmode = 1
+	End_If
+	attrlist = attrlist + ",showmode="+showmode
+	If badagainst <> null
+		attrlist = attrlist + ",badagainst="+badagainst
+	End_If
+	If bestagainst <> null
+		attrlist = attrlist + ",bestagainst="+bestagainst
+	End_If
+	If designer <> null
+		attrlist = attrlist + ",designer="+designer
+	End_If
+	If personal
+		attrlist = attrlist + ",vanishing=2"
+	Else
+		attrlist = attrlist + ",Valore=" + MyExtract(features,"value")
+	End_If
+	Dim x = NewItem(player,name,descr,NewImage(imageurl,imagew,imageh),attrlist) 
+	If personal
+		AttachEvent x,"saveInfo","personalWeapon_saveInfo"
+	End_If
+	Return x
+End_Function
+
+Function personalWeapon_saveInfo()
+	Return $OWNER.tid
+End_Function

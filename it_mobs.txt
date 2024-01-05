@@ -1,0 +1,49 @@
+0|2|uno sludge|asludge.gif,40,40|type=11,nohands=1,Forza=1.5,suffersound=pig.wav,affi=2/0/0/0
+0|2|un conch|conch.gif,48,49|type=11,nohands=1,Forza=1.5,affi=2/2/0/0
+0|2|un serpente|snake2.gif,40,40|type=11,nohands=1,Forza=2,suffersound=pig.wav,affi=0/2/0/0,artdefense=counterattack
+2|2.5|uno sludge|asludge.gif,40,40|type=11,nohands=1,Forza=2.2,suffersound=pig.wav,affi=2/0/0/0
+2|2.5|una sanguisuga|bloodskr.gif,50,29|type=11,nohands=1,Forza=2.5,suffersound=pig.wav,affi=4/0/0/0
+2.5|3.5|un biruburu|biruburu.gif,70,54|type=11,nohands=1,Forza=2.6,suffersound=pig.wav,affi=0/4/0/0
+2.5|3.5|un chorking|chorking.gif,80,73|type=11,nohands=1,Forza=2.8,suffersound=pig.wav
+2.5|3.5|una sanguisuga|bloodskr.gif,50,29|type=11,nohands=1,Forza=3,suffersound=pig.wav
+3.5|4|un giovane lupo mannaro|werewolf.gif,80,90|type=16,Forza=4,suffersound=wolfhit.wav
+4|4.5|un verme mutante|horror091.gif,90,115|type=11,Forza=4.2,affi=0/4/0/0
+4.5|5|un lupo mannaro|werewolf.gif,90,100|type=16,Forza=5,suffersound=wolfhit.wav
+5|5.5|un verme gigante|horror091.gif,100,125|type=11,Forza=5.2,vuln_mob=1,affi=0/4/0/0
+5.5|6|un vampiro|vampire.gif,95,100|type=14,Forza=5.7,yell=roar2.wav,artdefense=counterattack
+5.5|6|un fantasma|2003ghost.gif,80,100|type=11,Forza=5.7,yell=roar2.wav
+6|6.5|un mostro serpente|horror104.gif,105,130|type=11,Forza=6.2
+6|6.5|un beholder|beholder.gif,80,100|type=11,nohands,Forza=6.5,vuln_mob
+6.5|7|una mummia|mummy.gif,92,100|type=11,Forza=6.7,affi=0/4/0/0
+6.5|7|un troll|troll.png,74,110|type=11,Forza=7,vuln_mob
+7|8|un bruco della morte|dethpede.png,84,80|type=11,nohands,Forza=7.2
+7|8|un golem|sgolem.png,110,98|type=11,Forza=8,affi=0/4/0/0
+7|8|un orco|horror076.gif,140,133|type=11,Forza=8,yell=roarlong2.wav,affi=0/4/0/0
+7|8|uno scheletro|skeleton.gif,120,120|type=11,Forza=7.5,yell=roar2.wav,vuln_mob
+7|8|un ciclope|cyclops.gif,120,120|type=11,Forza=7.6,yell=roar2.wav,affi=0/4/0/0
+8|8.5|un vampiro anziano|vampire.gif,95,100|type=14,Forza=8.3,yell=roar2.wav,vuln_mob,artdefense=counterattack
+8|8.5|una entità oscura|horror047.gif,121,144|type=11,Forza=8.5,artdefense=counterattack
+8.5|9.5|un demone|daemon.png,121,117|type=11,Forza=9,artdefense=counterattack
+8.5|9.5|un demone volante|tn_an22.gif,152,105|type=11,Forza=8.7,vuln_mob,affi=0/0/4/0
+8.5|9.5|un folletto volante|flyinggoblin.gif,95,113|type=11,Forza=9.2,affi=0/0/4/0
+9.5|10.5|un demone guardiano|daemonguard.gif,121,100|type=11,Forza=10
+9.5|10.5|un uomo-lucertola|lizardman.gif,84,110|type=11,Forza=9.7,affi=0/4/0/0
+9.5|10.5|un serpente velenoso|snake2.gif,50,50|type=11,Forza=10.5,affi=0/4/0/0,artdefense=counterattack
+10.5|11.5|un mostro ectoplasmico|monst52.gif,78,100|type=11,Forza=11
+10.5|11.5|uno scheletro combattente|skeleton2.gif,78,100|type=11,Forza=10.6
+10.5|11.5|un demone ciclope|demoncyclops.gif,144,120|type=11,Forza=11,artdefense=counterattack
+10.5|11.5|un Demone|deamona.gif,88,105|type=11,Forza=11.3,vuln_mob
+11.5|12|un Demone multibraccia|multiarm.gif,76,120|type=11,Forza=11,vuln_mob
+11.5|12|un Dragone gigante|gdragon.gif,125,117|type=11.8,Forza=11
+11.5|12|un Dragone volante|fdragon.gif,64,100|type=11,Forza=11.5,affi=0/0/4/0
+12|15|un cavaliere oscuro|darkknight.gif,95,102|type=11,Forza=12.5,affi=4/0/0/0
+12|15|un profeta della morte|deathevanfront.gif,110,82|type=11,Forza=14,affi=0/0/4/0,artdefense=counterattack
+15|15.1|l'Uomo-Diavolo|horror046.gif,140,175|type=17,Forza=15,keeper=1,vuln_mob,affi=0/0/0/4
+15|100|l'Uomo-Diavolo Sterminatore|horror046.gif,145,180|type=11,Forza=*,keeper=1,vuln_mob,terminator,affi=0/0/0/4,artdefense=counterattack
+15|100|un diavolo rosso|reddevil.gif,130,130|type=11,Forza=*,keeper=1,affi=0/0/0/4
+15|100|un gargoyle|gargoyle.gif,167,115|type=11,affi=0/0/4/0,Forza=*
+15|100|una morte nera|deathreaper.gif,144,120|type=11,affi=0/0/4/0,Forza=*
+15|100|un gigabat|gigabat.gif,120,100|type=11,Forza=*,terminator,affi=0/0/4/0"
+15|100|una sterminatrice|monst11.gif,130,100|type=11,Forza=*,terminator
+15|100|un demone pipistrello|batdevil.gif,64,100|type=11,Forza=*,terminator,affi=0/0/4/0
+15|100|un gargoyle sterminatore|monst28.gif,100,100|type=11,Forza=*,terminator,affi=0/0/4/0,artdefense=counterattack
