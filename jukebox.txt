@@ -1,0 +1,10 @@
+Sean Beeson - Sentry Battle,$dir$/sentry.mp3,2
+Robin,$dir$/robin.mp3,3
+Trazada,$dir$/trazada.mp3,3
+Petersburg,$dir$/petersburg.mp3,8
+Alexander Blu - Electricity,$dir$/Alexander_Blu_-_Electricity.mp3,3.5
+Daedralarsa - Final Battle,$dir$/finalbattle_daedralarsa.mp3,3
+Tomoyasu,$dir$/tomoy.mp3,2.5
+Numatra - Imperium,$dir$/numatra-imperium.mp3,6
+Keep Talking,$dir$/talking.mp3,4
+Live To Tell,livetotell.mp3,4
